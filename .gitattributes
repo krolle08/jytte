@@ -1,0 +1,5 @@
+# Normalize line endings; keeps commit noise down on Windows checkouts.
+* text=auto eol=lf
+*.png binary
+*.jks binary
+*.geojson text

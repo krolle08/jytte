@@ -1,0 +1,41 @@
+# Pipeline configuration for the Jytte feature/bug workflow.
+# Adapted from the twapp (Flutter/Java) pipeline into a single Python target.
+#
+# The twapp workflow splits into flutter|java at "Step 0 - language
+# determination". Jytte is one language, so Step 0 collapses: target is
+# always `python`. The commands still read this file so the shape stays
+# compatible with the twapp tooling.
+
+targets:
+  - python
+default_target: python
+
+python:
+  # Feature and bug branches are cut from here.
+  baseline_ref: main
+  # Where implementation code lives. The branch gate refuses to let the
+  # main session edit these paths from the baseline branch.
+  code_paths:
+    - app/
+  test_paths:
+    - tests/
+  # Reviewer + test tooling for the "test" stage of the workflow.
+  reviewer: code-reviewer          # Agent tool subagent_type
+  review_command: /code-review     # slash command for a diff review
+  test_command: "python -m pytest -q"
+  build_command: "docker compose up -d --build jytte"
+
+# ID allocation is append-only. Never reuse a retired number.
+id_prefixes:
+  feature: FEAT
+  bug: BUG
+
+# Project invariants every spec + implementation must respect.
+# (Mirror of app/CLAUDE.md "Conventions you MUST follow".)
+invariants:
+  - "Money = INTEGER minor units (amount_cents). Never float."
+  - "Timestamps = datetime.now(timezone.utc).isoformat(), ISO 8601 UTC."
+  - "Secrets never appear in tool output, logs, or prose. Names + lengths only."
+  - "AI is never in the deterministic-I/O hot path. Fetchers are plain code."
+  - "n8n owns scheduled reads; Jytte owns user-initiated writes."
+  - "No em-dash / en-dash anywhere. Plain hyphen only."
