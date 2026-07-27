@@ -127,7 +127,8 @@ main {
   margin: 0 auto;
 }
 
-/* asymmetric grid - tasks 2x (left), news 1x (right), chat full row */
+/* Main screen: Obsidian tasks are the full-width hero (row 1), then
+   emails and azure devops full width, then the smaller widgets. */
 .grid {
   display: grid;
   grid-template-columns: 2fr 1fr;
@@ -135,18 +136,127 @@ main {
   gap: 1.25rem;
   align-items: start;
 }
-.grid > .card-geomap       { grid-column: 1 / -1; grid-row: 1; }
-.grid > .card-tasks        { grid-column: 1; grid-row: 2; }
-.grid > .card-football     { grid-column: 2; grid-row: 2; }
-.grid > .card-budget       { grid-column: 1; grid-row: 3; }
-.grid > .card-news         { grid-column: 2; grid-row: 3; }
-.grid > .card-azuredevops  { grid-column: 1 / -1; grid-row: 4; }
-.grid > .card-chat         { grid-column: 1 / -1; grid-row: 5; }
+.grid > .card-tasks        { grid-column: 1 / -1; grid-row: 1; }
+.grid > .card-emails       { grid-column: 1 / -1; grid-row: 2; }
+.grid > .card-azuredevops  { grid-column: 1 / -1; grid-row: 3; }
+.grid > .card-geomap       { grid-column: 1 / -1; grid-row: 4; }
+.grid > .card-budget       { grid-column: 1; grid-row: 5; }
+.grid > .card-news         { grid-column: 2; grid-row: 5; }
+.grid > .card-football     { grid-column: 1; grid-row: 6; }
+.grid > .card-chat         { grid-column: 1 / -1; grid-row: 7; }
 @media (max-width: 880px) {
   .grid { grid-template-columns: 1fr; }
-  .grid > .card-tasks, .grid > .card-news, .grid > .card-chat,
-  .grid > .card-azuredevops, .grid > .card-budget { grid-column: 1; }
+  .grid > .card-tasks, .grid > .card-emails, .grid > .card-news,
+  .grid > .card-chat, .grid > .card-azuredevops, .grid > .card-budget,
+  .grid > .card-football { grid-column: 1; }
 }
+
+/* Tasks hero: show every open task but keep the card from dominating the
+   viewport by scrolling internally. */
+.task-hero-list {
+  max-height: 22rem;
+  overflow-y: auto;
+}
+
+/* ---- emails widget (FEAT-001) ---- */
+.emails-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+@media (max-width: 720px) {
+  .emails-grid { grid-template-columns: 1fr; }
+}
+.emails-col {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.6rem 0.7rem;
+  background: rgba(255, 255, 255, 0.015);
+}
+.emails-col-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+.emails-col-label { font-weight: 600; }
+.emails-col-count {
+  font-size: 0.75rem;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 999px;
+  padding: 0.05rem 0.5rem;
+}
+.emails-list { list-style: none; margin: 0; padding: 0; }
+.email-row {
+  padding: 0.4rem 0.4rem;
+  border-radius: 6px;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+}
+.email-row:hover { background: rgba(255, 255, 255, 0.04); }
+.email-row-urgent { border-left-color: var(--danger, #e5484d); }
+.email-row-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+.email-title {
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+.email-attach { flex: none; }
+.email-row-topic { font-size: 0.75rem; color: var(--muted); }
+.email-row-desc {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tag.email-urgent {
+  background: rgba(229, 72, 77, 0.15);
+  color: var(--danger, #e5484d);
+}
+
+/* ---- ADO rework (FEAT-002): urgency, dark instance, comments ---- */
+.tag.ado-urgency-critical,
+.tag.ado-urgency-high {
+  background: rgba(229, 72, 77, 0.15);
+  color: var(--danger, #e5484d);
+}
+.tag.ado-urgency-low { color: var(--muted); }
+.ado-instance-dark { opacity: 0.7; }
+.ado-dark-badge {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  border: 1px dashed var(--line);
+  border-radius: 999px;
+  padding: 0.05rem 0.5rem;
+}
+.ado-dark-notice {
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0;
+}
+.ado-comments { list-style: none; margin: 0; padding: 0; }
+.ado-comment {
+  border-top: 1px solid var(--line);
+  padding: 0.5rem 0;
+}
+.ado-comment-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.2rem;
+}
+.ado-comment-author { font-weight: 600; font-size: 0.85rem; }
+.ado-comment-body { font-size: 0.85rem; }
 
 /* cards */
 .card {

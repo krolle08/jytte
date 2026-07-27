@@ -62,5 +62,6 @@ Then the stored last_error and any log line contain no password value
 - [ ] No em/en dash in strings
 
 ## Results
-- pytest: <paste>
-- code-review: <paste>
+- pytest: `tests/test_emails.py` 6 tests pass (classify, attachment, urgency, normalize, unconfigured, no-secret). Full suite 13/13 green.
+- boot: image builds; `import app.main` discovers the emails widget; `/health` lists it; card + detail render with sample data.
+- code-review (self, invariant checklist): pass - no secret in output/logs, UTC + data-ts, no AI in fetch, no em/en dash.

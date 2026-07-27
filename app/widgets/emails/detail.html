@@ -1,0 +1,33 @@
+<div class="detail">
+  <header class="detail-head">
+    {% if email %}
+    <h2>{{ email.title }}</h2>
+    {% else %}
+    <h2>Email not in cache</h2>
+    {% endif %}
+    <button class="close" onclick="closeDrawer()" title="close">&times;</button>
+  </header>
+
+  {% if not email %}
+  <p class="muted">This email is no longer in the cached snapshot for {{ bucket_label }}.
+  Refresh the widget to pull the latest mail.</p>
+  {% else %}
+  <dl class="meta-list">
+    <dt>bucket</dt><dd>{{ bucket_label }}</dd>
+    <dt>topic</dt><dd>{{ email.topic }}</dd>
+    {% if email.from_addr %}<dt>from</dt><dd>{{ email.from_addr }}</dd>{% endif %}
+    <dt>urgency</dt><dd>
+      {% if email.urgency == 'high' %}<span class="tag email-urgent">urgent</span>
+      {% else %}<span class="tag">normal</span>{% endif %}
+    </dd>
+    {% if email.date %}<dt>date</dt><dd><span data-ts="{{ email.date }}">{{ email.date[:16].replace('T', ' ') }}</span></dd>{% endif %}
+    <dt>attachments</dt><dd>{% if email.has_attachments %}&#128206; yes{% else %}none{% endif %}</dd>
+  </dl>
+
+  {% if email.description %}
+  <h3 class="detail-section">Preview</h3>
+  <div class="ado-body">{{ email.description }}</div>
+  <p class="muted small">Preview only - open your mail client for the full message.</p>
+  {% endif %}
+  {% endif %}
+</div>

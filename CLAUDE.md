@@ -34,8 +34,9 @@ registration list to edit.
 
 ## Shipped widgets
 
-- `azuredevops` (F4 / F5 / F6) - multi-org ADO: PRs + pipelines + sprint board, editable. See `app/widgets/azuredevops/CLAUDE.md`.
-- `tasks`       (v0.2)         - Obsidian task watcher with edit-back. See `app/widgets/tasks/CLAUDE.md`.
+- `azuredevops` (F4 / F5 / F6 / FEAT-002) - multi-org ADO: PRs + pipelines + sprint board (title/desc/assigned/sprint/due/urgency + lazy comments), editable. Instances can be shipped "dark" via `AZDO_ENABLED_<SUFFIX>=false` (Dagrofa is dark by default). See `app/widgets/azuredevops/CLAUDE.md`.
+- `tasks`       (v0.2 / FEAT-003) - Obsidian task watcher with edit-back; full-width dashboard hero listing every open task. See `app/widgets/tasks/CLAUDE.md`.
+- `emails`      (FEAT-001)     - IMAP mailbox card bucketed Trustworks / Dagrofa / Private. See `app/widgets/emails/CLAUDE.md`.
 - `geomap`      (v0.3)         - World pulse map: news + crisis severity. See `app/widgets/geomap/CLAUDE.md`.
 - `football`    (F1)           - ML predictor with bootstrap ensemble. See `app/widgets/football/CLAUDE.md`.
 - `news`        (post-F6)      - 8-category RSS aggregator with photos. See `app/widgets/news/CLAUDE.md`.

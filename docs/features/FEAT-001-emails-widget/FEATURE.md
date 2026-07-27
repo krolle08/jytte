@@ -2,7 +2,7 @@
 id: FEAT-001
 slug: emails-widget
 title: Emails widget with Trustworks / Dagrofa / Private split
-status: pending
+status: review
 priority: high
 target: python
 depends-on: []

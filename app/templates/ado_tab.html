@@ -43,6 +43,16 @@
     <div class="edit-error">instance fetch failed: {{ errors.get('_instance') }}</div>
     {% endif %}
 
+    {% if inst.awaiting_activation %}
+    <div class="ado-dark-notice">
+      <span class="ado-dark-badge">awaiting activation</span>
+      <p class="muted small">
+        This instance is configured but disabled. Jytte never contacts it until you
+        set <code>AZDO_ENABLED_{{ inst.slug | upper }}=true</code> in <code>.env</code> and restart.
+      </p>
+    </div>
+    {% else %}
+
     {# === PRs === #}
     <section class="ado-section">
       <header class="ado-section-head">
@@ -204,17 +214,20 @@
                 <span class="ado-title">#{{ it.id }} :: {{ it.title }}</span>
                 <span class="ado-type ado-type-{{ it.type | replace(' ', '') | lower }}">{{ it.type }}</span>
               </div>
-              {% if it.tags %}
               <div class="ado-row-foot">
-                <span class="muted small">tags: {{ it.tags }}</span>
+                {% if it.urgency and it.urgency != 'normal' %}<span class="tag ado-urgency-{{ it.urgency }}">{{ it.urgency }}</span>{% endif %}
+                {% if it.assignee %}<span class="muted small">{{ it.assignee }}</span>{% endif %}
+                {% if it.sprint %}<span class="muted small">{{ it.sprint }}</span>{% endif %}
+                {% if it.due_date %}<span class="muted small">due <span data-ts="{{ it.due_date }}">{{ it.due_date[:10] }}</span></span>{% endif %}
+                {% if it.tags %}<span class="muted small">tags: {{ it.tags }}</span>{% endif %}
               </div>
-              {% endif %}
             </li>
             {% endfor %}
           </ul>
         {% endfor %}
       {% endif %}
     </section>
+    {% endif %}
   </section>
   {% endfor %}
   {% endif %}

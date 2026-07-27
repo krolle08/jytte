@@ -83,8 +83,11 @@
   <dl class="meta-list">
     <dt>type</dt><dd>{{ item.type }}</dd>
     <dt>state</dt><dd>{{ item.state }}</dd>
+    {% if item.urgency %}<dt>urgency</dt><dd><span class="tag ado-urgency-{{ item.urgency }}">{{ item.urgency }}</span></dd>{% endif %}
+    {% if item.sprint %}<dt>sprint</dt><dd>{{ item.sprint }}</dd>{% endif %}
+    {% if item.due_date %}<dt>due</dt><dd><span data-ts="{{ item.due_date }}">{{ item.due_date[:10] }}</span></dd>{% endif %}
     <dt>area</dt><dd>{{ item.area }}</dd>
-    {% if item.assignee %}<dt>assignee</dt><dd>{{ item.assignee }}</dd>{% endif %}
+    {% if item.assignee %}<dt>assigned</dt><dd>{{ item.assignee }}</dd>{% endif %}
     {% if item.created_by %}<dt>created by</dt><dd>{{ item.created_by }}</dd>{% endif %}
     {% if item.created %}<dt>created</dt><dd>{{ item.created[:16].replace('T', ' ') }}</dd>{% endif %}
     {% if item.changed %}<dt>changed</dt><dd>{{ item.changed[:16].replace('T', ' ') }}</dd>{% endif %}
@@ -99,6 +102,26 @@
   {% if item.acceptance_criteria %}
   <h3 class="detail-section">Acceptance criteria</h3>
   <div class="ado-body">{{ item.acceptance_criteria|safe }}</div>
+  {% endif %}
+
+  {# Comments load lazily only when the task is opened (this drawer). #}
+  <h3 class="detail-section">Comments</h3>
+  {% if comments_error %}
+    <p class="muted small">{{ comments_error }}</p>
+  {% elif comments %}
+    <ul class="ado-comments">
+      {% for cm in comments %}
+      <li class="ado-comment">
+        <div class="ado-comment-head">
+          <span class="ado-comment-author">{{ cm.author or 'unknown' }}</span>
+          {% if cm.created %}<span class="muted small" data-ts="{{ cm.created }}">{{ cm.created[:16].replace('T', ' ') }}</span>{% endif %}
+        </div>
+        <div class="ado-body ado-comment-body">{{ cm.text|safe }}</div>
+      </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="muted small">no comments</p>
   {% endif %}
 
   <h3 class="detail-section">Change state</h3>

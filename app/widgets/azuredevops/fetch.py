@@ -139,6 +139,8 @@ async def _fetch_one_instance(config: ADOConfig) -> dict:
         "org": config.org,
         "project": config.project,
         "label": config.label,
+        "enabled": True,
+        "awaiting_activation": False,
         "prs": prs_data,
         "pipelines": pipelines_data,
         "tasks": tasks_data,
@@ -147,6 +149,25 @@ async def _fetch_one_instance(config: ADOConfig) -> dict:
             **({"pipelines": pipelines_err} if pipelines_err else {}),
             **({"tasks": tasks_err} if tasks_err else {}),
         },
+    }
+
+
+def _awaiting_activation_stub(config: ADOConfig) -> dict:
+    """Placeholder for a configured-but-disabled instance. Built WITHOUT
+    constructing an ADOClient, so no network request is ever issued to a
+    dark instance. This is the enforcement point for 'do not access this
+    org until I enable it'."""
+    return {
+        "slug": config.slug,
+        "org": config.org,
+        "project": config.project,
+        "label": config.label,
+        "enabled": False,
+        "awaiting_activation": True,
+        "prs": None,
+        "pipelines": None,
+        "tasks": None,
+        "section_errors": {},
     }
 
 
@@ -166,14 +187,23 @@ async def fetch() -> dict:
             "instances": [],
         }
 
-    # Fetch every instance in parallel. Per-instance failures captured.
-    instance_payloads = []
-    results = await asyncio.gather(
-        *[_safely_fetch_instance(cfg) for cfg in configs],
+    # Split enabled from dark instances. Dark instances are NEVER handed to
+    # the client path - they only produce a stub. Fetch the enabled ones in
+    # parallel; per-instance failures are captured, not raised.
+    enabled = [c for c in configs if c.enabled]
+    disabled = [c for c in configs if not c.enabled]
+    for cfg in disabled:
+        log.info("[ado] instance %s configured but disabled - not contacted", cfg.slug)
+
+    fetched = await asyncio.gather(
+        *[_safely_fetch_instance(cfg) for cfg in enabled],
         return_exceptions=False,
     )
-    for r in results:
-        instance_payloads.append(r)
+    stubs = [_awaiting_activation_stub(cfg) for cfg in disabled]
+
+    # Keep the operator's discovery order (primary first) stable.
+    by_slug = {p["slug"]: p for p in list(fetched) + stubs}
+    instance_payloads = [by_slug[c.slug] for c in configs if c.slug in by_slug]
 
     return {
         "ready": True,
@@ -195,6 +225,8 @@ async def _safely_fetch_instance(config: ADOConfig) -> dict:
             "org": config.org,
             "project": config.project,
             "label": config.label,
+            "enabled": True,
+            "awaiting_activation": False,
             "prs": None,
             "pipelines": None,
             "tasks": None,

@@ -2,7 +2,7 @@
 id: FEAT-002
 slug: ado-rework
 title: Azure DevOps rework - richer work items + Dagrofa gated instance
-status: pending
+status: review
 priority: high
 target: python
 depends-on: []

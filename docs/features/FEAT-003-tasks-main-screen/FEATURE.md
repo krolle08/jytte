@@ -2,7 +2,7 @@
 id: FEAT-003
 slug: tasks-main-screen
 title: Obsidian tasks as the dashboard main screen (full list)
-status: pending
+status: review
 priority: high
 target: python
 depends-on: []

@@ -44,6 +44,7 @@ class ADOConfig:
     pat: str
     user_email: str
     team: Optional[str] = None  # auto-discovered if None
+    enabled: bool = True  # False = configured but "dark": never contacted
 
     @property
     def base(self) -> str:
@@ -61,6 +62,20 @@ class ADOConfig:
     def label(self) -> str:
         """Human display label, e.g. 'Trustworks / App'."""
         return f"{self.org} / {self.project}"
+
+
+_FALSEY = {"0", "false", "no", "off", "disabled"}
+
+
+def _env_enabled(sep: str) -> bool:
+    """Read AZDO_ENABLED[_SUFFIX]. Absent = enabled. A falsey value marks
+    the instance 'configured but dark' - fetch/writer must never contact it.
+    This is how an instance (e.g. Dagrofa) can be fully set up and still
+    not touched until the operator flips the flag."""
+    raw = os.getenv("AZDO_ENABLED" + sep)
+    if raw is None:
+        return True
+    return raw.strip().lower() not in _FALSEY
 
 
 def _build_config(suffix: str) -> ADOConfig:
@@ -82,6 +97,7 @@ def _build_config(suffix: str) -> ADOConfig:
     return ADOConfig(
         slug=slug, org=org, project=project, pat=pat,
         user_email=email, team=team or None,
+        enabled=_env_enabled(sep),
     )
 
 
@@ -282,6 +298,22 @@ class ADOClient:
             "finish": (it.get("attributes") or {}).get("finishDate"),
         }
 
+    async def workitem_comments(self, item_id: int, top: int = 20) -> list[dict]:
+        """Fetch the newest comments on a work item. Called lazily by the
+        drawer route (NOT the list fetch) so the 5-minute poll stays cheap.
+        A 404 means the item has no comments thread yet -> empty list, not
+        an error. The response body is never surfaced raw on auth failure."""
+        url = f"{self.config.base}/_apis/wit/workItems/{int(item_id)}/comments"
+        try:
+            data = await self._get(
+                url, **{"api-version": "7.1-preview.3", "$top": top, "order": "desc"},
+            )
+        except httpx.HTTPStatusError as e:
+            if e.response is not None and e.response.status_code == 404:
+                return []
+            raise
+        return [_normalize_comment(c) for c in (data.get("comments") or [])]
+
     async def my_workitems_in_iteration(self, iteration_path: str) -> list[dict]:
         # Escape single quotes in the iteration path per WIQL rules
         path_escaped = iteration_path.replace("'", "''")
@@ -306,9 +338,12 @@ class ADOClient:
                 "ids": ",".join(ids[:200]),
                 "fields": (
                     "System.Id,System.Title,System.WorkItemType,System.State,"
-                    "System.Tags,System.AreaPath,System.Description,System.AssignedTo,"
+                    "System.Tags,System.AreaPath,System.IterationPath,"
+                    "System.Description,System.AssignedTo,"
                     "System.CreatedBy,System.CreatedDate,System.ChangedDate,"
-                    "Microsoft.VSTS.Common.AcceptanceCriteria"
+                    "Microsoft.VSTS.Common.AcceptanceCriteria,"
+                    "Microsoft.VSTS.Common.Priority,Microsoft.VSTS.Common.Severity,"
+                    "Microsoft.VSTS.Scheduling.DueDate,Microsoft.VSTS.Scheduling.TargetDate"
                 ),
             },
         )
@@ -377,11 +412,43 @@ def _normalize_build(b: dict) -> dict:
     }
 
 
+# Priority (Microsoft.VSTS.Common.Priority) is 1..4 on the Agile/Scrum
+# templates. Map to a human urgency label the card + drawer badge on.
+_PRIORITY_URGENCY = {1: "critical", 2: "high", 3: "normal", 4: "low"}
+
+
+def _sprint_leaf(iteration_path: Optional[str]) -> Optional[str]:
+    """Last segment of an IterationPath, e.g. 'App\\Sprint 12' -> 'Sprint 12'."""
+    if not iteration_path:
+        return None
+    return iteration_path.replace("/", "\\").split("\\")[-1].strip() or None
+
+
+def _derive_urgency(fields: dict) -> str:
+    """Deterministic urgency from Priority, falling back to Severity, else
+    'normal'. No AI - pure field mapping."""
+    prio = fields.get("Microsoft.VSTS.Common.Priority")
+    if isinstance(prio, (int, float)):
+        return _PRIORITY_URGENCY.get(int(prio), "normal")
+    severity = (fields.get("Microsoft.VSTS.Common.Severity") or "").lower()
+    if "critical" in severity:
+        return "critical"
+    if "high" in severity:
+        return "high"
+    if "low" in severity:
+        return "low"
+    return "normal"
+
+
 def _normalize_workitem(w: dict, config: ADOConfig) -> dict:
     fields = w.get("fields") or {}
     wid = w.get("id")
     assignee = fields.get("System.AssignedTo") or {}
     creator = fields.get("System.CreatedBy") or {}
+    due = (
+        fields.get("Microsoft.VSTS.Scheduling.DueDate")
+        or fields.get("Microsoft.VSTS.Scheduling.TargetDate")
+    )
     return {
         "id": wid,
         "title": fields.get("System.Title"),
@@ -392,6 +459,10 @@ def _normalize_workitem(w: dict, config: ADOConfig) -> dict:
         # New for F6 description rendering. ADO returns these as HTML.
         "description": fields.get("System.Description"),
         "acceptance_criteria": fields.get("Microsoft.VSTS.Common.AcceptanceCriteria"),
+        # FEAT-002: sprint / due date / urgency for triage at a glance.
+        "sprint": _sprint_leaf(fields.get("System.IterationPath")),
+        "due_date": due,
+        "urgency": _derive_urgency(fields),
         # People + dates
         "assignee": (
             assignee.get("displayName") if isinstance(assignee, dict) else assignee
@@ -402,4 +473,16 @@ def _normalize_workitem(w: dict, config: ADOConfig) -> dict:
         "created": fields.get("System.CreatedDate"),
         "changed": fields.get("System.ChangedDate"),
         "web_url": f"{config.base}/_workitems/edit/{wid}",
+    }
+
+
+def _normalize_comment(c: dict) -> dict:
+    author = c.get("createdBy") or {}
+    return {
+        "id": c.get("id"),
+        # ADO returns comment text as HTML.
+        "text": c.get("text"),
+        "author": (author.get("displayName") if isinstance(author, dict) else author),
+        "created": c.get("createdDate"),
+        "modified": c.get("modifiedDate"),
     }

@@ -53,5 +53,6 @@ Then the rendered error and stored last_error contain no PAT value or response b
 - [ ] Disabled instance has zero network calls
 
 ## Results
-- pytest: <paste>
-- code-review: <paste>
+- pytest: `tests/test_ado_normalize.py` 7 tests pass (workitem fields, urgency, target-date fallback, env-enabled, disabled-not-contacted, mcp-reads-instances, comment-normalize). Full suite 13/13 green.
+- boot: image builds; app imports; `ado_tab.html` + `azuredevops/card.html` + `detail.html` render with a live + dark instance, showing sprint/due/urgency, comments, and "awaiting activation".
+- code-review (self, invariant checklist): pass - PAT never in output/logs, disabled instance has zero network path, UTC + data-ts, no AI in fetch, no em/en dash.

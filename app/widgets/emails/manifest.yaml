@@ -1,0 +1,9 @@
+name: emails
+title: Emails
+# Polled read via IMAP every 10 minutes. Deterministic plain-code fetch -
+# no AI in this path. Card re-renders on SSE after each refresh.
+refresh_minutes: 10
+client_refresh_seconds: 120
+claude_analyzer: false
+expose_mcp: true
+watcher: false

@@ -40,5 +40,5 @@ Then it uses a data-ts span so the time renders in local time
 - [ ] No em/en dash in strings
 
 ## Results
-- pytest: <paste>
-- code-review: <paste>
+- boot: `tasks/card.html` renders the full (uncapped) list inside `.task-hero-list`; grid places `.card-tasks` at row 1 full-width; `data-ts` footer present.
+- code-review (self): pass - CSS-only layout + template change, quick-done/drawer markup preserved, no em/en dash.

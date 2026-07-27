@@ -14,11 +14,36 @@ from fastapi.responses import HTMLResponse
 
 from app import db, sse
 from app.widgets.azuredevops import fetch as fetch_mod
+from app.widgets.azuredevops.ado import ADOClient, discover_configs
 from app.widgets.azuredevops.ado_writer import (
     ADOWriteError, DEFAULT_STATE_OPTIONS, patch_workitem,
 )
 
 router = APIRouter()
+
+import logging
+
+log = logging.getLogger(__name__)
+
+
+async def _load_comments(slug: str | None, item_id: int) -> tuple[list[dict], str | None]:
+    """Fetch work-item comments live for the drawer. Returns (comments, error).
+    Only enabled instances are contacted; a dark instance yields no request.
+    Never raises - a comment fetch failure degrades to an inline note and
+    never leaks the PAT or a raw response body."""
+    configs = [c for c in discover_configs() if c.enabled]
+    if slug:
+        configs = [c for c in configs if c.slug == slug]
+    elif len(configs) != 1:
+        configs = []
+    if not configs:
+        return [], None
+    try:
+        async with ADOClient(configs[0]) as client:
+            return await client.workitem_comments(item_id), None
+    except Exception as e:  # noqa: BLE001
+        log.warning("[ado] comment fetch for #%s failed: %s", item_id, e)
+        return [], "could not load comments"
 
 
 def _instance_payload(state: dict, slug: str | None) -> dict | None:
@@ -123,11 +148,13 @@ async def detail(request: Request, kind: str, id: int, instance: str | None = No
                 f"Work item #{id} is no longer in the cached snapshot for {inst.get('label')}. "
                 "It may have moved out of the current sprint iteration.",
             )
+        comments, comments_error = await _load_comments(inst.get("slug"), id)
         return templates.TemplateResponse(
             "azuredevops/detail.html",
             {**common, "kind": "item", "item": item,
              "state_options": DEFAULT_STATE_OPTIONS,
-             "edit_error": None},
+             "edit_error": None,
+             "comments": comments, "comments_error": comments_error},
         )
 
     raise HTTPException(status_code=400, detail="kind must be one of: pr, run, item")
@@ -163,11 +190,13 @@ async def edit_item(
     except ADOWriteError as e:
         if item is None:
             raise HTTPException(status_code=404, detail="work item disappeared from cache")
+        comments, comments_error = await _load_comments(inst.get("slug"), id)
         return templates.TemplateResponse(
             "azuredevops/detail.html",
             {**common, "kind": "item", "item": item,
              "state_options": DEFAULT_STATE_OPTIONS,
-             "edit_error": str(e)},
+             "edit_error": str(e),
+             "comments": comments, "comments_error": comments_error},
             status_code=200,
         )
 
@@ -206,8 +235,10 @@ async def edit_item(
         },
     )
 
+    comments, comments_error = await _load_comments(inst.get("slug"), id)
     return templates.TemplateResponse(
         "azuredevops/detail.html",
         {**common, "kind": "item", "item": updated,
-         "state_options": DEFAULT_STATE_OPTIONS, "edit_error": None},
+         "state_options": DEFAULT_STATE_OPTIONS, "edit_error": None,
+         "comments": comments, "comments_error": comments_error},
     )

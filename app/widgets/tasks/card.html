@@ -1,28 +1,30 @@
 {% set items = state.data['items'] if state.data else [] %}
 {% if items %}
-<ul class="tasks-list">
-  {% for t in items[:12] %}
-  <li class="task-item">
-    <button class="task-quick-done"
-            title="mark done"
-            hx-post="/widgets/tasks/quick-done"
-            hx-vals='{"path": "{{ t.path|e }}"}'
-            hx-swap="none"
-            onclick="event.stopPropagation();">&check;</button>
-    <span class="task-clickable"
-          hx-get="/widgets/tasks/detail?path={{ t.path|urlencode }}"
-          hx-target="#drawer"
-          hx-swap="innerHTML"
-          onclick="openDrawer()">
-      {% if t.priority %}<span class="tag prio-{{ t.priority|lower }}">{{ t.priority }}</span>{% endif %}
-      {% if t.due %}<span class="tag">due {{ t.due }}</span>{% endif %}
-      <span class="task-title">{{ t.title }}</span>
-    </span>
-  </li>
-  {% endfor %}
-</ul>
-<p class="muted">{{ items|length }} open task{{ '' if items|length == 1 else 's' }}{% if items|length > 12 %} (showing 12){% endif %}</p>
+<div class="task-hero-list">
+  <ul class="tasks-list">
+    {% for t in items %}
+    <li class="task-item">
+      <button class="task-quick-done"
+              title="mark done"
+              hx-post="/widgets/tasks/quick-done"
+              hx-vals='{"path": "{{ t.path|e }}"}'
+              hx-swap="none"
+              onclick="event.stopPropagation();">&check;</button>
+      <span class="task-clickable"
+            hx-get="/widgets/tasks/detail?path={{ t.path|urlencode }}"
+            hx-target="#drawer"
+            hx-swap="innerHTML"
+            onclick="openDrawer()">
+        {% if t.priority %}<span class="tag prio-{{ t.priority|lower }}">{{ t.priority }}</span>{% endif %}
+        {% if t.due %}<span class="tag">due {{ t.due }}</span>{% endif %}
+        <span class="task-title">{{ t.title }}</span>
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+<p class="muted">{{ items|length }} open task{{ '' if items|length == 1 else 's' }}</p>
 {% else %}
 <p class="muted">no open tasks</p>
 {% endif %}
-{% if state.updated_at %}<p class="ts">updated {{ state.updated_at }}</p>{% endif %}
+{% if state.updated_at %}<p class="ts">updated <span data-ts="{{ state.updated_at }}">{{ state.updated_at[:16] }}</span></p>{% endif %}

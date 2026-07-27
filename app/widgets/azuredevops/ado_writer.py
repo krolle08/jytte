@@ -38,10 +38,17 @@ def _resolve_config(slug: Optional[str]) -> ADOConfig:
     if slug:
         for c in configs:
             if c.slug == slug:
+                if not c.enabled:
+                    raise ADOWriteError(
+                        f"ADO instance '{slug}' is disabled; enable it before writing"
+                    )
                 return c
         raise ADOWriteError(f"no ADO instance with slug '{slug}'")
-    if len(configs) == 1:
-        return configs[0]
+    enabled = [c for c in configs if c.enabled]
+    if len(enabled) == 1:
+        return enabled[0]
+    if not enabled:
+        raise ADOWriteError("no enabled ADO instance configured")
     raise ADOWriteError("multiple ADO instances configured; specify which one")
 
 

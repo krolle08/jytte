@@ -20,6 +20,17 @@
 
 <ul class="ado-instances-summary">
   {% for inst in instances %}
+  {% if inst.awaiting_activation %}
+  <li class="ado-instance-row ado-instance-dark">
+    <div class="ado-instance-head">
+      <span class="ado-instance-label">{{ inst.label or inst.slug }}</span>
+      <span class="ado-dark-badge">awaiting activation</span>
+    </div>
+    <div class="ado-instance-stats">
+      <span class="muted small">configured - not contacted until enabled</span>
+    </div>
+  </li>
+  {% else %}
   {% set prs = inst.prs or {} %}
   {% set pipes = inst.pipelines or {} %}
   {% set tasks = inst.tasks or {} %}
@@ -43,6 +54,7 @@
       </div>
     </a>
   </li>
+  {% endif %}
   {% endfor %}
 </ul>
 {% endif %}

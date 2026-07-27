@@ -1,0 +1,49 @@
+{# Emails dashboard card: three buckets - Trustworks / Dagrofa / Private.
+   Each row shows title, topic, urgency, description preview + attachment
+   checkmark. Click a row to open the detail drawer. #}
+{% set data = state.data or {} %}
+{% if not data.get('ready') %}
+<p class="muted">emails loading...</p>
+{% elif not data.get('configured') %}
+<div class="emails-empty">
+  <p class="muted">{{ data.get('reason') or 'mailbox not configured' }}</p>
+  <p class="muted small">Set <code>EMAIL_IMAP_HOST</code>, <code>EMAIL_IMAP_USER</code> and
+  <code>EMAIL_IMAP_PASSWORD</code> (see <code>.env.example</code>) to connect a mailbox.</p>
+</div>
+{% else %}
+{% set buckets = data.get('buckets') or {} %}
+{% set labels = {'trustworks': 'Trustworks', 'dagrofa': 'Dagrofa', 'private': 'Private'} %}
+<div class="emails-grid">
+  {% for key in ['trustworks', 'dagrofa', 'private'] %}
+  {% set mails = buckets.get(key) or [] %}
+  <section class="emails-col emails-col-{{ key }}">
+    <header class="emails-col-head">
+      <span class="emails-col-label">{{ labels[key] }}</span>
+      <span class="emails-col-count">{{ mails | length }}</span>
+    </header>
+    {% if mails %}
+    <ul class="emails-list">
+      {% for m in mails[:10] %}
+      <li class="email-row{% if m.urgency == 'high' %} email-row-urgent{% endif %}"
+          hx-get="/widgets/emails/detail?uid={{ m.uid | urlencode }}&bucket={{ key }}"
+          hx-target="#drawer" hx-swap="innerHTML"
+          onclick="openDrawer()">
+        <div class="email-row-head">
+          {% if m.urgency == 'high' %}<span class="tag email-urgent">urgent</span>{% endif %}
+          <span class="email-title">{{ m.title }}</span>
+          {% if m.has_attachments %}<span class="email-attach" title="has attachments">&#128206;</span>{% endif %}
+        </div>
+        <div class="email-row-topic">{{ m.topic }}</div>
+        {% if m.description %}<div class="email-row-desc muted small">{{ m.description }}</div>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% if mails | length > 10 %}<p class="muted small">+{{ mails | length - 10 }} more</p>{% endif %}
+    {% else %}
+    <p class="muted small">no mail</p>
+    {% endif %}
+  </section>
+  {% endfor %}
+</div>
+{% endif %}
+{% if state.updated_at %}<p class="ts">updated <span data-ts="{{ state.updated_at }}">{{ state.updated_at[:16] }}</span></p>{% endif %}
