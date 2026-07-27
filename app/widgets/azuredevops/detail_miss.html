@@ -1,0 +1,22 @@
+<div class="detail">
+  <header class="detail-head">
+    <h2>Not in cache</h2>
+    <button class="close" onclick="closeDrawer()" title="close">&times;</button>
+  </header>
+
+  <div class="edit-error">{{ reason }}</div>
+
+  <dl class="meta-list">
+    <dt>kind</dt><dd>{{ kind }}</dd>
+    <dt>id</dt><dd>{{ id }}</dd>
+    {% if instance %}<dt>instance</dt><dd>{{ instance }}</dd>{% endif %}
+  </dl>
+
+  <p class="muted small">
+    Click the <em>refresh</em> button on the card header to pull a
+    fresh snapshot from Azure DevOps. If the item really has been
+    removed/merged, it won't reappear; if it's just outside the
+    24-hour window or the current sprint iteration, it should come
+    back in the broader view inside Azure DevOps itself.
+  </p>
+</div>

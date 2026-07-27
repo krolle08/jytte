@@ -1,0 +1,9 @@
+name: budget
+title: Budget
+# refresh_minutes intentionally null - the budget is user-driven, not a
+# polled data source. Card re-renders on SSE after each edit instead.
+refresh_minutes: null
+client_refresh_seconds: 120
+claude_analyzer: false
+expose_mcp: true
+watcher: false

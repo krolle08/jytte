@@ -1,0 +1,7 @@
+name: tasks
+title: Tasks
+refresh_minutes: null
+client_refresh_seconds: 60
+claude_analyzer: false
+expose_mcp: true
+watcher: true

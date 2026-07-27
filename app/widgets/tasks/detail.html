@@ -1,0 +1,86 @@
+<div class="detail" id="tasks-detail">
+  <header class="detail-head">
+    <h2>{{ meta.title or path }}</h2>
+    <div class="detail-actions">
+      {% if not edit_mode %}
+      <button class="edit-toggle"
+              hx-get="/widgets/tasks/detail?path={{ path|urlencode }}&edit=1"
+              hx-target="#tasks-detail"
+              hx-swap="outerHTML"
+              title="edit">edit</button>
+      {% else %}
+      <button class="edit-toggle"
+              hx-get="/widgets/tasks/detail?path={{ path|urlencode }}&edit=0"
+              hx-target="#tasks-detail"
+              hx-swap="outerHTML"
+              title="cancel">cancel</button>
+      {% endif %}
+      <button class="close" onclick="closeDrawer()" title="close">&times;</button>
+    </div>
+  </header>
+
+  {% if not edit_mode %}
+  <dl class="meta-list">
+    {% if meta.status %}<dt>status</dt><dd>{{ meta.status }}</dd>{% endif %}
+    {% if meta.priority %}<dt>priority</dt><dd><span class="tag prio-{{ meta.priority|lower }}">{{ meta.priority }}</span></dd>{% endif %}
+    {% if meta.due %}<dt>due</dt><dd>{{ meta.due }}</dd>{% endif %}
+    {% if meta.category %}<dt>category</dt><dd>{{ meta.category }}</dd>{% endif %}
+    {% if meta.customer %}<dt>customer</dt><dd>{{ meta.customer }}</dd>{% endif %}
+    {% if meta.tags %}<dt>tags</dt><dd>{% for t in meta.tags %}<span class="tag">{{ t }}</span>{% endfor %}</dd>{% endif %}
+    <dt>file</dt><dd><code>{{ path }}</code></dd>
+  </dl>
+
+  <div class="detail-body">
+    {{ body_html|safe }}
+  </div>
+  {% else %}
+  <form class="edit-form"
+        hx-post="/widgets/tasks/edit"
+        hx-target="#tasks-detail"
+        hx-swap="outerHTML">
+    <input type="hidden" name="path" value="{{ path }}" />
+
+    <div class="edit-field">
+      <label for="ef-status">status</label>
+      <select id="ef-status" name="status">
+        <option value="open"        {% if (meta.status or '')|lower == 'open' %}selected{% endif %}>open</option>
+        <option value="in-progress" {% if (meta.status or '')|lower == 'in-progress' %}selected{% endif %}>in-progress</option>
+        <option value="blocked"     {% if (meta.status or '')|lower == 'blocked' %}selected{% endif %}>blocked</option>
+        <option value="done"        {% if (meta.status or '')|lower == 'done' %}selected{% endif %}>done</option>
+      </select>
+    </div>
+
+    <div class="edit-field">
+      <label for="ef-priority">priority</label>
+      <select id="ef-priority" name="priority">
+        <option value="">(unchanged)</option>
+        <option value="P1" {% if meta.priority == 'P1' %}selected{% endif %}>P1 (critical)</option>
+        <option value="P2" {% if meta.priority == 'P2' %}selected{% endif %}>P2 (normal)</option>
+        <option value="P3" {% if meta.priority == 'P3' %}selected{% endif %}>P3 (low)</option>
+      </select>
+    </div>
+
+    <div class="edit-field">
+      <label for="ef-due">due (YYYY-MM-DD, empty to clear)</label>
+      <input id="ef-due" type="text" name="due" value="{{ meta.due or '' }}" placeholder="YYYY-MM-DD" />
+    </div>
+
+    <div class="edit-actions">
+      <button type="submit" class="edit-save">save</button>
+      <button type="button" class="edit-cancel"
+              hx-get="/widgets/tasks/detail?path={{ path|urlencode }}&edit=0"
+              hx-target="#tasks-detail"
+              hx-swap="outerHTML">cancel</button>
+    </div>
+  </form>
+
+  <p class="muted small edit-hint">
+    Audit log is on - every save lands in <code>widget_edits</code>.
+    Body edits go through <a href="{{ obsidian_uri }}">Obsidian</a>.
+  </p>
+  {% endif %}
+
+  <footer class="detail-foot">
+    <a class="obsidian-link" href="{{ obsidian_uri }}">open in obsidian</a>
+  </footer>
+</div>

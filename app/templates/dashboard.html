@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="grid" hx-ext="sse" sse-connect="/events">
+  {% for widget in widgets %}
+  <article class="card card-{{ widget.name }}"
+           id="card-{{ widget.name }}">
+    <header class="card-head">
+      <h2>{{ widget.title }}</h2>
+      <button class="refresh"
+              hx-post="/widgets/{{ widget.name }}/refresh"
+              hx-swap="none"
+              title="refresh now"
+              aria-label="refresh {{ widget.title }}">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>
+      </button>
+    </header>
+    <div class="card-body"
+         hx-get="/widgets/{{ widget.name }}?partial=1"
+         hx-trigger="load, sse:widget:{{ widget.name }}, every {{ widget.client_refresh_seconds }}s"
+         hx-swap="innerHTML">
+      <div class="skeleton">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+  </article>
+  {% endfor %}
+
+  {% if claude_enabled %}
+  <article class="card card-chat">
+    <header class="card-head">
+      <h2>Chat</h2>
+      <span class="chat-hint">claude with widget context</span>
+    </header>
+    <form class="chat-form"
+          onsubmit="event.preventDefault(); jytteChat(this);">
+      <input type="text" name="message" placeholder="ask jytte..." autocomplete="off" />
+      <button type="submit" aria-label="send">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7Z"/></svg>
+      </button>
+    </form>
+    <pre id="chat-output" class="chat-output muted">ask anything - jytte answers from cached widget summaries.</pre>
+  </article>
+  {% endif %}
+</section>
+
+<aside id="drawer" class="drawer" aria-hidden="true"></aside>
+<div id="drawer-backdrop" class="drawer-backdrop" onclick="closeDrawer()"></div>
+
+<script>
+function openDrawer() {
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drawer-backdrop').classList.add('open');
+  document.getElementById('drawer').setAttribute('aria-hidden', 'false');
+  document.body.classList.add('drawer-open');
+}
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('drawer-backdrop').classList.remove('open');
+  document.getElementById('drawer').setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('drawer-open');
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+
+async function jytteChat(form) {
+  const input = form.querySelector('input[name=message]');
+  const out = document.getElementById('chat-output');
+  const msg = input.value.trim();
+  if (!msg) return;
+  out.classList.remove('muted');
+  out.textContent = 'thinking...';
+  try {
+    const r = await fetch('/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({message: msg}),
+    });
+    const j = await r.json();
+    out.textContent = j.answer || JSON.stringify(j);
+  } catch (e) {
+    out.textContent = 'error: ' + e;
+  }
+  input.value = '';
+}
+</script>
+{% endblock %}

@@ -1,0 +1,29 @@
+{# Dashboard summary card for the budget. Compact: just totals + link.
+   Full editor lives on /budget. #}
+{% set data = state.data or {} %}
+{% if not data.get('ready') %}
+<p class="muted">budget loading...</p>
+{% else %}
+<div class="budget-summary">
+  <div class="budget-summary-row">
+    <span class="budget-summary-label">Income / month</span>
+    <span class="budget-summary-value income">{{ data.income_monthly }} DKK</span>
+  </div>
+  <div class="budget-summary-row">
+    <span class="budget-summary-label">Expense / month</span>
+    <span class="budget-summary-value expense">{{ data.expense_monthly }} DKK</span>
+  </div>
+  <div class="budget-summary-row budget-summary-net">
+    <span class="budget-summary-label">Net / month</span>
+    <span class="budget-summary-value {% if data.net_monthly_cents < 0 %}negative{% else %}positive{% endif %}">
+      {{ data.net_monthly }} DKK
+    </span>
+  </div>
+  <div class="budget-summary-foot muted small">
+    {{ data.entry_count }} entries
+    :: annual net <strong>{{ data.net_annual }} DKK</strong>
+    :: <a href="/budget" class="budget-out-link">edit /budget &rarr;</a>
+  </div>
+</div>
+{% endif %}
+{% if state.updated_at %}<p class="ts">updated <span data-ts="{{ state.updated_at }}">{{ state.updated_at[:16] }}</span></p>{% endif %}

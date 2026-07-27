@@ -1,0 +1,56 @@
+{
+  "trained_at": "2026-06-02T07:30:25.756128+00:00",
+  "n_train": 1824,
+  "n_val": 228,
+  "n_test": 228,
+  "feature_count": 24,
+  "feature_names": [
+    "elo_home_pre",
+    "elo_away_pre",
+    "elo_delta",
+    "days_rest_home",
+    "days_rest_away",
+    "days_rest_delta",
+    "home_ppm_5",
+    "away_ppm_5",
+    "home_gd_5",
+    "away_gd_5",
+    "home_gf_5",
+    "away_gf_5",
+    "home_ga_5",
+    "away_ga_5",
+    "home_shots_for_5",
+    "away_shots_for_5",
+    "home_shots_on_target_5",
+    "away_shots_on_target_5",
+    "home_home_ppm_5",
+    "away_away_ppm_5",
+    "h2h_home_winrate_5",
+    "h2h_avg_goals_5",
+    "home_yellows_5",
+    "away_yellows_5"
+  ],
+  "metrics_baseline": {
+    "accuracy": 0.543859649122807,
+    "log_loss": 0.9868874165584004,
+    "brier_per_class": {
+      "A": 0.20553394591771207,
+      "D": 0.17784192306417723,
+      "H": 0.20784769413210105
+    },
+    "brier_mean": 0.1970745210379968,
+    "n_samples": 228
+  },
+  "metrics_calibrated": {
+    "accuracy": 0.543859649122807,
+    "log_loss": 0.9737887114206559,
+    "brier_per_class": {
+      "A": 0.20351597474729624,
+      "D": 0.1739351740971763,
+      "H": 0.2044937557282892
+    },
+    "brier_mean": 0.19398163485758724,
+    "n_samples": 228
+  },
+  "epistemic_std_mean": 0.04124777381794388
+}

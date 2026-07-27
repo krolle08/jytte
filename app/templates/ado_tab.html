@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+{% block title %}Azure DevOps :: Jytte{% endblock %}
+
+{% block content %}
+<section class="ado-tab" hx-ext="sse" sse-connect="/events">
+  <header class="ado-tab-head">
+    <h1>Azure DevOps</h1>
+    <p class="muted small">
+      {% if data.ready %}
+        {{ data.instances | length }} instance{{ 's' if data.instances|length != 1 else '' }}
+        :: fetched <span data-ts="{{ data.fetched_at }}">{{ data.fetched_at[:16] }}</span>
+      {% else %}
+        not configured
+      {% endif %}
+    </p>
+  </header>
+
+  {% if not data.ready %}
+  <div class="ado-empty">
+    <p class="muted">{{ data.reason }}</p>
+  </div>
+  {% else %}
+
+  {% for inst in data.instances %}
+  {% set prs = inst.prs or {} %}
+  {% set pipelines = inst.pipelines or {} %}
+  {% set tasks = inst.tasks or {} %}
+  {% set errors = inst.section_errors or {} %}
+
+  <section class="ado-instance" id="{{ inst.slug }}"
+           hx-trigger="sse:widget:azuredevops"
+           hx-get="/ado?partial=1&instance={{ inst.slug }}"
+           hx-target="this"
+           hx-swap="outerHTML"
+           hx-select="#{{ inst.slug }}">
+    <header class="ado-instance-header">
+      <h2 class="ado-org">{{ inst.org }}</h2>
+      <h3 class="ado-project">{{ inst.project }}</h3>
+      <span class="ado-slug muted small">slug: <code>{{ inst.slug }}</code></span>
+    </header>
+
+    {% if errors.get('_instance') %}
+    <div class="edit-error">instance fetch failed: {{ errors.get('_instance') }}</div>
+    {% endif %}
+
+    {# === PRs === #}
+    <section class="ado-section">
+      <header class="ado-section-head">
+        <h3>Pull requests</h3>
+        {% set need = (prs.get('awaiting_me') or []) | length %}
+        <span class="ado-count">{{ (prs.get('mine') or []) | length }} mine</span>
+        {% if need > 0 %}<span class="ado-need-badge">{{ need }} need you</span>{% endif %}
+      </header>
+      {% if errors.prs %}
+        <p class="muted small">section error: {{ errors.prs }}</p>
+      {% else %}
+        {% if prs.get('awaiting_me') %}
+          <p class="ado-subhead">Awaiting your review</p>
+          <ul class="ado-list">
+            {% for pr in prs.awaiting_me %}
+            <li class="ado-row ado-row-need"
+                hx-get="/widgets/azuredevops/detail?kind=pr&id={{ pr.id }}&instance={{ inst.slug }}"
+                hx-target="#drawer" hx-swap="innerHTML"
+                onclick="openDrawer()">
+              <div class="ado-row-head">
+                <span class="ado-title">#{{ pr.id }} :: {{ pr.title }}</span>
+                <span class="ado-repo">{{ pr.repo }}</span>
+              </div>
+              <div class="ado-row-foot">
+                <span class="muted small">{{ pr.source }} &rarr; {{ pr.target }}</span>
+                <span class="ado-creator">by {{ pr.creator }}</span>
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+        {% if prs.get('mine') %}
+          <p class="ado-subhead">Authored by me</p>
+          <ul class="ado-list">
+            {% for pr in prs.mine %}
+            {% set approved = (pr.reviewers | selectattr('vote', 'ge', 5) | list | length) %}
+            {% set waiting = (pr.reviewers | selectattr('vote', 'lt', 0) | list | length) %}
+            <li class="ado-row{% if waiting > 0 %} ado-row-blocked{% endif %}"
+                hx-get="/widgets/azuredevops/detail?kind=pr&id={{ pr.id }}&instance={{ inst.slug }}"
+                hx-target="#drawer" hx-swap="innerHTML"
+                onclick="openDrawer()">
+              <div class="ado-row-head">
+                <span class="ado-title">#{{ pr.id }} :: {{ pr.title }}</span>
+                <span class="ado-repo">{{ pr.repo }}</span>
+              </div>
+              <div class="ado-row-foot">
+                <span class="muted small">{{ pr.source }} &rarr; {{ pr.target }}</span>
+                <span class="ado-vote-roll">
+                  {% if approved %}<span class="vote-ok">{{ approved }} approved</span>{% endif %}
+                  {% if waiting %}<span class="vote-block">{{ waiting }} blocked</span>{% endif %}
+                </span>
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+        {% if not prs.get('mine') and not prs.get('awaiting_me') %}
+          <p class="muted small">no active PRs</p>
+        {% endif %}
+      {% endif %}
+    </section>
+
+    {# === Pipelines === #}
+    <section class="ado-section">
+      <header class="ado-section-head">
+        <h3>Pipelines</h3>
+        {% set running = (pipelines.get('running') or []) | length %}
+        {% set failing = (pipelines.get('failing_on_default') or []) | length %}
+        {% set last24 = (pipelines.get('last_24h') or []) | length %}
+        <span class="ado-count">{{ last24 }} in last 24h</span>
+        {% if running > 0 %}<span class="ado-running-badge">{{ running }} running</span>{% endif %}
+        {% if failing > 0 %}<span class="ado-fail-badge">{{ failing }} red on default</span>{% endif %}
+      </header>
+      {% if errors.pipelines %}
+        <p class="muted small">section error: {{ errors.pipelines }}</p>
+      {% else %}
+        {% if pipelines.get('failing_on_default') %}
+          <p class="ado-subhead">Failing on default branch</p>
+          <ul class="ado-list">
+            {% for r in pipelines.failing_on_default %}
+            <li class="ado-row ado-row-need"
+                hx-get="/widgets/azuredevops/detail?kind=run&id={{ r.id }}&instance={{ inst.slug }}"
+                hx-target="#drawer" hx-swap="innerHTML"
+                onclick="openDrawer()">
+              <div class="ado-row-head">
+                <span class="ado-title">{{ r.pipeline }}</span>
+                <span class="ado-fail-pill">{{ r.result }}</span>
+              </div>
+              <div class="ado-row-foot">
+                <span class="muted small">{{ r.branch }} :: #{{ r.id }}</span>
+                <span class="muted small">{{ r.finished[:16] if r.finished else '' }}</span>
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+        {% if pipelines.get('running') %}
+          <p class="ado-subhead">Running now</p>
+          <ul class="ado-list">
+            {% for r in pipelines.running %}
+            <li class="ado-row ado-row-running"
+                hx-get="/widgets/azuredevops/detail?kind=run&id={{ r.id }}&instance={{ inst.slug }}"
+                hx-target="#drawer" hx-swap="innerHTML"
+                onclick="openDrawer()">
+              <div class="ado-row-head">
+                <span class="ado-title">{{ r.pipeline }}</span>
+                <span class="ado-running-pill">running</span>
+              </div>
+              <div class="ado-row-foot">
+                <span class="muted small">{{ r.branch }} :: started {{ r.started[:16] if r.started else '' }}</span>
+                <span class="muted small">by {{ r.requested_by or '?' }}</span>
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+        {% if pipelines.get('last_24h') %}
+          <p class="ado-subhead">Last 24h ({{ pipelines.last_24h | length }})</p>
+          <ul class="ado-list ado-list-compact">
+            {% for r in pipelines.last_24h[:12] %}
+            <li class="ado-row ado-row-compact{% if r.result and r.result != 'succeeded' %} ado-row-need{% endif %}"
+                hx-get="/widgets/azuredevops/detail?kind=run&id={{ r.id }}&instance={{ inst.slug }}"
+                hx-target="#drawer" hx-swap="innerHTML"
+                onclick="openDrawer()">
+              <span class="ado-result-dot ado-result-{{ r.result or 'unknown' }}"></span>
+              <span class="ado-title">{{ r.pipeline }}</span>
+              <span class="muted small">{{ r.branch }}</span>
+              <span class="muted small">{{ r.finished[11:16] if r.finished else '' }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      {% endif %}
+    </section>
+
+    {# === Tasks === #}
+    <section class="ado-section">
+      <header class="ado-section-head">
+        <h3>Sprint board</h3>
+        {% if tasks.get('iteration') %}
+          <span class="ado-count">{{ tasks.iteration.name }}</span>
+        {% endif %}
+        <span class="ado-count">{{ (tasks.get('items') or []) | length }} items</span>
+      </header>
+      {% if errors.tasks %}
+        <p class="muted small">section error: {{ errors.tasks }}</p>
+      {% elif not tasks.get('iteration') %}
+        <p class="muted small">no current iteration set for team</p>
+      {% else %}
+        {% for state, items in (tasks.by_state or {}).items() %}
+          <p class="ado-subhead">{{ state }} ({{ items | length }})</p>
+          <ul class="ado-list">
+            {% for it in items %}
+            <li class="ado-row"
+                hx-get="/widgets/azuredevops/detail?kind=item&id={{ it.id }}&instance={{ inst.slug }}"
+                hx-target="#drawer" hx-swap="innerHTML"
+                onclick="openDrawer()">
+              <div class="ado-row-head">
+                <span class="ado-title">#{{ it.id }} :: {{ it.title }}</span>
+                <span class="ado-type ado-type-{{ it.type | replace(' ', '') | lower }}">{{ it.type }}</span>
+              </div>
+              {% if it.tags %}
+              <div class="ado-row-foot">
+                <span class="muted small">tags: {{ it.tags }}</span>
+              </div>
+              {% endif %}
+            </li>
+            {% endfor %}
+          </ul>
+        {% endfor %}
+      {% endif %}
+    </section>
+  </section>
+  {% endfor %}
+  {% endif %}
+</section>
+
+<aside id="drawer" class="drawer" aria-hidden="true"></aside>
+<div id="drawer-backdrop" class="drawer-backdrop" onclick="closeDrawer()"></div>
+
+<script>
+function openDrawer() {
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drawer-backdrop').classList.add('open');
+  document.getElementById('drawer').setAttribute('aria-hidden', 'false');
+  document.body.classList.add('drawer-open');
+}
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('drawer-backdrop').classList.remove('open');
+  document.getElementById('drawer').setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('drawer-open');
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+</script>
+{% endblock %}

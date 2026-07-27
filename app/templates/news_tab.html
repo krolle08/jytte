@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}News :: Jytte{% endblock %}
+
+{% block content %}
+<section class="news-tab">
+  <header class="news-tab-head">
+    <h1>News</h1>
+    <p class="muted small">
+      {% if data.ready %}
+        {{ data.total_items }} items across {{ data.categories | length }} categories
+        :: fetched <span data-ts="{{ data.fetched_at }}">{{ data.fetched_at[:16] }}</span>
+      {% else %}
+        no cached state yet (refresh in ~30s)
+      {% endif %}
+    </p>
+  </header>
+
+  {% if data.ready %}
+  <nav class="news-jump" aria-label="categories">
+    {% for c in data.categories %}
+    <a class="news-jump-link" href="#{{ c.slug }}">{{ c.title }} <span class="muted small">({{ c['items'] | length }})</span></a>
+    {% endfor %}
+  </nav>
+
+  {% for c in data.categories %}
+  <section class="news-category" id="{{ c.slug }}">
+    <header class="news-category-head">
+      <h2>{{ c.title }}</h2>
+      <span class="muted small">{{ c['items'] | length }} items from {{ c.source_count }} sources</span>
+    </header>
+
+    {% if not c['items'] %}
+    <p class="muted small">No items - feeds may be down or keyword filters too narrow.</p>
+    {% else %}
+    <ul class="news-grid">
+      {% for it in c['items'] %}
+      <li class="news-card">
+        <a class="news-card-link" href="{{ it.link }}" target="_blank" rel="noopener noreferrer">
+          {% if it.image %}
+          <div class="news-card-thumb-wrap">
+            <img class="news-card-thumb" src="{{ it.image }}" alt="" loading="lazy" referrerpolicy="no-referrer" />
+          </div>
+          {% else %}
+          <div class="news-card-thumb-wrap news-card-thumb-placeholder">
+            <span>{{ c.title }}</span>
+          </div>
+          {% endif %}
+          <div class="news-card-body">
+            <h3 class="news-card-title">{{ it.title }}</h3>
+            {% if it.summary %}
+            <p class="news-card-summary">{{ it.summary }}</p>
+            {% endif %}
+            <p class="news-card-meta muted small">
+              <span class="news-card-source">{{ it.source }}</span>
+              {% if it.published %}
+              <span class="news-card-date" data-ts="{{ it.published }}">{{ it.published[:10] }}</span>
+              {% endif %}
+            </p>
+          </div>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </section>
+  {% endfor %}
+  {% endif %}
+</section>
+{% endblock %}

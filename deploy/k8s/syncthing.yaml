@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: syncthing
+  namespace: jytte
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: syncthing
+  template:
+    metadata:
+      labels:
+        app: syncthing
+    spec:
+      containers:
+        - name: syncthing
+          image: syncthing/syncthing:latest
+          ports:
+            - { name: gui, containerPort: 8384 }
+            - { name: sync-tcp, containerPort: 22000, protocol: TCP }
+            - { name: sync-udp, containerPort: 22000, protocol: UDP }
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+          volumeMounts:
+            - name: config
+              mountPath: /var/syncthing/config
+            - name: tasks
+              mountPath: /var/syncthing/folders/tasks
+      volumes:
+        - name: config
+          emptyDir: {}
+        - name: tasks
+          persistentVolumeClaim:
+            claimName: obsidian-tasks
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: syncthing
+  namespace: jytte
+spec:
+  selector:
+    app: syncthing
+  ports:
+    - { name: gui, port: 8384, targetPort: 8384 }
+    - { name: sync-tcp, port: 22000, targetPort: 22000, protocol: TCP }
+    - { name: sync-udp, port: 22000, targetPort: 22000, protocol: UDP }

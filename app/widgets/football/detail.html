@@ -1,0 +1,93 @@
+{% set cal = match.calibrated_proba %}
+{% set ens = match.ensemble_mean %}
+{% set std = match.ensemble_std %}
+<div class="detail">
+  <header class="detail-head">
+    <h2>{{ match.home }} <span class="vs">vs</span> {{ match.away }}</h2>
+    <button class="close" onclick="closeDrawer()" title="close">&times;</button>
+  </header>
+
+  <dl class="meta-list">
+    <dt>date</dt><dd>{{ match.date[:16].replace('T',' ') }}</dd>
+    <dt>predicted</dt><dd>
+      {% if match.winner == 'H' %}<span class="tag prio-p3">home win</span>
+      {% elif match.winner == 'A' %}<span class="tag prio-p3">away win</span>
+      {% else %}<span class="tag prio-p3">draw</span>{% endif %}
+      {{ '%.0f' % (match.winner_proba * 100) }}%
+    </dd>
+    {% if match.actual %}
+    <dt>actual</dt><dd>
+      {% if match.actual == 'H' %}home win{% elif match.actual == 'A' %}away win{% else %}draw{% endif %}
+      {% if match.correct %}<span class="tag prio-p3">correct</span>{% else %}<span class="tag prio-p1">wrong</span>{% endif %}
+    </dd>
+    {% endif %}
+    <dt>confidence</dt><dd><span class="conf-badge conf-badge-{{ match.confidence_bucket }}">{{ match.confidence_bucket }}</span>
+      ({{ '%.2f' % match.confidence_score }})</dd>
+    <dt>entropy</dt><dd>{{ '%.3f' % match.entropy }} (normalized {{ '%.2f' % match.normalized_entropy }})</dd>
+    <dt>epistemic std</dt><dd>{{ '%.3f' % match.epistemic_std_mean }}</dd>
+  </dl>
+
+  <h3 class="detail-section">Calibrated probabilities</h3>
+  <table class="proba-table">
+    <thead><tr><th>outcome</th><th>P</th><th>ensemble &mu;</th><th>ensemble &sigma;</th></tr></thead>
+    <tbody>
+      <tr><td>home win (H)</td><td>{{ '%.1f' % (cal['H']*100) }}%</td><td>{{ '%.1f' % (ens['H']*100) }}%</td><td>{{ '%.1f' % (std['H']*100) }}%</td></tr>
+      <tr><td>draw (D)</td>    <td>{{ '%.1f' % (cal['D']*100) }}%</td><td>{{ '%.1f' % (ens['D']*100) }}%</td><td>{{ '%.1f' % (std['D']*100) }}%</td></tr>
+      <tr><td>away win (A)</td><td>{{ '%.1f' % (cal['A']*100) }}%</td><td>{{ '%.1f' % (ens['A']*100) }}%</td><td>{{ '%.1f' % (std['A']*100) }}%</td></tr>
+    </tbody>
+  </table>
+
+  {% if match.top_features %}
+  <h3 class="detail-section">Why this prediction</h3>
+  <p class="muted small">
+    Top features pushing the model toward
+    {% if match.winner == 'H' %}<strong>{{ match.home }} winning</strong>{% elif match.winner == 'A' %}<strong>{{ match.away }} winning</strong>{% else %}<strong>a draw</strong>{% endif %}.
+    Bars show the standardized logit contribution; green supports the
+    prediction, red works against it.
+  </p>
+  {% set max_abs = (match.top_features | map(attribute='contribution') | map('abs') | max) %}
+  {% if not max_abs %}{% set max_abs = 0.0001 %}{% endif %}
+  <ul class="why-list">
+    {% for f in match.top_features %}
+    {% set pct = (f.contribution|abs / max_abs) * 100 %}
+    <li class="why-row why-{{ f.direction }}">
+      <div class="why-head">
+        <span class="why-name" title="{{ f.description }}">{{ f.name }}</span>
+        <span class="why-value">
+          {% if f.raw_value is not none %}value {{ '%.2f' % f.raw_value }}{% else %}no value{% endif %}
+          ::
+          <span class="why-contrib">{{ '%+.2f' % f.contribution }}</span>
+        </span>
+      </div>
+      <div class="why-bar why-bar-{{ f.direction }}">
+        <span class="why-bar-fill" style="width: {{ pct }}%"></span>
+      </div>
+      <div class="why-desc muted small">{{ f.description }}</div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <h3 class="detail-section">Reading this</h3>
+  <p class="muted small">
+    <strong>P</strong> = calibrated probability (Platt-scaled, what we display).
+    <strong>ensemble &mu;</strong> = mean across 20 bootstrap models.
+    <strong>ensemble &sigma;</strong> = standard deviation. Higher &sigma; means the
+    individual models disagree more about this match - signal that the
+    model is extrapolating outside its comfort zone.
+  </p>
+  <p class="muted small">
+    <strong>contribution</strong> = standardized feature value &times; logistic-regression
+    coefficient for the predicted class. Linear in standardized space,
+    so the sign tells you whether the feature pushed the model toward
+    or away from the prediction.
+  </p>
+
+  <h3 class="detail-section">Test-set context</h3>
+  <p class="muted small">
+    Across the full holdout test set: accuracy {{ '%.0f' % (metrics.accuracy * 100) }}%,
+    log-loss {{ '%.3f' % metrics.log_loss }}, mean Brier {{ '%.3f' % metrics.brier_mean }}.
+    See <a href="/docs/ml" target="_blank">/docs/ml</a> for the full walkthrough,
+    feature definitions, and reliability diagrams.
+  </p>
+</div>

@@ -1,0 +1,7 @@
+name: news
+title: News
+refresh_minutes: 30
+client_refresh_seconds: 120
+claude_analyzer: false
+expose_mcp: true
+watcher: false

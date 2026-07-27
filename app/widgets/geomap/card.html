@@ -1,0 +1,197 @@
+{% set data = state.data or {} %}
+{% set news = data.get('news', []) %}
+{% set crises_by_iso = data.get('crises_by_iso', {}) %}
+{% set severity = data.get('severity_by_iso', {}) %}
+
+<div class="geomap" id="geomap">
+  <div class="map-stage">
+    <svg viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet" class="world-svg" role="img" aria-label="world map">
+      <defs>
+        <radialGradient id="pinGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="rgba(94,225,208,0.9)" />
+          <stop offset="70%" stop-color="rgba(94,225,208,0.0)" />
+        </radialGradient>
+      </defs>
+      <rect x="0" y="0" width="1000" height="500" fill="transparent" />
+      <g class="countries">
+        {% for c in country_paths %}
+        <path d="{{ c.d }}" data-iso="{{ c.iso }}" data-name="{{ c.name }}"
+              class="country {{ 'crisis crisis-' ~ (severity.get(c.iso, 0)|string) if severity.get(c.iso) else '' }}"></path>
+        {% endfor %}
+      </g>
+      <g class="pins">
+        {% for n in news %}
+        {% set x = (n.lon + 180) / 360 * 1000 %}
+        {% set y = (90 - n.lat) / 180 * 500 %}
+        <g class="pin pin-{{ n.source_kind }}"
+           data-id="{{ n.id }}"
+           transform="translate({{ '%.2f' % x }} {{ '%.2f' % y }})">
+          <circle r="6" class="pin-glow" />
+          <circle r="3.2" class="pin-dot" />
+        </g>
+        {% endfor %}
+      </g>
+    </svg>
+
+    <div class="map-tooltip" id="map-tooltip" aria-hidden="true"></div>
+  </div>
+
+  <div class="map-legend">
+    <span class="legend-item"><span class="dot pin-danish"></span>Danish</span>
+    <span class="legend-item"><span class="dot pin-worldwide"></span>Worldwide</span>
+    <span class="legend-item"><span class="dot pin-tech"></span>Tech</span>
+    <span class="legend-sep"></span>
+    <span class="legend-item legend-crisis">crisis</span>
+    <span class="legend-scale">
+      <span class="scale-step crisis-1"></span>
+      <span class="scale-step crisis-2"></span>
+      <span class="scale-step crisis-3"></span>
+      <span class="scale-step crisis-4"></span>
+      <span class="muted">low &rarr; high</span>
+    </span>
+    <span class="legend-sep"></span>
+    <span class="legend-item muted">{{ news|length }} headlines :: {{ data.get('crisis_count', 0) }} active crises</span>
+  </div>
+</div>
+
+<script type="application/json" id="geomap-data">
+{
+  "news": [
+    {% for n in news %}
+    {
+      "id": {{ n.id|tojson }},
+      "title": {{ n.title|tojson }},
+      "summary": {{ n.summary|tojson }},
+      "link": {{ n.link|tojson }},
+      "image": {{ n.image|tojson }},
+      "source_name": {{ n.source_name|tojson }},
+      "source_kind": {{ n.source_kind|tojson }},
+      "source_logo": {{ n.source_logo|tojson }},
+      "country_name": {{ n.country_name|tojson }},
+      "pin_source": {{ n.pin_source|tojson }},
+      "published": {{ n.published|tojson }}
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ],
+  "crises_by_iso": {{ crises_by_iso|tojson }},
+  "country_names": {
+    {% for c in country_paths %}{{ c.iso|tojson }}: {{ c.name|tojson }}{% if not loop.last %},{% endif %}{% endfor %}
+  }
+}
+</script>
+
+<script>
+(function () {
+  const root = document.getElementById('geomap');
+  const tooltip = document.getElementById('map-tooltip');
+  const dataEl = document.getElementById('geomap-data');
+  if (!root || !tooltip || !dataEl) return;
+  const data = JSON.parse(dataEl.textContent);
+  const newsById = Object.fromEntries(data.news.map(n => [n.id, n]));
+
+  function showTip(html, ev) {
+    tooltip.innerHTML = html;
+    tooltip.classList.add('open');
+    tooltip.setAttribute('aria-hidden', 'false');
+    positionTip(ev);
+  }
+  function positionTip(ev) {
+    const rect = root.getBoundingClientRect();
+    const x = ev.clientX - rect.left;
+    const y = ev.clientY - rect.top;
+    const tw = tooltip.offsetWidth || 320;
+    const th = tooltip.offsetHeight || 200;
+    let nx = x + 14;
+    let ny = y + 14;
+    if (nx + tw > rect.width - 8) nx = x - tw - 14;
+    if (ny + th > rect.height - 8) ny = y - th - 14;
+    if (ny < 4) ny = 4;
+    if (nx < 4) nx = 4;
+    tooltip.style.left = nx + 'px';
+    tooltip.style.top  = ny + 'px';
+  }
+  function hideTip() {
+    tooltip.classList.remove('open');
+    tooltip.setAttribute('aria-hidden', 'true');
+  }
+
+  function newsCard(n) {
+    const img = n.image
+      ? `<img src="${n.image}" alt="" class="tip-img" onerror="this.replaceWith(Object.assign(document.createElement('img'),{src:'${n.source_logo}',className:'tip-img tip-img-logo'}))" />`
+      : `<img src="${n.source_logo}" alt="" class="tip-img tip-img-logo" />`;
+    return `
+      <div class="tip-news">
+        ${img}
+        <div class="tip-body">
+          <div class="tip-meta">
+            <span class="tip-source tip-source-${n.source_kind}">${n.source_name}</span>
+            <span class="tip-loc">${n.country_name}${n.pin_source === 'source' ? ' (source)' : ''}</span>
+          </div>
+          <div class="tip-title">${n.title || ''}</div>
+          <div class="tip-snip">${(n.summary || '').slice(0, 220)}${(n.summary || '').length > 220 ? '...' : ''}</div>
+          ${n.link ? `<a class="tip-link" href="${n.link}" target="_blank" rel="noopener">open article &rarr;</a>` : ''}
+        </div>
+      </div>`;
+  }
+
+  function crisisCard(iso) {
+    const list = data.crises_by_iso[iso] || [];
+    if (!list.length) return null;
+    const name = data.country_names[iso] || iso;
+    // sort: highest severity first; curated above reliefweb above acled when tied
+    const sorted = list.slice().sort((a, b) => {
+      const sa = a.severity || 0, sb = b.severity || 0;
+      if (sa !== sb) return sb - sa;
+      const order = { curated: 0, reliefweb: 1, acled: 2 };
+      return (order[a.source] ?? 9) - (order[b.source] ?? 9);
+    });
+    const rows = sorted.slice(0, 6).map(c => {
+      let detail = '';
+      if (c.source === 'acled' && c.fatalities != null) {
+        detail = `<span class="tip-crisis-detail">${c.events} events :: ${c.fatalities} fatalities</span>`;
+      } else if (c.age_days != null) {
+        detail = `<span class="tip-crisis-detail">${c.age_days}d old</span>`;
+      }
+      return `
+        <li>
+          <div class="tip-crisis-row">
+            <span class="tip-crisis-src tip-crisis-src-${c.source}">${c.source}</span>
+            <span class="tip-crisis-type">${c.type || 'event'}</span>
+            ${c.status ? `<span class="tip-crisis-status tip-crisis-${c.status}">${c.status}</span>` : ''}
+          </div>
+          <div class="tip-crisis-name">${c.name || ''}</div>
+          ${detail}
+        </li>`;
+    }).join('');
+    return `
+      <div class="tip-crisis">
+        <div class="tip-meta">
+          <span class="tip-source tip-source-crisis">crisis</span>
+          <span class="tip-loc">${name}</span>
+        </div>
+        <ul class="tip-crisis-list">${rows}</ul>
+        ${sorted.length > 6 ? `<div class="muted">+ ${sorted.length - 6} more</div>` : ''}
+      </div>`;
+  }
+
+  // pin hover -> news bubble
+  root.querySelectorAll('.pin').forEach(pin => {
+    const id = pin.getAttribute('data-id');
+    const n = newsById[id];
+    if (!n) return;
+    pin.addEventListener('mouseenter', e => showTip(newsCard(n), e));
+    pin.addEventListener('mousemove', positionTip);
+    pin.addEventListener('mouseleave', hideTip);
+  });
+
+  // country hover -> crisis bubble (if any)
+  root.querySelectorAll('.country.crisis').forEach(path => {
+    const iso = path.getAttribute('data-iso');
+    const html = crisisCard(iso);
+    if (!html) return;
+    path.addEventListener('mouseenter', e => showTip(html, e));
+    path.addEventListener('mousemove', positionTip);
+    path.addEventListener('mouseleave', hideTip);
+  });
+})();
+</script>

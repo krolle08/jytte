@@ -1,0 +1,38 @@
+{# F5 freshness/error banner.
+
+    Renders a tight one-line banner at the top of any widget card that
+    uses the F5 substrate. Reads from the `state` dict passed to every
+    card render (`state.last_success_at`, `state.consecutive_failures`,
+    `state.last_error`).
+
+    The `data-ts` attribute carries the raw ISO 8601 UTC timestamp; the
+    inline script at the bottom rewrites the visible text to the
+    browser's local timezone + a relative "N min ago" tail. Falls back
+    to the server-rendered text if JS is disabled.
+
+    Usage in a widget's card.html:
+      {% include "freshness_banner.html" %}
+#}
+{% set fails = state.consecutive_failures or 0 %}
+{% set last = state.last_success_at or state.updated_at %}
+{% set err = state.last_error %}
+
+{% if last %}
+<div class="freshness freshness-{% if fails >= 6 %}red{% elif fails >= 1 %}amber{% else %}ok{% endif %}">
+  <span class="freshness-ts" data-ts="{{ last }}">
+    updated {{ last[:16].replace('T', ' ') }}Z
+  </span>
+  {% if fails > 0 %}
+    <span class="freshness-fail">{{ fails }} failure{{ 's' if fails != 1 else '' }}</span>
+    {% if err and err.code %}
+      <span class="freshness-code">{{ err.code }}</span>
+    {% endif %}
+    {% if err and err.message %}
+      <span class="freshness-msg" title="{{ err.message }}">{{ err.message[:60] }}{% if err.message|length > 60 %}...{% endif %}</span>
+    {% endif %}
+  {% endif %}
+  {% if fails >= 6 and err and err.workflow_id %}
+    <a class="freshness-logs" href="/n8n-logs?workflow={{ err.workflow_id }}" target="_blank" rel="noopener">View n8n logs &rarr;</a>
+  {% endif %}
+</div>
+{% endif %}

@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Secrets - never commit (keeps .env.example, which is the safe template)
+.env
+.envtest
+keys.md
+
+# Local dev artifacts
+.local-data/
+.qa-screenshots/
+jarvis-core.zip
+
+# Sphinx docs
+docs/.venv/
+docs/build/
+docs/.plantuml/plantuml.jar

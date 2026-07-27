@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jytte
+  namespace: jytte
+  labels:
+    app: jytte
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: jytte
+  template:
+    metadata:
+      labels:
+        app: jytte
+    spec:
+      containers:
+        - name: jytte
+          image: ghcr.io/REPLACE_ME/jytte:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - secretRef:
+                name: jytte-secrets
+          env:
+            - name: JYTTE_DATA_DIR
+              value: /data
+            - name: JYTTE_TASKS_PATH
+              value: /data/obsidian-tasks
+            - name: JYTTE_DB_PATH
+              value: /data/jytte.db
+            - name: JYTTE_NEWS_FEEDS
+              value: "https://news.ycombinator.com/rss"
+            - name: JYTTE_CLAUDE_MODEL
+              value: "claude-haiku-4-5-20251001"
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: obsidian-tasks
+              mountPath: /data/obsidian-tasks
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 30
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: jytte-data
+        - name: obsidian-tasks
+          persistentVolumeClaim:
+            claimName: obsidian-tasks

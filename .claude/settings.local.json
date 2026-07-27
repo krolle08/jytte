@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Test-Path *)",
+      "Bash(cp ~/.claude/settings.json ~/.claude/settings.json.bak)",
+      "Bash(jq '.counts.workflows = 0 | .counts.skills = 8 | .counts.hooks = 3 | .counts.updatedAt = \\(now | todate\\)' ~/.claude/settings.json)",
+      "Bash(mv /tmp/s.json ~/.claude/settings.json)",
+      "Read(//c/Users/NichlasMadsen/.claude/**)"
+    ]
+  }
+}

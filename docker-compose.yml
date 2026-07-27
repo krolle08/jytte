@@ -1,0 +1,62 @@
+services:
+  jytte:
+    build: .
+    container_name: jytte
+    ports:
+      - "8080:8080"
+    # env_file forwards EVERY key/value from .env into the container,
+    # which is what makes multi-instance ADO (AZDO_*_DAGROFA,
+    # AZDO_*_TRUSTWORKS, AZDO_*_<ANY_SUFFIX>) work without enumerating
+    # every suffix here. The explicit `environment:` block below
+    # overrides specific values that should be container-internal
+    # paths or fixed defaults regardless of what the host has.
+    env_file:
+      - .env
+    environment:
+      TZ: "Europe/Copenhagen"
+      JYTTE_DATA_DIR: "/data"
+      JYTTE_TASKS_PATH: "/data/obsidian-tasks"
+      JYTTE_DB_PATH: "/data/jytte.db"
+      JYTTE_NEWS_FEEDS: "https://news.ycombinator.com/rss"
+      JYTTE_CLAUDE_MODEL: "claude-haiku-4-5-20251001"
+    volumes:
+      - jytte-data:/data
+      - type: bind
+        source: C:\Obsidian\Nichlas\Tasks
+        target: /data/obsidian-tasks
+    restart: unless-stopped
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    ports:
+      - "5678:5678"
+    # Same pattern - .env forwards everything (incl. all AZDO_*_<SUFFIX>
+    # vars so workflows can reach any org). Container-internal defaults
+    # below.
+    env_file:
+      - .env
+    environment:
+      TZ: "Europe/Copenhagen"
+      N8N_HOST: "localhost"
+      N8N_PORT: "5678"
+      N8N_PROTOCOL: "http"
+      JYTTE_BASE_URL: "http://jytte:8080"
+      DB_TYPE: "sqlite"
+      GENERIC_TIMEZONE: "Europe/Copenhagen"
+      # Allow workflow expressions to read this container's env vars.
+      # See deploy/n8n/README.md for the security trade-off.
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
+    volumes:
+      - n8n-data:/home/node/.n8n
+      - ./deploy/n8n/workflows:/workflows:ro
+      - ./deploy/n8n/init.sh:/docker-entrypoint-init.d/init.sh:ro
+    depends_on:
+      - jytte
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["/docker-entrypoint-init.d/init.sh & exec tini -- /docker-entrypoint.sh"]
+
+volumes:
+  jytte-data:
+  n8n-data:

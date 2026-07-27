@@ -1,0 +1,7 @@
+name: geomap
+title: World Pulse
+refresh_minutes: 20
+client_refresh_seconds: 600
+claude_analyzer: false
+expose_mcp: true
+watcher: false

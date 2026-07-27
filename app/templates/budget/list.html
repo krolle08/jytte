@@ -1,0 +1,80 @@
+{# Full categories + entries tree with totals. Swapped into #budget-list. #}
+<div class="budget-totals">
+  <div class="budget-total-row">
+    <span class="budget-total-label">Income</span>
+    <span class="budget-total-monthly income">{{ summary.income_monthly }} DKK / mo</span>
+    <span class="budget-total-annual muted">{{ summary.income_annual }} / yr</span>
+  </div>
+  <div class="budget-total-row">
+    <span class="budget-total-label">Expense</span>
+    <span class="budget-total-monthly expense">{{ summary.expense_monthly }} DKK / mo</span>
+    <span class="budget-total-annual muted">{{ summary.expense_annual }} / yr</span>
+  </div>
+  <div class="budget-total-row budget-total-net">
+    <span class="budget-total-label">Net</span>
+    <span class="budget-total-monthly {% if summary.net_monthly_cents < 0 %}negative{% else %}positive{% endif %}">{{ summary.net_monthly }} DKK / mo</span>
+    <span class="budget-total-annual">{{ summary.net_annual }} / yr</span>
+  </div>
+</div>
+
+{% for c in categories %}
+<section class="budget-category budget-category-{{ c.kind }}" id="cat-{{ c.slug }}">
+  <header class="budget-category-head">
+    <h2>{{ c.name }}</h2>
+    <span class="budget-category-kind">{{ c.kind }}</span>
+    <button type="button"
+            class="budget-add-inline"
+            title="Add to {{ c.name }}"
+            hx-get="/widgets/budget/entries/new/form?category_slug={{ c.slug }}"
+            hx-target="#budget-add-pane"
+            hx-swap="innerHTML">+</button>
+  </header>
+
+  {% set cat_entries = entries_by_category.get(c.slug) or [] %}
+  {% if not cat_entries %}
+  <p class="muted small budget-empty">no entries yet</p>
+  {% else %}
+  <table class="budget-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th class="budget-col-amount">Amount</th>
+        <th>Recurrence</th>
+        <th>Due</th>
+        <th>Notes</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for e in cat_entries %}
+      <tr class="budget-row" id="entry-{{ e.id }}">
+        <td>{{ e.name }}</td>
+        <td class="budget-col-amount">{{ e.amount }} {{ e.currency }}</td>
+        <td><span class="budget-recurrence">{{ e.recurrence }}</span></td>
+        <td>
+          {% if e.due_day %}day {{ e.due_day }}
+          {% elif e.due_date %}{{ e.due_date[:10] }}
+          {% else %}-
+          {% endif %}
+        </td>
+        <td class="budget-col-notes">{{ e.notes or "" }}</td>
+        <td class="budget-col-actions">
+          <button type="button"
+                  class="budget-edit-btn"
+                  hx-get="/widgets/budget/entries/{{ e.id }}/form"
+                  hx-target="#budget-add-pane"
+                  hx-swap="innerHTML">edit</button>
+          <button type="button"
+                  class="budget-delete-btn"
+                  hx-post="/widgets/budget/entries/{{ e.id }}/delete"
+                  hx-target="#budget-list"
+                  hx-swap="innerHTML"
+                  hx-confirm="Delete '{{ e.name }}'?">del</button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</section>
+{% endfor %}

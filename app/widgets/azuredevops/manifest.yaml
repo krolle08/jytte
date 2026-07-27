@@ -1,0 +1,7 @@
+name: azuredevops
+title: Azure DevOps
+refresh_minutes: 5
+client_refresh_seconds: 60
+claude_analyzer: false
+expose_mcp: true
+watcher: false

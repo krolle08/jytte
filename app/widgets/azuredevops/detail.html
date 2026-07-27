@@ -1,0 +1,134 @@
+<div class="detail">
+  <header class="detail-head">
+    {% if kind == 'pr' %}
+    <h2>PR #{{ pr.id }} :: {{ pr.title }}</h2>
+    {% elif kind == 'run' %}
+    <h2>{{ run.pipeline }} :: #{{ run.id }}</h2>
+    {% elif kind == 'item' %}
+    <h2>{{ item.type }} #{{ item.id }} :: {{ item.title }}</h2>
+    {% endif %}
+    <button class="close" onclick="closeDrawer()" title="close">&times;</button>
+  </header>
+
+  {% if kind == 'pr' %}
+  <dl class="meta-list">
+    <dt>repo</dt><dd>{{ pr.repo }}</dd>
+    <dt>branch</dt><dd>{{ pr.source }} &rarr; {{ pr.target }}</dd>
+    <dt>created</dt><dd>{{ pr.created[:16].replace('T', ' ') }}</dd>
+    <dt>author</dt><dd>{{ pr.creator }}</dd>
+    <dt>my vote</dt><dd>
+      {% if pr.my_vote in (None, 0) %}<span class="tag prio-p1">owe a review</span>
+      {% elif pr.my_vote == 10 %}<span class="tag prio-p3">approved</span>
+      {% elif pr.my_vote == 5 %}<span class="tag prio-p3">approved with suggestions</span>
+      {% elif pr.my_vote == -5 %}<span class="tag prio-p2">waiting</span>
+      {% elif pr.my_vote == -10 %}<span class="tag prio-p1">rejected</span>
+      {% endif %}
+    </dd>
+  </dl>
+
+  {% if pr.description %}
+  <h3 class="detail-section">Description</h3>
+  <div class="ado-body">{{ pr.description }}</div>
+  {% endif %}
+
+  <h3 class="detail-section">Reviewers</h3>
+  <ul class="ado-reviewers">
+    {% for rv in pr.reviewers %}
+    <li>
+      {% set v = rv.vote or 0 %}
+      <span class="ado-vote ado-vote-{{ v }}">
+        {% if v == 10 %}approved
+        {% elif v == 5 %}approved (suggestions)
+        {% elif v == 0 %}no vote
+        {% elif v == -5 %}waiting
+        {% elif v == -10 %}rejected
+        {% endif %}
+      </span>
+      {{ rv.name }}{% if rv.required %} <em class="muted small">(required)</em>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+
+  {% if pr.web_url %}
+  <p><a href="{{ pr.web_url }}" target="_blank" rel="noopener" class="ado-out-link">Open in Azure DevOps &rarr;</a></p>
+  {% endif %}
+  {% endif %}
+
+  {% if kind == 'run' %}
+  <dl class="meta-list">
+    <dt>pipeline</dt><dd>{{ run.pipeline }}</dd>
+    <dt>branch</dt><dd>{{ run.branch }}</dd>
+    <dt>status</dt><dd>{{ run.status }}</dd>
+    <dt>result</dt><dd>
+      {% if run.result == 'succeeded' %}<span class="tag prio-p3">{{ run.result }}</span>
+      {% elif run.result in ('failed', 'canceled') %}<span class="tag prio-p1">{{ run.result }}</span>
+      {% elif run.result %}<span class="tag prio-p2">{{ run.result }}</span>
+      {% else %}<span class="muted">(no result yet)</span>{% endif %}
+    </dd>
+    <dt>started</dt><dd>{{ run.started[:16].replace('T', ' ') if run.started else '-' }}</dd>
+    <dt>finished</dt><dd>{{ run.finished[:16].replace('T', ' ') if run.finished else '-' }}</dd>
+    <dt>requested by</dt><dd>{{ run.requested_by or '-' }}</dd>
+  </dl>
+
+  {% if run.web_url %}
+  <p><a href="{{ run.web_url }}" target="_blank" rel="noopener" class="ado-out-link">Open run in Azure DevOps &rarr;</a></p>
+  {% endif %}
+
+  <p class="muted small">
+    Failed-log drill-in is parked for v1.1 of F4 - open the run in the ADO web UI for now.
+  </p>
+  {% endif %}
+
+  {% if kind == 'item' %}
+  <dl class="meta-list">
+    <dt>type</dt><dd>{{ item.type }}</dd>
+    <dt>state</dt><dd>{{ item.state }}</dd>
+    <dt>area</dt><dd>{{ item.area }}</dd>
+    {% if item.assignee %}<dt>assignee</dt><dd>{{ item.assignee }}</dd>{% endif %}
+    {% if item.created_by %}<dt>created by</dt><dd>{{ item.created_by }}</dd>{% endif %}
+    {% if item.created %}<dt>created</dt><dd>{{ item.created[:16].replace('T', ' ') }}</dd>{% endif %}
+    {% if item.changed %}<dt>changed</dt><dd>{{ item.changed[:16].replace('T', ' ') }}</dd>{% endif %}
+    {% if item.tags %}<dt>tags</dt><dd>{{ item.tags }}</dd>{% endif %}
+  </dl>
+
+  {% if item.description %}
+  <h3 class="detail-section">Description</h3>
+  <div class="ado-body">{{ item.description|safe }}</div>
+  {% endif %}
+
+  {% if item.acceptance_criteria %}
+  <h3 class="detail-section">Acceptance criteria</h3>
+  <div class="ado-body">{{ item.acceptance_criteria|safe }}</div>
+  {% endif %}
+
+  <h3 class="detail-section">Change state</h3>
+  {% if edit_error %}
+  <p class="edit-error">{{ edit_error }}</p>
+  {% endif %}
+  <form class="edit-form ado-edit-form"
+        hx-post="/widgets/azuredevops/edit-item"
+        hx-target=".detail"
+        hx-swap="outerHTML">
+    <input type="hidden" name="id" value="{{ item.id }}" />
+    <div class="edit-field">
+      <label for="ado-state-{{ item.id }}">new state</label>
+      <select id="ado-state-{{ item.id }}" name="state">
+        {% for s in state_options %}
+        <option value="{{ s }}" {% if s == item.state %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="edit-actions">
+      <button type="submit" class="edit-save">save</button>
+    </div>
+  </form>
+  <p class="muted small edit-hint">
+    Writes go direct from Jytte to Azure DevOps (no n8n in the write path).
+    Audit log captures every change in <code>widget_edits</code>.
+  </p>
+
+  {% if item.web_url %}
+  <p><a href="{{ item.web_url }}" target="_blank" rel="noopener" class="ado-out-link">Open work item in Azure DevOps &rarr;</a></p>
+  {% endif %}
+  {% endif %}
+</div>

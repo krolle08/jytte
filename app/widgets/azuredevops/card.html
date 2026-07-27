@@ -1,0 +1,51 @@
+{% set data = state.data or {} %}
+{% set ready = data.get('ready') %}
+
+{% include "freshness_banner.html" %}
+
+{% if not ready %}
+<div class="ado-empty">
+  <p class="muted">{{ data.get('reason') or 'azure devops not configured' }}</p>
+</div>
+{% else %}
+{% set instances = data.get('instances') or [] %}
+{% if not instances %}
+<p class="muted small">No Azure DevOps instances discovered.</p>
+{% else %}
+
+<p class="muted small ado-card-hint">
+  <a href="/ado" class="ado-out-link">Open Azure DevOps tab &rarr;</a>
+  to drill in, edit work items, see descriptions + acceptance criteria.
+</p>
+
+<ul class="ado-instances-summary">
+  {% for inst in instances %}
+  {% set prs = inst.prs or {} %}
+  {% set pipes = inst.pipelines or {} %}
+  {% set tasks = inst.tasks or {} %}
+  {% set need_review = (prs.get('awaiting_me') or []) | length %}
+  {% set failing = (pipes.get('failing_on_default') or []) | length %}
+  {% set running = (pipes.get('running') or []) | length %}
+  {% set items = (tasks.get('items') or []) | length %}
+  {% set has_err = (inst.section_errors or {}) | length > 0 %}
+  <li class="ado-instance-row{% if failing > 0 or need_review > 0 or has_err %} ado-instance-need{% endif %}">
+    <a class="ado-instance-link" href="/ado#{{ inst.slug }}">
+      <div class="ado-instance-head">
+        <span class="ado-instance-label">{{ inst.label or inst.slug }}</span>
+        {% if has_err %}<span class="ado-fail-badge">err</span>{% endif %}
+      </div>
+      <div class="ado-instance-stats">
+        <span>{{ (prs.get('mine') or []) | length }} mine</span>
+        {% if need_review > 0 %}<span class="ado-need-badge">{{ need_review }} review</span>{% endif %}
+        {% if running > 0 %}<span class="ado-running-badge">{{ running }} running</span>{% endif %}
+        {% if failing > 0 %}<span class="ado-fail-badge">{{ failing }} red</span>{% endif %}
+        <span>{{ items }} sprint</span>
+      </div>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+{% endif %}
+
+{% if state.updated_at %}<p class="ts">updated <span data-ts="{{ state.updated_at }}">{{ state.updated_at[:16] }}</span></p>{% endif %}

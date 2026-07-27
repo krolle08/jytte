@@ -1,0 +1,51 @@
+{# Dashboard card for the news widget. Per request, the dashboard view
+   focuses on the WORLD_CUP category. The full categorized view lives
+   at /news. #}
+{% set data = state.data or {} %}
+{% set ready = data.get('ready') %}
+
+{% if not ready %}
+<div class="news-empty">
+  <p class="muted">{{ data.get('reason') or 'news widget loading...' }}</p>
+</div>
+{% else %}
+{% set cats = data.get('categories') or [] %}
+{% set world_cup = (cats | selectattr('slug', 'equalto', 'world-cup') | list | first) %}
+{% set wc_items = (world_cup['items'] if world_cup else []) %}
+
+<header class="news-card-head">
+  <h3 class="news-card-subtitle">World Cup</h3>
+  <a href="/news" class="news-out-link">All topics &rarr;</a>
+</header>
+
+{% if not wc_items %}
+<p class="muted small">No World Cup stories right now. Check <a href="/news#world-cup">/news</a>.</p>
+{% else %}
+<ul class="news-list news-list-compact">
+  {% for it in wc_items[:6] %}
+  <li class="news-item">
+    <a class="news-item-link" href="{{ it.link }}" target="_blank" rel="noopener noreferrer">
+      {% if it.image %}
+      <img class="news-thumb" src="{{ it.image }}" alt="" loading="lazy" referrerpolicy="no-referrer" />
+      {% endif %}
+      <div class="news-item-body">
+        <h4 class="news-item-title">{{ it.title }}</h4>
+        {% if it.summary %}<p class="news-item-summary">{{ it.summary }}</p>{% endif %}
+        <p class="news-item-meta muted small">
+          <span>{{ it.source }}</span>
+          {% if it.published %} :: <span data-ts="{{ it.published }}">{{ it.published[:10] }}</span>{% endif %}
+        </p>
+      </div>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+<p class="muted small news-card-foot">
+  {{ data.total_items }} items across {{ cats | length }} categories
+  :: <a href="/news" class="news-out-link">open /news tab &rarr;</a>
+</p>
+{% endif %}
+
+{% if state.updated_at %}<p class="ts">updated <span data-ts="{{ state.updated_at }}">{{ state.updated_at[:16] }}</span></p>{% endif %}

@@ -1,0 +1,180 @@
+{
+  "name": "azuredevops",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all"
+  },
+  "pinData": {},
+  "nodes": [
+    {
+      "id": "trigger-schedule",
+      "name": "Every 5 minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [-400, 0],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "*/5 * * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "config",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-200, 0],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "1", "name": "org",     "value": "={{$env.AZDO_ORG}}",     "type": "string" },
+            { "id": "2", "name": "project", "value": "={{$env.AZDO_PROJECT}}", "type": "string" },
+            { "id": "3", "name": "base",    "value": "=https://dev.azure.com/{{$env.AZDO_ORG}}/{{$env.AZDO_PROJECT}}", "type": "string" },
+            { "id": "4", "name": "vssps",   "value": "=https://vssps.dev.azure.com/{{$env.AZDO_ORG}}", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "smoke-test",
+      "name": "Smoke - list projects",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [0, 0],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://dev.azure.com/{{$env.AZDO_ORG}}/_apis/projects?api-version=7.1",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "options": {}
+      },
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "ado-pat",
+          "name": "ADO PAT (basic, empty user, PAT as password)"
+        }
+      },
+      "notes": "First-boot smoke test. Returns project list - if this is non-empty, the PAT works.\nReplace this single node with the 11-call sequence documented in docs/azuredevops-api-walkthrough.md once the pipe is verified."
+    },
+    {
+      "id": "shape-payload",
+      "name": "Shape payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [200, 0],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "1", "name": "ready", "value": true, "type": "boolean" },
+            { "id": "2", "name": "summary",
+              "value": "=n8n smoke push :: {{ $json.count || ($json.value && $json.value.length) || 0 }} projects visible",
+              "type": "string" },
+            { "id": "3", "name": "org",     "value": "={{$('Config').item.json.org}}",     "type": "string" },
+            { "id": "4", "name": "project", "value": "={{$('Config').item.json.project}}", "type": "string" },
+            { "id": "5", "name": "smoke",   "value": "={{$json}}", "type": "object" },
+            { "id": "6", "name": "fetched_at", "value": "={{$now.toISO()}}", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "post-state",
+      "name": "POST -> Jytte /state",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [400, 0],
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.JYTTE_BASE_URL}}/widgets/azuredevops/state",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-Jytte-Internal-Secret", "value": "={{$env.JYTTE_INTERNAL_SECRET}}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{$json}}",
+        "options": {}
+      }
+    },
+    {
+      "id": "error-trigger",
+      "name": "On any error",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [-200, 200],
+      "parameters": {}
+    },
+    {
+      "id": "shape-error",
+      "name": "Shape error payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [0, 200],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "1", "name": "code",
+              "value": "={{$json.execution && $json.execution.error && ($json.execution.error.httpCode || $json.execution.error.name) || 'unknown'}}",
+              "type": "string" },
+            { "id": "2", "name": "message",
+              "value": "={{$json.execution && $json.execution.error && ($json.execution.error.message || JSON.stringify($json.execution.error)) || 'unknown'}}",
+              "type": "string" },
+            { "id": "3", "name": "execution_id",
+              "value": "={{$json.execution && $json.execution.id}}",
+              "type": "string" },
+            { "id": "4", "name": "workflow_id",
+              "value": "={{$json.workflow && $json.workflow.id}}",
+              "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "post-error",
+      "name": "POST -> Jytte /error",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [200, 200],
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.JYTTE_BASE_URL}}/widgets/azuredevops/error",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-Jytte-Internal-Secret", "value": "={{$env.JYTTE_INTERNAL_SECRET}}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{$json}}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Every 5 minutes": { "main": [[{ "node": "Config", "type": "main", "index": 0 }]] },
+    "Config": { "main": [[{ "node": "Smoke - list projects", "type": "main", "index": 0 }]] },
+    "Smoke - list projects": { "main": [[{ "node": "Shape payload", "type": "main", "index": 0 }]] },
+    "Shape payload": { "main": [[{ "node": "POST -> Jytte /state", "type": "main", "index": 0 }]] },
+    "On any error": { "main": [[{ "node": "Shape error payload", "type": "main", "index": 0 }]] },
+    "Shape error payload": { "main": [[{ "node": "POST -> Jytte /error", "type": "main", "index": 0 }]] }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "notes": "F5 v1 smoke-test workflow. Proves: schedule trigger fires every 5 min, ADO PAT auth works, payload is shaped, Jytte /state receives the POST, and the Error Trigger branch can POST to /error. Once the pipe is verified end-to-end, EXTEND the 'Smoke - list projects' node into the full 11-call chain from docs/azuredevops-api-walkthrough.md (resolve user id, list my PRs, list awaiting-me PRs, list repos, list recent builds, latest-on-default-branch per repo, list teams, current iteration, WIQL, batch work-item fields). The shape-payload node must then emit the same JSON structure that app/widgets/azuredevops/fetch.py currently produces."
+  }
+}

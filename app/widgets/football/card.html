@@ -1,0 +1,51 @@
+{% set data = state.data or {} %}
+{% set ready = data.get('ready') %}
+{% set matches = data.get('matches') or [] %}
+{% set metrics = data.get('metrics') or {} %}
+
+{% if not ready %}
+<div class="football-empty">
+  <p class="muted">{{ data.get('reason') or 'no predictions yet' }}</p>
+  <p class="ts">when training finishes, refresh this card.</p>
+</div>
+{% elif not matches %}
+<p class="muted">no matches predicted</p>
+{% else %}
+<ul class="football-list">
+  {% for m in matches %}
+  {% set cal = m.calibrated_proba %}
+  {% set p_home = cal['H'] if 'H' in cal else 0 %}
+  {% set p_draw = cal['D'] if 'D' in cal else 0 %}
+  {% set p_away = cal['A'] if 'A' in cal else 0 %}
+  <li class="match-row conf-{{ m.confidence_bucket }}{% if m.correct is sameas true %} match-correct{% elif m.correct is sameas false %} match-wrong{% endif %}"
+      hx-get="/widgets/football/detail?date={{ m.date|urlencode }}&home={{ m.home|urlencode }}&away={{ m.away|urlencode }}"
+      hx-target="#drawer"
+      hx-swap="innerHTML"
+      onclick="openDrawer()">
+    <div class="match-head">
+      <span class="match-teams"><span class="t-home">{{ m.home }}</span> <span class="vs">vs</span> <span class="t-away">{{ m.away }}</span></span>
+      <span class="match-date">{{ m.date[:10] }}</span>
+    </div>
+    <div class="prob-bar" title="home {{ '%.0f' % (p_home*100) }}% / draw {{ '%.0f' % (p_draw*100) }}% / away {{ '%.0f' % (p_away*100) }}%">
+      <span class="seg seg-home" style="width: {{ p_home*100 }}%"></span>
+      <span class="seg seg-draw" style="width: {{ p_draw*100 }}%"></span>
+      <span class="seg seg-away" style="width: {{ p_away*100 }}%"></span>
+    </div>
+    <div class="match-foot">
+      <span class="prob-num prob-home">H {{ '%.0f' % (p_home*100) }}%</span>
+      <span class="prob-num prob-draw">D {{ '%.0f' % (p_draw*100) }}%</span>
+      <span class="prob-num prob-away">A {{ '%.0f' % (p_away*100) }}%</span>
+      <span class="conf-badge conf-badge-{{ m.confidence_bucket }}">{{ m.confidence_bucket }}</span>
+      {% if m.actual %}<span class="actual-pill actual-{{ m.actual }}">actual: {{ m.actual }}</span>{% endif %}
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+<p class="muted football-stats">
+  {% if metrics.accuracy is defined %}
+  acc {{ '%.0f' % (metrics.accuracy * 100) }}% :: log-loss {{ '%.3f' % metrics.log_loss }} :: brier {{ '%.3f' % metrics.brier_mean }}
+  :: <a href="/docs/ml" target="_blank">ml walkthrough &rarr;</a>
+  {% endif %}
+</p>
+{% endif %}
+{% if state.updated_at %}<p class="ts">updated {{ state.updated_at }}</p>{% endif %}

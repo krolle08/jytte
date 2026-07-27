@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>{% block title %}Jytte{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/styles.css" />
+  <script src="https://unpkg.com/htmx.org@2.0.3" defer></script>
+  <script src="https://unpkg.com/htmx-ext-sse@2.2.2" defer></script>
+</head>
+<body>
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="brand-wrap">
+      <span class="dot" aria-hidden="true"></span>
+      <span class="brand">Jytte</span>
+      <span class="brand-sub">personal jarvis</span>
+    </div>
+    <nav class="tabs" aria-label="primary">
+      <a class="tab {% if active_tab == 'dashboard' %}tab-active{% endif %}" href="/">Dashboard</a>
+      <a class="tab {% if active_tab == 'ado' %}tab-active{% endif %}" href="/ado">Azure DevOps</a>
+      <a class="tab {% if active_tab == 'news' %}tab-active{% endif %}" href="/news">News</a>
+      <a class="tab {% if active_tab == 'budget' %}tab-active{% endif %}" href="/budget">Budget</a>
+    </nav>
+    <div class="status">
+      <span class="status-val" id="clock">--:--:--</span>
+      <span class="status-sep">|</span>
+      <span class="status-val status-host">jytte.home.arpa</span>
+    </div>
+  </header>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <span>jytte v0.1 :: built by nichlas :: {% block footer_extra %}widgets live{% endblock %}</span>
+  </footer>
+
+  <script>
+    (function () {
+      const el = document.getElementById('clock');
+      const fmt = n => String(n).padStart(2, '0');
+      function tick() {
+        const d = new Date();
+        if (el) el.textContent = `${fmt(d.getHours())}:${fmt(d.getMinutes())}:${fmt(d.getSeconds())}`;
+      }
+      tick();
+      setInterval(tick, 1000);
+
+      // F5 - rewrite any element carrying a data-ts="<ISO UTC>" attribute
+      // to show the browser's local time + a relative-time tail.
+      // Runs on initial load AND after every HTMX swap so freshly-loaded
+      // partials (the widget cards) also get reformatted.
+      function relTail(deltaSec) {
+        const abs = Math.abs(deltaSec);
+        if (abs < 60)     return Math.round(abs) + 's ago';
+        if (abs < 3600)   return Math.round(abs / 60) + 'm ago';
+        if (abs < 86400)  return Math.round(abs / 3600) + 'h ago';
+        return Math.round(abs / 86400) + 'd ago';
+      }
+      function paintTimestamps(root) {
+        const scope = root || document;
+        scope.querySelectorAll('[data-ts]').forEach(el => {
+          const raw = el.getAttribute('data-ts');
+          if (!raw) return;
+          // Ensure the string is interpreted as UTC even if the trailing Z is missing
+          const iso = raw.endsWith('Z') || /[+-]\d{2}:?\d{2}$/.test(raw) ? raw : raw + 'Z';
+          const d = new Date(iso);
+          if (Number.isNaN(d.getTime())) return;
+          const local = `${fmt(d.getHours())}:${fmt(d.getMinutes())}`;
+          const dateBit = `${d.getFullYear()}-${fmt(d.getMonth() + 1)}-${fmt(d.getDate())}`;
+          const deltaSec = (Date.now() - d.getTime()) / 1000;
+          el.textContent = `updated ${dateBit} ${local} (${relTail(deltaSec)})`;
+        });
+      }
+      paintTimestamps();
+      // Repaint after every HTMX content swap (cards re-render on SSE)
+      document.body.addEventListener('htmx:afterSwap', e => paintTimestamps(e.target));
+      // Also repaint every 30s so the relative tail stays accurate
+      setInterval(() => paintTimestamps(), 30000);
+    })();
+  </script>
+</body>
+</html>

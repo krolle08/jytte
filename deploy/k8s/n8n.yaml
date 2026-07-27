@@ -1,0 +1,136 @@
+# n8n deployment in the jytte namespace.
+#
+# Workflows in this k3s deployment are loaded from a ConfigMap mounted
+# at /workflows. To add or change a workflow:
+#   1. Edit the JSON in deploy/n8n/workflows/<name>.json
+#   2. Regenerate the ConfigMap:
+#        kubectl create configmap n8n-workflows -n jytte \
+#          --from-file=deploy/n8n/workflows/ \
+#          --dry-run=client -o yaml | kubectl apply -f -
+#   3. Roll the n8n deployment:
+#        kubectl rollout restart deployment/n8n -n jytte
+#
+# Secrets come from the same `jytte-secrets` Secret used by the main
+# jytte pod (so JYTTE_INTERNAL_SECRET and AZDO_PAT are consistent
+# across the two services).
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: n8n-data
+  namespace: jytte
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: n8n
+  namespace: jytte
+  labels:
+    app: n8n
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: n8n
+  template:
+    metadata:
+      labels:
+        app: n8n
+    spec:
+      initContainers:
+        # Copy committed workflows out of the read-only ConfigMap into
+        # a writable volume so the n8n CLI can import them on startup.
+        - name: stage-workflows
+          image: busybox:1.36
+          command: ["sh", "-c", "cp -v /cm-workflows/*.json /workflows/ || true; cp -v /cm-init/init.sh /init/init.sh && chmod +x /init/init.sh"]
+          volumeMounts:
+            - { name: cm-workflows, mountPath: /cm-workflows }
+            - { name: cm-init,      mountPath: /cm-init }
+            - { name: workflows,    mountPath: /workflows }
+            - { name: init,         mountPath: /init }
+      containers:
+        - name: n8n
+          image: n8nio/n8n:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5678
+          envFrom:
+            - secretRef:
+                name: jytte-secrets
+          env:
+            - { name: N8N_HOST,       value: "n8n.home.arpa" }
+            - { name: N8N_PORT,       value: "5678" }
+            - { name: N8N_PROTOCOL,   value: "http" }
+            - { name: DB_TYPE,        value: "sqlite" }
+            - { name: GENERIC_TIMEZONE, value: "Europe/Copenhagen" }
+            - { name: JYTTE_BASE_URL, value: "http://jytte.jytte.svc.cluster.local:8080" }
+          volumeMounts:
+            - { name: data,      mountPath: /home/node/.n8n }
+            - { name: workflows, mountPath: /workflows, readOnly: true }
+            - { name: init,      mountPath: /docker-entrypoint-init.d }
+          readinessProbe:
+            httpGet: { path: /healthz, port: 5678 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /healthz, port: 5678 }
+            initialDelaySeconds: 30
+            periodSeconds: 30
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: n8n-data
+        - name: cm-workflows
+          configMap:
+            name: n8n-workflows
+        - name: cm-init
+          configMap:
+            name: n8n-init
+            defaultMode: 0755
+        - name: workflows
+          emptyDir: {}
+        - name: init
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: n8n
+  namespace: jytte
+spec:
+  type: ClusterIP
+  selector:
+    app: n8n
+  ports:
+    - port: 5678
+      targetPort: 5678
+      name: http
+---
+# Ingress for the n8n UI (handy for editing workflows on the home server).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: n8n
+  namespace: jytte
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "8m"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: n8n.home.arpa
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: n8n
+                port:
+                  number: 5678

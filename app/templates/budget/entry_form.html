@@ -1,0 +1,74 @@
+{# Inline form for create + edit. Swapped into #budget-add-pane.
+   On submit, posts and re-renders the full list (which the form pane
+   reverts back to the + button). #}
+{% set is_edit = mode == "edit" and entry %}
+<form class="budget-form"
+      hx-post="{% if is_edit %}/widgets/budget/entries/{{ entry.id }}/edit{% else %}/widgets/budget/entries{% endif %}"
+      hx-target="#budget-list"
+      hx-swap="innerHTML"
+      hx-on::after-request="if(event.detail.successful){this.closest('#budget-add-pane').innerHTML='<button type=\'button\' class=\'budget-add-btn\' hx-get=\'/widgets/budget/entries/new/form\' hx-target=\'#budget-add-pane\' hx-swap=\'innerHTML\'>+ Add entry</button>'; htmx.process(this.closest('#budget-add-pane'));}">
+
+  <h3 class="budget-form-title">{% if is_edit %}Edit entry #{{ entry.id }}{% else %}New entry{% endif %}</h3>
+
+  <div class="budget-form-grid">
+    <div class="budget-form-field">
+      <label>Category</label>
+      <select name="category_slug" required>
+        {% for c in categories %}
+        <option value="{{ c.slug }}"
+          {% if is_edit and entry.category_slug == c.slug %}selected
+          {% elif not is_edit and preselect_category == c.slug %}selected
+          {% endif %}>{{ c.name }} ({{ c.kind }})</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="budget-form-field">
+      <label>Name</label>
+      <input type="text" name="name" required placeholder="e.g. Electricity bill"
+             value="{{ entry.name if is_edit else '' }}" />
+    </div>
+
+    <div class="budget-form-field">
+      <label>Amount (DKK)</label>
+      <input type="text" name="amount" required placeholder="e.g. 1250,00"
+             value="{{ entry.amount if is_edit else '' }}" />
+    </div>
+
+    <div class="budget-form-field">
+      <label>Recurrence</label>
+      <select name="recurrence">
+        <option value="monthly" {% if not is_edit or entry.recurrence == 'monthly' %}selected{% endif %}>monthly</option>
+        <option value="yearly"  {% if is_edit and entry.recurrence == 'yearly'  %}selected{% endif %}>yearly</option>
+        <option value="one-off" {% if is_edit and entry.recurrence == 'one-off' %}selected{% endif %}>one-off</option>
+      </select>
+    </div>
+
+    <div class="budget-form-field">
+      <label>Due day (1-31, monthly only)</label>
+      <input type="number" name="due_day" min="1" max="31"
+             value="{{ entry.due_day if (is_edit and entry.recurrence == 'monthly') else '' }}" />
+    </div>
+
+    <div class="budget-form-field">
+      <label>Due date (yearly / one-off)</label>
+      <input type="date" name="due_date"
+             value="{{ entry.due_date[:10] if (is_edit and entry.due_date) else '' }}" />
+    </div>
+
+    <div class="budget-form-field budget-form-field-wide">
+      <label>Notes</label>
+      <input type="text" name="notes" placeholder="optional"
+             value="{{ entry.notes if (is_edit and entry.notes) else '' }}" />
+    </div>
+  </div>
+
+  <div class="budget-form-actions">
+    <button type="submit" class="budget-save-btn">{% if is_edit %}Save changes{% else %}Add entry{% endif %}</button>
+    <button type="button" class="budget-cancel-btn"
+            hx-get="/widgets/budget/list"
+            hx-target="#budget-list"
+            hx-swap="innerHTML"
+            hx-on::after-request="this.closest('#budget-add-pane').innerHTML='<button type=\'button\' class=\'budget-add-btn\' hx-get=\'/widgets/budget/entries/new/form\' hx-target=\'#budget-add-pane\' hx-swap=\'innerHTML\'>+ Add entry</button>'; htmx.process(this.closest('#budget-add-pane'));">cancel</button>
+  </div>
+</form>

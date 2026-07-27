@@ -1,0 +1,7 @@
+sphinx>=7.0
+sphinx-rtd-theme>=2.0
+sphinxcontrib-plantuml>=0.29
+sphinx-autobuild>=2021.3.5
+sphinx-needs>=2.0
+sphinx-design>=0.5
+myst-parser>=3.0
