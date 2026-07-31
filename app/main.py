@@ -38,6 +38,13 @@ def _templates() -> Jinja2Templates:
     ])
     t = Jinja2Templates(directory=str(BASE / "templates"))
     t.env.loader = loader
+    # Cache-bust the stylesheet by its file mtime so a rebuilt CSS is never
+    # masked by a stale browser cache (each build changes the mtime -> the ?v
+    # query changes -> the browser refetches).
+    try:
+        t.env.globals["css_version"] = int((BASE / "static" / "styles.css").stat().st_mtime)
+    except OSError:
+        t.env.globals["css_version"] = 0
     return t
 
 
