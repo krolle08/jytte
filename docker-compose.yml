@@ -3,7 +3,9 @@ services:
     build: .
     container_name: jytte
     ports:
-      - "8080:8080"
+      # Host port is configurable; default 8347 (deliberately not 8080/8000,
+      # which collide with other local services). Override with JYTTE_HOST_PORT.
+      - "${JYTTE_HOST_PORT:-8347}:8080"
     # env_file forwards EVERY key/value from .env into the container,
     # which is what makes multi-instance ADO (AZDO_*_DAGROFA,
     # AZDO_*_TRUSTWORKS, AZDO_*_<ANY_SUFFIX>) work without enumerating
