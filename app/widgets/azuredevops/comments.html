@@ -1,0 +1,19 @@
+{# Lazy comments partial - returned by GET /widgets/azuredevops/comments and
+   swapped into the drawer after it paints. #}
+{% if comments_error %}
+  <p class="muted small">{{ comments_error }}</p>
+{% elif comments %}
+  <ul class="ado-comments">
+    {% for cm in comments %}
+    <li class="ado-comment">
+      <div class="ado-comment-head">
+        <span class="ado-comment-author">{{ cm.author or 'unknown' }}</span>
+        {% if cm.created %}<span class="muted small" data-ts="{{ cm.created }}">{{ cm.created[:16].replace('T', ' ') }}</span>{% endif %}
+      </div>
+      <div class="ado-body ado-comment-body">{{ cm.text|safe }}</div>
+    </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p class="muted small">no comments</p>
+{% endif %}

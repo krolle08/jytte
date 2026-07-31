@@ -7,23 +7,35 @@ holds one instance, omitting `instance` resolves to that one.
 
 from __future__ import annotations
 
+import json
+import logging
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 
 from app import db, sse
-from app.widgets.azuredevops import fetch as fetch_mod
 from app.widgets.azuredevops.ado import ADOClient, discover_configs
 from app.widgets.azuredevops.ado_writer import (
     ADOWriteError, DEFAULT_STATE_OPTIONS, patch_workitem,
 )
 
 router = APIRouter()
-
-import logging
-
 log = logging.getLogger(__name__)
+
+
+async def _cached_state() -> dict:
+    """Read the widget's LAST CACHED payload (no live ADO call). This is the
+    exact data the card/tab already render from, so the drawer always finds
+    the item the user clicked - no live-refetch latency, no snapshot drift
+    into detail_miss, no fetch-failure blanks. Mirrors the emails widget."""
+    row = await db.read_state("azuredevops")
+    if row and row.get("payload"):
+        try:
+            return json.loads(row["payload"])
+        except (ValueError, TypeError):
+            return {}
+    return {}
 
 
 async def _load_comments(slug: str | None, item_id: int) -> tuple[list[dict], str | None]:
@@ -104,7 +116,7 @@ def _drawer_miss(templates, request, kind, id, instance, reason):
 
 @router.get("/detail", response_class=HTMLResponse)
 async def detail(request: Request, kind: str, id: int, instance: str | None = None):
-    state = await fetch_mod.fetch()
+    state = await _cached_state()
     templates = request.app.state.templates
     inst = _instance_payload(state, instance)
     if inst is None:
@@ -148,16 +160,26 @@ async def detail(request: Request, kind: str, id: int, instance: str | None = No
                 f"Work item #{id} is no longer in the cached snapshot for {inst.get('label')}. "
                 "It may have moved out of the current sprint iteration.",
             )
-        comments, comments_error = await _load_comments(inst.get("slug"), id)
         return templates.TemplateResponse(
             "azuredevops/detail.html",
             {**common, "kind": "item", "item": item,
-             "state_options": DEFAULT_STATE_OPTIONS,
-             "edit_error": None,
-             "comments": comments, "comments_error": comments_error},
+             "state_options": DEFAULT_STATE_OPTIONS, "edit_error": None},
         )
 
     raise HTTPException(status_code=400, detail="kind must be one of: pr, run, item")
+
+
+@router.get("/comments", response_class=HTMLResponse)
+async def comments(request: Request, id: int, instance: str | None = None):
+    """Lazy comments partial for a work item. Loaded by the drawer AFTER it
+    paints (hx-trigger=load), so a slow or failing ADO comments call never
+    delays or blanks the drawer itself."""
+    templates = request.app.state.templates
+    items, error = await _load_comments(instance, id)
+    return templates.TemplateResponse(
+        "azuredevops/comments.html",
+        {"request": request, "comments": items, "comments_error": error},
+    )
 
 
 # F6 - ADO state transition. Writes go direct (no n8n).
@@ -172,7 +194,7 @@ async def edit_item(
     log the audit row, in-place patch the cached widget state for THAT
     instance, emit SSE, return re-rendered drawer."""
     templates = request.app.state.templates
-    current_state = await fetch_mod.fetch()
+    current_state = await _cached_state()
     inst = _instance_payload(current_state, instance)
     if inst is None:
         raise HTTPException(status_code=404, detail="instance not found")
@@ -190,13 +212,10 @@ async def edit_item(
     except ADOWriteError as e:
         if item is None:
             raise HTTPException(status_code=404, detail="work item disappeared from cache")
-        comments, comments_error = await _load_comments(inst.get("slug"), id)
         return templates.TemplateResponse(
             "azuredevops/detail.html",
             {**common, "kind": "item", "item": item,
-             "state_options": DEFAULT_STATE_OPTIONS,
-             "edit_error": str(e),
-             "comments": comments, "comments_error": comments_error},
+             "state_options": DEFAULT_STATE_OPTIONS, "edit_error": str(e)},
             status_code=200,
         )
 
@@ -235,10 +254,8 @@ async def edit_item(
         },
     )
 
-    comments, comments_error = await _load_comments(inst.get("slug"), id)
     return templates.TemplateResponse(
         "azuredevops/detail.html",
         {**common, "kind": "item", "item": updated,
-         "state_options": DEFAULT_STATE_OPTIONS, "edit_error": None,
-         "comments": comments, "comments_error": comments_error},
+         "state_options": DEFAULT_STATE_OPTIONS, "edit_error": None},
     )
