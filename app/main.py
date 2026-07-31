@@ -231,6 +231,20 @@ async def push_widget_state(name: str, request: Request):
     w = registry.get(name)
     if w is None:
         raise HTTPException(status_code=404, detail="widget not found")
+    if w.source != "n8n":
+        # This widget fetches its own data on the local scheduler
+        # (source: python). Accepting an external push would clobber that
+        # good data with whatever the pusher sent - exactly the failure a
+        # legacy n8n 'azuredevops' workflow caused (it pushed an empty
+        # snapshot over the widget's live fetch). Refuse it: a self-fetching
+        # widget owns its state. Declare source: n8n in the manifest to opt in.
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"widget '{name}' is self-fetching (source=python); external "
+                "state push refused. Set source: n8n in its manifest to accept pushes."
+            ),
+        )
     body = await request.json()
     summary = None
     if isinstance(body, dict) and isinstance(body.get("summary"), str):
