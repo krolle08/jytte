@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell|Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python",
+            "args": ["C:\\Projects\\jytte\\.claude\\hooks\\guard_no_credential_minting.py"],
+            "timeout": 15,
+            "statusMessage": "Checking AI-credentials policy..."
+          }
+        ]
+      }
+    ]
+  }
+}

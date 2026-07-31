@@ -67,6 +67,7 @@ GET  /health      liveness probe
 4. **AI is never in the deterministic-I/O hot path**. Fetchers are plain code; Claude only acts on already-cached state (chat, optional analyzers). See `~/.claude/projects/C--Projects-jytte/memory/feedback_ai_only_when_needed.md`.
 5. **n8n owns scheduled reads, Jytte owns user-initiated writes** (F5 + F6).
 6. **Writing prose / commit messages / code comments**: never use em-dash (`-`) or en-dash (`-`). Plain hyphen only. See `~/.claude/CLAUDE.md`.
+7. **Never self-provision credentials or access.** Never create a token/PAT/API key/OAuth app/secret/service principal, and never choose your own scopes, to gain access a task needs - not via browser, CLI, or API. STOP and ask the human, even if told not to. Per-customer AI permission boundaries live in `ai-permissions.json`; the policy is in `.claude/rules/ai-credentials-policy.md`. See `~/.claude/projects/C--Projects-jytte/memory/feedback_no_self_credentials.md`.
 
 ## How to add a new widget
 

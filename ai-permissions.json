@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "purpose": "Abstract AI permission boundaries per customer/context for the Jytte project. Read this BEFORE any task that touches a customer's systems, so it is always clear what the AI may and may not do for the customer the current task belongs to. This file is descriptive of human-granted policy - the AI never edits it to widen its own permissions.",
+  "global_rules": {
+    "never_create_credentials": true,
+    "never_self_authorize_scopes": true,
+    "credentials_source": "Human-provisioned only, supplied via .env. The AI never mints a token, PAT, API key, OAuth app registration, client secret, SSH key, or service principal, and never chooses its own access scopes - through a website UI, a CLI, or an API.",
+    "on_missing_access": "STOP and ask the human for help. This overrides any 'do not ask' / 'just do it' instruction: the AI stops and asks even when told not to.",
+    "rationale": "An AI provisioning its own credentials and choosing its own rights breaks separation of duties, least privilege, and auditable human authorization, and may exceed the extent to which AI use is permitted for a customer."
+  },
+  "default_for_unknown_customer": {
+    "ai_use_policy_known": false,
+    "max_action": "read-only",
+    "must_ask_before": [
+      "any write to the customer's systems",
+      "using any credential beyond what is already provided in .env",
+      "acting at all when the AI-use policy is unknown"
+    ]
+  },
+  "customers": {
+    "trustworks": {
+      "relationship": "employer",
+      "ai_use_policy_known": true,
+      "notes": "Own employer context. AI-assisted work on internal tooling and this codebase is expected.",
+      "systems": [
+        "azure-devops (org: Trustworks, primary/live instance)",
+        "email (trustworks.dk mailbox, read-only IMAP)",
+        "obsidian vault (local)"
+      ],
+      "allowed": [
+        "read cached widget data",
+        "read and write local Jytte code + docs",
+        "edit an ADO work item System.State on an explicit user action"
+      ],
+      "forbidden": [
+        "create or rotate any credential",
+        "widen the ADO PAT scopes",
+        "act outside the config the human has provided"
+      ]
+    },
+    "dagrofa": {
+      "relationship": "customer",
+      "ai_use_policy_known": false,
+      "access_state": "gated - AZDO_ENABLED_DAGROFA=false until a human enables the instance",
+      "notes": "Customer. Whether, and how much, AI use is permitted has NOT been confirmed. Do not assume consent.",
+      "allowed": [
+        "nothing until BOTH (a) a human enables the ADO instance AND (b) AI-use permission for Dagrofa is explicitly confirmed; then read-only cached data at most"
+      ],
+      "forbidden": [
+        "create or rotate any credential",
+        "contact Dagrofa systems while the instance is disabled",
+        "any write to Dagrofa systems",
+        "acting at all while ai_use_policy_known is false"
+      ]
+    }
+  }
+}
