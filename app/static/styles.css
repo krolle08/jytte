@@ -136,19 +136,22 @@ main {
   gap: 1.25rem;
   align-items: start;
 }
-.grid > .card-tasks        { grid-column: 1 / -1; grid-row: 1; }
-.grid > .card-emails       { grid-column: 1 / -1; grid-row: 2; }
-.grid > .card-azuredevops  { grid-column: 1 / -1; grid-row: 3; }
-.grid > .card-geomap       { grid-column: 1 / -1; grid-row: 4; }
-.grid > .card-budget       { grid-column: 1; grid-row: 5; }
-.grid > .card-news         { grid-column: 2; grid-row: 5; }
-.grid > .card-football     { grid-column: 1; grid-row: 6; }
-.grid > .card-chat         { grid-column: 1 / -1; grid-row: 7; }
+.grid > .card-tasks         { grid-column: 1 / -1; grid-row: 1; }
+.grid > .card-emails        { grid-column: 1 / -1; grid-row: 2; }
+.grid > .card-azuredevops   { grid-column: 1 / -1; grid-row: 3; }
+.grid > .card-geomap        { grid-column: 1 / -1; grid-row: 4; }
+.grid > .card-budget        { grid-column: 1; grid-row: 5; }
+.grid > .card-news          { grid-column: 2; grid-row: 5; }
+.grid > .card-footballnews  { grid-column: 1; grid-row: 6; }
+.grid > .card-computerworld { grid-column: 2; grid-row: 6; }
+.grid > .card-football      { grid-column: 1; grid-row: 7; }
+.grid > .card-chat          { grid-column: 1 / -1; grid-row: 8; }
 @media (max-width: 880px) {
   .grid { grid-template-columns: 1fr; }
   .grid > .card-tasks, .grid > .card-emails, .grid > .card-news,
   .grid > .card-chat, .grid > .card-azuredevops, .grid > .card-budget,
-  .grid > .card-football { grid-column: 1; }
+  .grid > .card-football, .grid > .card-footballnews,
+  .grid > .card-computerworld { grid-column: 1; }
 }
 
 /* Tasks hero: show every open task but keep the card from dominating the
@@ -257,6 +260,33 @@ main {
 }
 .ado-comment-author { font-weight: 600; font-size: 0.85rem; }
 .ado-comment-body { font-size: 0.85rem; }
+
+/* ---- football news (FEAT-005) ---- */
+.fbnews-items, .cw-items { list-style: none; margin: 0; padding: 0; }
+.fbnews-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.fbnews-title { flex: 1; font-size: 0.85rem; }
+.fbnews-src { flex: none; }
+.tag.fbtier { text-transform: uppercase; font-size: 0.65rem; letter-spacing: 0.03em; }
+.tag.fbtier-fck { background: rgba(46, 122, 255, 0.18); color: #5a9bff; }
+.tag.fbtier-superliga { background: rgba(46, 122, 255, 0.1); color: #7fb0ff; }
+.tag.fb-transfer { background: rgba(255, 176, 32, 0.18); color: #ffb020; }
+
+/* ---- ComputerWorld (FEAT-004) ---- */
+.cw-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.cw-title { font-size: 0.85rem; }
 
 /* cards */
 .card {

@@ -1,0 +1,28 @@
+{# ComputerWorld article references parsed from the newsletter emails. #}
+{% set data = state.data or {} %}
+{% if not data.get('ready') %}
+<p class="muted">computerworld loading...</p>
+{% elif not data.get('configured') %}
+<div class="emails-empty">
+  <p class="muted">{{ data.get('reason') or 'mailbox not configured' }}</p>
+  <p class="muted small">Uses the same mailbox as the emails widget (set <code>EMAIL_IMAP_*</code>).</p>
+</div>
+{% else %}
+{% set arts = data.get('articles') or [] %}
+{% if arts %}
+<div class="cw-list">
+  <ul class="cw-items">
+    {% for a in arts[:15] %}
+    <li class="cw-row">
+      <a class="cw-title" href="{{ a.link }}" target="_blank" rel="noopener">{{ a.title }}</a>
+      {% if a.received %}<span class="muted small" data-ts="{{ a.received }}">{{ a.received[:10] }}</span>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+<p class="muted small">{{ arts|length }} article{{ '' if arts|length == 1 else 's' }} from recent newsletters</p>
+{% else %}
+<p class="muted">{{ data.get('reason') or 'no articles found' }}</p>
+{% endif %}
+{% endif %}
+{% if state.updated_at %}<p class="ts">updated <span data-ts="{{ state.updated_at }}">{{ state.updated_at[:16] }}</span></p>{% endif %}

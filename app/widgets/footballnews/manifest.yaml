@@ -1,0 +1,8 @@
+name: footballnews
+title: Football news
+# RSS aggregation on a 20-minute poll. Plain-code fetch, no AI.
+refresh_minutes: 20
+client_refresh_seconds: 120
+claude_analyzer: false
+expose_mcp: true
+watcher: false

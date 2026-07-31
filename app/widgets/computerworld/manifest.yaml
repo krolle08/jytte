@@ -1,0 +1,9 @@
+name: computerworld
+title: ComputerWorld
+# Reads the ComputerWorld newsletters from the mailbox every 60 min.
+# Plain IMAP + HTML parsing, no AI.
+refresh_minutes: 60
+client_refresh_seconds: 300
+claude_analyzer: false
+expose_mcp: true
+watcher: false

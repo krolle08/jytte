@@ -1,0 +1,28 @@
+{# Football news, ranked FCK -> Superliga -> UEFA -> FIFA -> world, with
+   transfer stories boosted when transfer_focus is on. #}
+{% set data = state.data or {} %}
+{% if not data.get('ready') %}
+<p class="muted">football news loading...</p>
+{% else %}
+{% set items = data.get('items') or [] %}
+{% set tier_labels = {'fck': 'FCK', 'superliga': 'Superliga', 'uefa': 'UEFA', 'fifa': 'FIFA', 'world': 'World'} %}
+{% if data.get('transfer_focus') %}<p class="muted small">transfers in focus</p>{% endif %}
+{% if items %}
+<div class="fbnews-list">
+  <ul class="fbnews-items">
+    {% for it in items[:14] %}
+    <li class="fbnews-row">
+      <span class="tag fbtier fbtier-{{ it.tier }}">{{ tier_labels.get(it.tier, it.tier) }}</span>
+      {% if it.is_transfer %}<span class="tag fb-transfer">transfer</span>{% endif %}
+      <a class="fbnews-title" href="{{ it.link }}" target="_blank" rel="noopener">{{ it.title }}</a>
+      <span class="muted small fbnews-src">{{ it.source }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+<p class="muted small">{{ items|length }} stories</p>
+{% else %}
+<p class="muted">no football news</p>
+{% endif %}
+{% endif %}
+{% if state.updated_at %}<p class="ts">updated <span data-ts="{{ state.updated_at }}">{{ state.updated_at[:16] }}</span></p>{% endif %}
