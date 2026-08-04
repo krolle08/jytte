@@ -1,0 +1,43 @@
+{# Finances dashboard card: balances + electricity month-over-month, read
+   straight from the pushed payload (no categorization here - that + planned
+   vs actual live on /budget). fmt() is supplied by view.py. #}
+{% set data = state.data or {} %}
+{% set accounts = data.get('accounts') or [] %}
+{% if not accounts %}
+<div class="fin-empty">
+  <p class="muted">No financial data yet.</p>
+  <p class="muted small">Trigger your n8n finances workflow to push accounts, transactions and electricity.
+  Planned vs actual on <a href="/budget">/budget</a>.</p>
+</div>
+{% else %}
+<div class="fin-balances">
+  <div class="fin-bal-total">
+    <span class="muted small">Total balance</span>
+    <strong>{{ fmt(accounts | sum(attribute='balance_cents')) }} DKK</strong>
+  </div>
+  <ul class="fin-accounts">
+    {% for a in accounts %}
+    <li class="fin-account">
+      <span class="tag fin-label">{{ a.label }}</span>
+      <span class="fin-account-name">{{ a.name }}</span>
+      <span class="muted small fin-account-bal">{{ fmt(a.balance_cents) }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+
+{% set el = data.get('electricity') or {} %}
+{% set cur = el.get('current_month') or {} %}
+{% set prev = el.get('previous_month') or {} %}
+{% if cur %}
+<div class="fin-elec">
+  <span class="muted small">Electricity (Andel)</span>
+  <span class="fin-elec-val">{{ cur.get('kwh') }} kWh
+    {%- if prev %} <span class="muted small">vs {{ prev.get('kwh') }} last month</span>{% endif %}</span>
+</div>
+{% endif %}
+
+<p class="muted small"><a href="/budget" class="fin-out-link">planned vs actual &rarr;</a></p>
+{% endif %}
+
+{% if state.updated_at %}<p class="ts">updated <span data-ts="{{ state.updated_at }}">{{ state.updated_at[:16] }}</span></p>{% endif %}

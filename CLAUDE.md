@@ -41,6 +41,9 @@ registration list to edit.
 - `football`    (F1)           - ML predictor with bootstrap ensemble. See `app/widgets/football/CLAUDE.md`.
 - `news`        (post-F6)      - 8-category RSS aggregator with photos. See `app/widgets/news/CLAUDE.md`.
 - `budget`      (F7)           - Family budget planner with HTMX CRUD. See `app/widgets/budget/CLAUDE.md`.
+- `footballnews`(FEAT-005)     - Football RSS ranked FCK>Superliga>UEFA>FIFA>world, transfers boosted. See `app/widgets/footballnews/CLAUDE.md`.
+- `computerworld`(FEAT-004)    - Article refs parsed from ComputerWorld newsletter emails. See `app/widgets/computerworld/CLAUDE.md`.
+- `finances`    (FEAT-008)     - `source: n8n` planned-vs-actual: n8n holds all provider creds and pushes; Jytte categorizes + shows actuals on /budget. See `app/widgets/finances/CLAUDE.md`.
 
 ## Top-level URL surface
 

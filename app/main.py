@@ -117,6 +117,14 @@ async def budget_tab(request: Request):
     for e in entries:
         by_cat.setdefault(e.category_slug, []).append(e)
     summary = db_budget.summarise(entries)
+
+    # FEAT-008: overlay actuals from the finances widget (pushed by n8n).
+    from app.widgets.finances import db_finances
+    fin_w = registry.get("finances")
+    fin_payload = (await fin_w.latest()).get("data") if fin_w else None
+    fin_view = await db_finances.build_view(fin_payload or {})
+    fin_rules = await db_finances.get_rules()
+
     templates: Jinja2Templates = request.app.state.templates
     return templates.TemplateResponse(
         "budget_tab.html",
@@ -126,6 +134,9 @@ async def budget_tab(request: Request):
             "entries_by_category": by_cat,
             "summary": summary,
             "fmt": db_budget.format_amount,
+            "fin_view": fin_view,
+            "fin_rules": fin_rules,
+            "fin_categories": db_finances.CATEGORIES,
             "active_tab": "budget",
         },
     )

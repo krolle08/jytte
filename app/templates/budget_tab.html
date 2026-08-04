@@ -28,5 +28,16 @@
     {# initial render done server-side below; SSE swaps replace #}
     {% include "budget/list.html" %}
   </div>
+
+  {# FEAT-008: actuals from the finances widget (planned vs actual, spend by
+     card label, electricity, categorization rules). Re-renders on push. #}
+  <div hx-trigger="sse:widget:finances"
+       hx-get="/widgets/finances/actuals"
+       hx-target="#finances-actuals"
+       hx-swap="outerHTML">
+    {% with view=fin_view, rules=fin_rules, categories=fin_categories %}
+    {% include "finances/actuals.html" %}
+    {% endwith %}
+  </div>
 </section>
 {% endblock %}

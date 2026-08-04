@@ -123,13 +123,14 @@ main {
 .grid > .card-footballnews  { grid-column: 1; grid-row: 6; }
 .grid > .card-computerworld { grid-column: 2; grid-row: 6; }
 .grid > .card-football      { grid-column: 1; grid-row: 7; }
+.grid > .card-finances      { grid-column: 2; grid-row: 7; }
 .grid > .card-chat          { grid-column: 1 / -1; grid-row: 8; }
 @media (max-width: 880px) {
   .grid { grid-template-columns: 1fr; }
   .grid > .card-tasks, .grid > .card-emails, .grid > .card-news,
   .grid > .card-chat, .grid > .card-azuredevops, .grid > .card-budget,
   .grid > .card-football, .grid > .card-footballnews,
-  .grid > .card-computerworld { grid-column: 1; }
+  .grid > .card-computerworld, .grid > .card-finances { grid-column: 1; }
 }
 
 /* Tasks hero: show every open task but keep the card from dominating the
@@ -305,6 +306,39 @@ main {
   transition: color 0.15s ease, border-color 0.15s ease;
 }
 .news-move:hover { color: var(--accent); border-color: var(--accent); }
+
+/* ---- finances widget + budget actuals (FEAT-008) ---- */
+.fin-accounts, .fin-cat-list, .fin-rule-list { list-style: none; margin: 0.3rem 0; padding: 0; }
+.fin-bal-total { display: flex; justify-content: space-between; align-items: baseline; }
+.fin-bal-total strong { font-size: 1.1rem; }
+.fin-account { display: flex; align-items: baseline; gap: 0.4rem; padding: 0.15rem 0; }
+.fin-account-name { flex: 1; }
+.fin-label { text-transform: capitalize; }
+.fin-elec { margin-top: 0.6rem; display: flex; flex-direction: column; }
+.fin-out-link { border-bottom: 1px solid transparent; }
+
+.fin-actuals { margin-top: 1.5rem; border-top: 2px solid var(--line-strong); padding-top: 0.9rem; }
+.fin-actuals-head { display: flex; align-items: baseline; gap: 0.6rem; margin-bottom: 0.6rem; }
+.fin-actuals-head h2 { margin: 0; font-size: 1.15rem; }
+.fin-pva { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.fin-pva th { text-align: right; font-weight: 500; color: var(--muted); border-bottom: 1px solid var(--line); padding: 0.3rem 0.5rem; }
+.fin-pva th:first-child, .fin-pva td:first-child { text-align: left; }
+.fin-pva td { text-align: right; padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--line); }
+.fin-neg { color: var(--danger); }
+.fin-pos { color: var(--ok); }
+.fin-elec-row { margin: 0.75rem 0; padding: 0.6rem 0.7rem; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); }
+.fin-elec-label { font-weight: 600; margin-right: 0.5rem; }
+.fin-by-label { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; margin: 0.9rem 0; }
+.fin-label-block { border: 1px solid var(--line); border-radius: 8px; padding: 0.6rem 0.7rem; }
+.fin-label-block h3 { margin: 0 0 0.3rem; text-transform: capitalize; font-size: 0.95rem; }
+.fin-cat-list li { display: flex; justify-content: space-between; padding: 0.1rem 0; }
+.fin-rules { margin-top: 1rem; }
+.fin-rules summary { cursor: pointer; color: var(--muted); }
+.fin-rule-add { display: flex; gap: 0.4rem; margin: 0.5rem 0; flex-wrap: wrap; }
+.fin-rule-add input, .fin-rule-add select { padding: 0.3rem 0.5rem; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--text); }
+.fin-rule { display: flex; align-items: center; gap: 0.4rem; padding: 0.15rem 0; }
+.fin-rule-del { margin-left: auto; border: 1px solid var(--line); background: var(--surface); color: var(--muted); border-radius: 6px; cursor: pointer; padding: 0 0.4rem; }
+.fin-rule-del:hover { color: var(--danger); border-color: var(--danger); }
 
 /* cards */
 .card {

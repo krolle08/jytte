@@ -1,0 +1,74 @@
+{# Planned-vs-actual + categorized spend + electricity + rules editor.
+   Rendered on /budget and returned by the finances rule endpoints. The
+   container owns the HTMX target/swap so the rule buttons inherit them. #}
+<div id="finances-actuals" class="fin-actuals" hx-target="#finances-actuals" hx-swap="outerHTML">
+  <header class="fin-actuals-head">
+    <h2>Actuals</h2>
+    <span class="muted small">
+      {{ view.month }} :: total balance {{ view.balances_total }} DKK :: {{ view.txn_count }} transactions
+    </span>
+  </header>
+
+  {% if not view.by_label and not view.electricity %}
+  <p class="muted small">No pushed data yet - trigger your n8n finances workflow. The plan below still shows expected monthly amounts.</p>
+  {% endif %}
+
+  <table class="fin-pva">
+    <thead><tr><th>Category</th><th>Planned / mo</th><th>Actual</th><th>Delta</th></tr></thead>
+    <tbody>
+      {% for r in view.planned_vs_actual %}
+      <tr>
+        <td>{{ r.name }}</td>
+        <td>{{ r.planned }}</td>
+        <td>{{ r.actual }}</td>
+        <td class="{{ 'fin-neg' if r.delta_cents < 0 else 'fin-pos' }}">{{ r.delta }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if view.electricity %}
+  {% set cur = view.electricity.current %}
+  {% set prev = view.electricity.previous %}
+  <div class="fin-elec-row">
+    <span class="fin-elec-label">Electricity (Andel)</span>
+    <span>{{ cur.kwh }} kWh{% if cur.cost_cents is not none %} / {{ view.fmt(cur.cost_cents) }} DKK{% endif %} this month
+      {%- if prev %} <span class="muted small">vs {{ prev.kwh }} kWh last month
+        {%- if view.electricity.delta_kwh is not none %} ({{ '+' if view.electricity.delta_kwh >= 0 else '' }}{{ view.electricity.delta_kwh }} kWh){% endif %}</span>{% endif %}</span>
+  </div>
+  {% endif %}
+
+  {% if view.by_label %}
+  <div class="fin-by-label">
+    {% for label, lb in view.by_label.items() %}
+    <div class="fin-label-block">
+      <h3>{{ label }} <span class="muted small">{{ view.fmt(lb.total_cents) }} DKK</span></h3>
+      <ul class="fin-cat-list">
+        {% for cat, amt in lb.by_category.items() %}
+        <li><span class="fin-cat-name">{{ cat }}</span> <span class="muted small">{{ view.fmt(amt) }}</span></li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <details class="fin-rules">
+    <summary>Categorization rules ({{ rules | length }})</summary>
+    <form class="fin-rule-add" hx-post="/widgets/finances/rules">
+      <input type="text" name="pattern" placeholder="text in merchant/description" required />
+      <select name="category">
+        {% for c in categories %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+      </select>
+      <button type="submit">add rule</button>
+    </form>
+    <ul class="fin-rule-list">
+      {% for r in rules %}
+      <li class="fin-rule">
+        <code>{{ r.pattern }}</code> &rarr; <span class="tag">{{ r.category }}</span>
+        <button class="fin-rule-del" hx-post="/widgets/finances/rules/{{ r.id }}/delete" aria-label="delete rule">&times;</button>
+      </li>
+      {% endfor %}
+    </ul>
+  </details>
+</div>

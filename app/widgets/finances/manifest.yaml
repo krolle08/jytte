@@ -1,0 +1,13 @@
+name: finances
+title: Finances
+# source: n8n - the real data (accounts, transactions, electricity) is
+# fetched by the user's own n8n workflow (which holds ALL provider
+# credentials) and PUSHED to POST /widgets/finances/state. Jytte never
+# fetches it and never holds a credential. This also makes the /state
+# anti-clobber guard ACCEPT the push (it only accepts source: n8n widgets).
+source: n8n
+refresh_minutes: null
+client_refresh_seconds: 300
+claude_analyzer: false
+expose_mcp: true
+watcher: false

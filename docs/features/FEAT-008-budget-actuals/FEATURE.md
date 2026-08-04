@@ -41,11 +41,11 @@ This is the F5 pattern and it satisfies the credentials guardrail: the AI never 
 - Write access to accounts (read-only PSD2 only).
 - MobilePay direct API (no public personal API; it appears via bank transactions).
 
-## Open questions (proposed defaults in notes.md)
-- OQ-1 Electricity source: **Eloverblik** (Energinet DataHub) token in n8n for kWh; cost via tariff or provider. Confirm your electricity setup.
-- OQ-2 Card labels: you map each GoCardless account/card to a label (private/loan/food/...). Define your set.
-- OQ-3 Categorization rules seed: propose shopping/restaurant/fun/groceries/transport/subscriptions/other; refine later. Rules are editable in Jytte.
-- OQ-4 History depth: current + previous month minimum; store rolling ~90 days (PSD2 limit).
+## Resolved decisions
+- Electricity provider: **Andel** (n8n fetches it - via Andel's portal or Eloverblik, n8n's concern; Jytte just receives the monthly kWh/cost in the push). Jytte side is source-agnostic.
+- Card labels (level 1): **Private, Shared expenditures, Food** (seed; user maps each account).
+- Categories (level 2): accepted seed - groceries, restaurant, shopping, transport, subscriptions, fun, bills, cash, income, other.
+- History depth: current + previous month; rolling ~90 days (PSD2 limit).
 
 ## Files to create
 - `app/widgets/finances/{manifest.yaml (source: n8n), fetch.py (returns empty-ready; n8n pushes), card.html, routes.py (categorization-rule CRUD + planned-vs-actual partials), db_finances.py (accounts, transactions, rules, electricity tables + aggregation), CLAUDE.md}`
