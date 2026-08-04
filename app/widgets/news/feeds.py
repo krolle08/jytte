@@ -46,8 +46,8 @@ CATEGORIES: list[Category] = [
     Category(
         slug="computerworld", title="ComputerWorld", section="business", sort_order=10,
         feeds=[
-            FeedSource(url="https://www.computerworld.dk/rss", name="ComputerWorld"),
-            FeedSource(url="https://www.computerworld.dk/feed", name="ComputerWorld"),
+            # Confirmed feed: the <link rel="alternate"> on computerworld.dk.
+            FeedSource(url="https://www.computerworld.dk/rss/all", name="ComputerWorld"),
         ],
     ),
     Category(
