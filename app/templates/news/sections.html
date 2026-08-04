@@ -1,0 +1,65 @@
+{# Ordered news sections + topics with reorder controls. Rendered on /news
+   and returned by the move-topic / move-section routes. The container owns
+   the HTMX target/swap so the reorder buttons inherit them. #}
+<div id="news-sections" hx-target="#news-sections" hx-swap="outerHTML">
+  <nav class="news-jump" aria-label="topics">
+    {% for sec in sections %}
+      {% for c in sec.topics %}
+      <a class="news-jump-link" href="#{{ c.slug }}">{{ c.title }} <span class="muted small">({{ c['items'] | length }})</span></a>
+      {% endfor %}
+    {% endfor %}
+  </nav>
+
+  {% for sec in sections %}
+  <section class="news-section" id="section-{{ sec.section }}">
+    <header class="news-section-head">
+      <h2>{{ sec.title }}</h2>
+      <span class="news-reorder" title="reorder section">
+        <button class="news-move" hx-post="/widgets/news/move-section" hx-vals='{"section": "{{ sec.section }}", "direction": "up"}' aria-label="move {{ sec.title }} up">&uarr;</button>
+        <button class="news-move" hx-post="/widgets/news/move-section" hx-vals='{"section": "{{ sec.section }}", "direction": "down"}' aria-label="move {{ sec.title }} down">&darr;</button>
+      </span>
+    </header>
+
+    {% for c in sec.topics %}
+    <section class="news-category" id="{{ c.slug }}">
+      <header class="news-category-head">
+        <h3>{{ c.title }}</h3>
+        <span class="muted small">{{ c['items'] | length }} items from {{ c.source_count }} sources</span>
+        <span class="news-reorder" title="reorder topic">
+          <button class="news-move" hx-post="/widgets/news/move-topic" hx-vals='{"slug": "{{ c.slug }}", "direction": "up"}' aria-label="move {{ c.title }} up">&uarr;</button>
+          <button class="news-move" hx-post="/widgets/news/move-topic" hx-vals='{"slug": "{{ c.slug }}", "direction": "down"}' aria-label="move {{ c.title }} down">&darr;</button>
+        </span>
+      </header>
+
+      {% if not c['items'] %}
+      <p class="muted small">No items - feeds may be down or keyword filters too narrow.</p>
+      {% else %}
+      <ul class="news-grid">
+        {% for it in c['items'] %}
+        <li class="news-card">
+          <a class="news-card-link" href="{{ it.link }}" target="_blank" rel="noopener noreferrer">
+            {% if it.image %}
+            <div class="news-card-thumb-wrap">
+              <img class="news-card-thumb" src="{{ it.image }}" alt="" loading="lazy" referrerpolicy="no-referrer" />
+            </div>
+            {% else %}
+            <div class="news-card-thumb-wrap news-card-thumb-placeholder"><span>{{ c.title }}</span></div>
+            {% endif %}
+            <div class="news-card-body">
+              <h4 class="news-card-title">{{ it.title }}</h4>
+              {% if it.summary %}<p class="news-card-summary">{{ it.summary }}</p>{% endif %}
+              <p class="news-card-meta muted small">
+                <span class="news-card-source">{{ it.source }}</span>
+                {% if it.published %}<span class="news-card-date" data-ts="{{ it.published }}">{{ it.published[:10] }}</span>{% endif %}
+              </p>
+            </div>
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </section>
+    {% endfor %}
+  </section>
+  {% endfor %}
+</div>

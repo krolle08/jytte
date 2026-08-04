@@ -138,12 +138,16 @@ async def news_tab(request: Request):
     if w is None:
         raise HTTPException(status_code=404, detail="news widget not loaded")
     state = await w.latest()
+    data = state.get("data") or {"ready": False, "reason": "no cached state yet"}
+    from app.widgets.news import db_news
+    sections = await db_news.ordered_sections(data) if data.get("ready") else []
     templates: Jinja2Templates = request.app.state.templates
     return templates.TemplateResponse(
         "news_tab.html",
         {
             "request": request,
-            "data": state.get("data") or {"ready": False, "reason": "no cached state yet"},
+            "data": data,
+            "sections": sections,
             "active_tab": "news",
         },
     )

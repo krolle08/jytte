@@ -1,33 +1,34 @@
 """Feed configuration for the news widget.
 
-One named CATEGORY = N feeds + N keyword filters. The dashboard card
-focuses on the WORLD_CUP category (per request); the /news tab page
-shows every category with photos + summaries + click-through to the
-source URL.
+One named CATEGORY = a section ('business' | 'private'), a display title,
+N feeds + optional keyword filters, and a default sort order. The /news
+page groups categories into sections and renders them in a user-editable
+order (persisted in the DB via db_news.py); these `section` / `sort_order`
+values are only the SEED defaults.
 
-Adding a new category: drop a new dict into CATEGORIES with a slug,
-display title, a list of RSS feed URLs, and optional keyword filters
-(only items whose title or summary matches at least one keyword are
-kept; an empty filter keeps everything).
+Adding a category: drop a Category into CATEGORIES with a unique slug,
+section, title, feeds, and a sort_order. It is seeded into the ordering
+prefs on next boot (INSERT OR IGNORE), appended at its default position.
 
-Adding/removing feeds: edit the `feeds` list. The fetcher is
-fault-tolerant - a 404 or parse error on one feed does not sink the
-category.
+Danish feed URLs are best-effort - a 404 or parse error on one feed does
+not sink the category (the fetcher is fault-tolerant). Verify/adjust URLs
+here as sources change.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+# Section order + display titles (seed defaults; user can reorder sections).
+DEFAULT_SECTION_ORDER = ["business", "private"]
+SECTION_TITLES = {"business": "Business", "private": "Private"}
+
 
 @dataclass
 class FeedSource:
     url: str
     name: str                       # short, for the "via X" line on each card
-    # When set, only items with at least one keyword (case-insensitive)
-    # in title OR summary are kept. Use this when the feed is broad
-    # (e.g. general football feed) but the category is narrow (World Cup).
-    keywords: tuple[str, ...] = ()
+    keywords: tuple[str, ...] = ()  # keep only items matching >= 1 (title/summary)
 
 
 @dataclass
@@ -35,141 +36,118 @@ class Category:
     slug: str
     title: str
     feeds: list[FeedSource]
-    # Cap rendered items per category (newest first across all feeds).
+    section: str = "business"       # 'business' | 'private' (seed default)
+    sort_order: int = 100           # seed order within the section
     max_items: int = 24
 
 
 CATEGORIES: list[Category] = [
+    # ─────────────── Business ───────────────
     Category(
-        slug="world-cup",
-        title="World Cup",
-        max_items=18,
+        slug="computerworld", title="ComputerWorld", section="business", sort_order=10,
         feeds=[
-            # The Guardian's dedicated World Cup feed - no keyword filter needed.
-            FeedSource(
-                url="https://www.theguardian.com/football/world-cup/rss",
-                name="The Guardian",
-            ),
-            # Broad football feeds keyword-filtered to anything World-Cup-shaped:
-            # main tournaments, qualifiers, FIFA Club World Cup, Euros, etc.
-            FeedSource(
-                url="https://www.fifa.com/rss-feeds/news",
-                name="FIFA",
-                keywords=("world cup", "wc 202", "qualif", "fifa"),
-            ),
-            FeedSource(
-                url="https://www.espn.com/espn/rss/soccer/news",
-                name="ESPN FC",
-                keywords=("world cup", "wc 202", "qualif", "fifa"),
-            ),
-            FeedSource(
-                url="https://feeds.bbci.co.uk/sport/football/rss.xml",
-                name="BBC Sport",
-                keywords=("world cup", "wc 202", "qualif", "fifa"),
-            ),
+            FeedSource(url="https://www.computerworld.dk/rss", name="ComputerWorld"),
+            FeedSource(url="https://www.computerworld.dk/feed", name="ComputerWorld"),
         ],
     ),
-
     Category(
-        slug="ai",
-        title="AI",
+        slug="danish-it", title="Danish IT", section="business", sort_order=20,
         feeds=[
-            FeedSource(url="https://www.technologyreview.com/feed/",                name="MIT Technology Review",
+            FeedSource(url="https://www.version2.dk/rss", name="Version2"),
+            FeedSource(url="https://ing.dk/rss/nyheder", name="Ingenioren"),
+            FeedSource(url="https://www.dr.dk/nyheder/service/feeds/viden~teknologi", name="DR Teknologi"),
+        ],
+    ),
+    Category(
+        slug="ai", title="AI", section="business", sort_order=30,
+        feeds=[
+            FeedSource(url="https://www.technologyreview.com/feed/", name="MIT Technology Review",
                        keywords=("ai", "artificial intelligence", "llm", "model", "machine learning", "openai", "anthropic", "google", "deepmind")),
-            FeedSource(url="https://venturebeat.com/category/ai/feed/",             name="VentureBeat AI"),
-            FeedSource(url="https://www.artificialintelligence-news.com/feed/",     name="AI News"),
-            FeedSource(url="https://huggingface.co/blog/feed.xml",                  name="Hugging Face"),
-            FeedSource(url="https://openai.com/blog/rss.xml",                       name="OpenAI"),
+            FeedSource(url="https://venturebeat.com/category/ai/feed/", name="VentureBeat AI"),
+            FeedSource(url="https://www.artificialintelligence-news.com/feed/", name="AI News"),
+            FeedSource(url="https://huggingface.co/blog/feed.xml", name="Hugging Face"),
+            FeedSource(url="https://openai.com/blog/rss.xml", name="OpenAI"),
         ],
     ),
-
     Category(
-        slug="claude",
-        title="Claude",
+        slug="claude", title="Claude", section="business", sort_order=40,
         feeds=[
-            # NOTE: anthropic.com does not currently publish a public RSS feed
-            # (every reasonable URL returns 404). The category therefore relies
-            # entirely on keyword-filtered broad tech feeds. If Anthropic adds
-            # one, drop a FeedSource(url=..., name="Anthropic") above this line.
-            # Broad tech feeds keyword-filtered to anything Claude-shaped:
-            # company name, model family names (Sonnet/Opus/Haiku), agent SDK,
-            # and the MCP protocol Anthropic ships.
-            FeedSource(url="https://venturebeat.com/category/ai/feed/",             name="VentureBeat",
+            FeedSource(url="https://venturebeat.com/category/ai/feed/", name="VentureBeat",
                        keywords=("claude", "anthropic", "sonnet", "opus", "haiku", "agent sdk", "mcp")),
-            FeedSource(url="https://feeds.feedburner.com/TechCrunch/",              name="TechCrunch",
+            FeedSource(url="https://feeds.feedburner.com/TechCrunch/", name="TechCrunch",
                        keywords=("claude", "anthropic", "sonnet", "opus", "haiku", "agent sdk", "mcp")),
-            FeedSource(url="https://www.theverge.com/rss/index.xml",                name="The Verge",
+            FeedSource(url="https://www.theverge.com/rss/index.xml", name="The Verge",
                        keywords=("claude", "anthropic", "sonnet", "opus", "haiku", "agent sdk", "mcp")),
         ],
     ),
-
     Category(
-        slug="it-architecture",
-        title="IT Architecture",
+        slug="it-architecture", title="IT Architecture", section="business", sort_order=50,
         feeds=[
-            FeedSource(url="https://martinfowler.com/feed.atom",                    name="Martin Fowler"),
-            FeedSource(url="https://feed.infoq.com/architecture-design",           name="InfoQ Architecture"),
-            FeedSource(url="https://www.thoughtworks.com/rss/insights.xml",         name="Thoughtworks"),
-            FeedSource(url="https://aws.amazon.com/blogs/architecture/feed/",       name="AWS Architecture"),
-            FeedSource(url="https://devops.com/feed/",                              name="DevOps.com"),
+            FeedSource(url="https://martinfowler.com/feed.atom", name="Martin Fowler"),
+            FeedSource(url="https://feed.infoq.com/architecture-design", name="InfoQ Architecture"),
+            FeedSource(url="https://www.thoughtworks.com/rss/insights.xml", name="Thoughtworks"),
+            FeedSource(url="https://aws.amazon.com/blogs/architecture/feed/", name="AWS Architecture"),
+            FeedSource(url="https://devops.com/feed/", name="DevOps.com"),
+        ],
+    ),
+    Category(
+        slug="conferences", title="Conferences & Courses", section="business", sort_order=60,
+        feeds=[
+            FeedSource(url="https://feed.infoq.com/news", name="InfoQ",
+                       keywords=("conference", "qcon", "kubecon", "devoxx", "goto", "ndc", "javazone",
+                                 "summit", "keynote", "workshop", "training", "course", "certification",
+                                 "re:invent", "ignite", "build 202", "google i/o", "wwdc")),
+            FeedSource(url="https://devops.com/feed/", name="DevOps.com",
+                       keywords=("conference", "kubecon", "devoxx", "summit", "keynote", "workshop",
+                                 "training", "certification", "re:invent", "ignite", "course")),
+            FeedSource(url="https://devblogs.microsoft.com/feed/", name="Microsoft DevBlogs",
+                       keywords=("conference", "summit", "ignite", "build 202", "training", "course",
+                                 "certification", "learn", "workshop")),
         ],
     ),
 
+    # ─────────────── Private ───────────────
     Category(
-        slug="conferences",
-        title="Conferences & Courses",
+        slug="computer-games", title="Computer games", section="private", sort_order=10,
         feeds=[
-            # Broad tech feeds keyword-filtered to event-shaped headlines.
-            # Real news rarely says "conference" verbatim; named events
-            # ("KubeCon", "GOTO", "re:Invent") + verbs ("keynote",
-            # "announced at") catch the bulk.
-            FeedSource(url="https://feed.infoq.com/news",                          name="InfoQ",
-                       keywords=("conference", "qcon", "kubecon", "devoxx", "goto",
-                                 "ndc", "javazone", "summit", "keynote", "workshop",
-                                 "training", "course", "certification", "re:invent",
-                                 "ignite", "build 202", "google i/o", "wwdc")),
-            FeedSource(url="https://devops.com/feed/",                             name="DevOps.com",
-                       keywords=("conference", "kubecon", "devoxx", "summit", "keynote",
-                                 "workshop", "training", "certification", "re:invent",
-                                 "ignite", "course")),
-            # Replaces the old learn.microsoft.com 404. devblogs covers MS
-            # ecosystem learning / conference announcements (Build, Ignite).
-            FeedSource(url="https://devblogs.microsoft.com/feed/",                 name="Microsoft DevBlogs",
-                       keywords=("conference", "summit", "ignite", "build 202",
-                                 "training", "course", "certification", "learn", "workshop")),
+            FeedSource(url="https://www.eurogamer.net/feed", name="Eurogamer"),
+            FeedSource(url="https://www.pcgamer.com/rss/", name="PC Gamer"),
+            FeedSource(url="https://feeds.ign.com/ign/games-all", name="IGN"),
+            FeedSource(url="https://www.polygon.com/rss/index.xml", name="Polygon"),
         ],
     ),
-
     Category(
-        slug="football",
-        title="Football",
+        slug="concerts", title="Concerts", section="private", sort_order=20,
         feeds=[
-            FeedSource(url="https://www.theguardian.com/football/rss",              name="The Guardian"),
-            FeedSource(url="https://feeds.bbci.co.uk/sport/football/rss.xml",       name="BBC Sport"),
-            FeedSource(url="https://www.espn.com/espn/rss/soccer/news",             name="ESPN FC"),
+            # Concert / live-music NEWS (RSS). Concert *listings* by city would
+            # need a ticketing API (Songkick / Bandsintown) - future option.
+            FeedSource(url="https://consequence.net/feed/", name="Consequence"),
+            FeedSource(url="https://www.stereogum.com/feed/", name="Stereogum"),
+            FeedSource(url="https://pitchfork.com/rss/news/", name="Pitchfork"),
         ],
     ),
-
     Category(
-        slug="movies",
-        title="Movies",
+        slug="football", title="Football", section="private", sort_order=30,
         feeds=[
-            # NOTE: Empire Online (empireonline.com) no longer publishes a
-            # public RSS feed at any known path. Variety + IndieWire cover
-            # the same beat well.
-            FeedSource(url="https://variety.com/v/film/feed/",                      name="Variety"),
-            FeedSource(url="https://www.indiewire.com/feed/",                       name="IndieWire"),
-            FeedSource(url="https://www.hollywoodreporter.com/c/movies/feed/",      name="Hollywood Reporter"),
+            FeedSource(url="https://www.theguardian.com/football/rss", name="The Guardian"),
+            FeedSource(url="https://feeds.bbci.co.uk/sport/football/rss.xml", name="BBC Sport"),
+            FeedSource(url="https://www.espn.com/espn/rss/soccer/news", name="ESPN FC"),
         ],
     ),
-
     Category(
-        slug="series",
-        title="Series",
+        slug="movies", title="Movies", section="private", sort_order=40,
         feeds=[
-            FeedSource(url="https://variety.com/v/tv/feed/",                        name="Variety TV"),
-            FeedSource(url="https://tvline.com/feed/",                              name="TVLine"),
-            FeedSource(url="https://www.indiewire.com/c/tv/feed/",                  name="IndieWire TV"),
+            FeedSource(url="https://variety.com/v/film/feed/", name="Variety"),
+            FeedSource(url="https://www.indiewire.com/feed/", name="IndieWire"),
+            FeedSource(url="https://www.hollywoodreporter.com/c/movies/feed/", name="Hollywood Reporter"),
+        ],
+    ),
+    Category(
+        slug="series", title="Series", section="private", sort_order=50,
+        feeds=[
+            FeedSource(url="https://variety.com/v/tv/feed/", name="Variety TV"),
+            FeedSource(url="https://tvline.com/feed/", name="TVLine"),
+            FeedSource(url="https://www.indiewire.com/c/tv/feed/", name="IndieWire TV"),
         ],
     ),
 ]
