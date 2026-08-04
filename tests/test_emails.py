@@ -98,17 +98,19 @@ def test_unconfigured(monkeypatch):
     assert data["buckets"] == {"trustworks": [], "dagrofa": [], "private": []}
 
 
-def test_error_has_no_secret(monkeypatch):
-    secret = "hunter2-should-never-appear"
-    monkeypatch.setenv("EMAIL_IMAP_HOST", "imap.example.com")
-    monkeypatch.setenv("EMAIL_IMAP_USER", "u@example.com")
-    monkeypatch.setenv("EMAIL_IMAP_PASSWORD", secret)
-
-    def _boom(cfg):
-        raise imaplib.IMAP4.error(f"login failed for u with {secret}")
-
-    monkeypatch.setattr(f, "_fetch_sync", _boom)
+def test_fetch_is_now_n8n_push_stub(monkeypatch):
+    # emails is source: n8n (FEAT-009) - fetch() no longer does IMAP; it just
+    # returns an awaiting-push shape. Real mail arrives via POST /state.
     data = asyncio.run(f.fetch())
-    assert data["configured"] is True
-    assert secret not in (data.get("reason") or "")
-    assert "login failed" in (data.get("reason") or "")
+    assert data["ready"] is True and data["configured"] is False
+    assert data["buckets"] == {"trustworks": [], "dagrofa": [], "private": []}
+
+
+def test_dagrofa_gate(monkeypatch):
+    from app.widgets.emails import view
+    monkeypatch.delenv("EMAILS_DAGROFA_ENABLED", raising=False)
+    assert view.context({})["dagrofa_enabled"] is False   # gated by default
+    monkeypatch.setenv("EMAILS_DAGROFA_ENABLED", "true")
+    assert view.context({})["dagrofa_enabled"] is True
+    monkeypatch.setenv("EMAILS_DAGROFA_ENABLED", "false")
+    assert view.context({})["dagrofa_enabled"] is False

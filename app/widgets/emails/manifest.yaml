@@ -1,8 +1,11 @@
 name: emails
 title: Emails
-# Polled read via IMAP every 10 minutes. Deterministic plain-code fetch -
-# no AI in this path. Card re-renders on SSE after each refresh.
-refresh_minutes: 10
+# source: n8n (FEAT-009). Mail is fetched by the user's n8n workflow (which
+# holds all mailbox credentials: Trustworks + Dagrofa via Microsoft Graph,
+# personal Gmail) and PUSHED to POST /widgets/emails/state. Never scheduled
+# locally; the /state anti-clobber guard accepts it because source is n8n.
+source: n8n
+refresh_minutes: null
 client_refresh_seconds: 120
 claude_analyzer: false
 expose_mcp: true

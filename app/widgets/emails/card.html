@@ -1,27 +1,30 @@
-{# Emails dashboard card: three buckets - Trustworks / Dagrofa / Private.
-   Each row shows title, topic, urgency, description preview + attachment
-   checkmark. Click a row to open the detail drawer. #}
+{# Emails dashboard card: three buckets - Trustworks / Dagrofa / Private -
+   by mailbox. Data is PUSHED by the user's n8n workflow (source: n8n); Jytte
+   only displays. Each row shows title, topic, urgency, description preview +
+   attachment checkmark. Dagrofa stays gated until EMAILS_DAGROFA_ENABLED. #}
 {% set data = state.data or {} %}
 {% if not data.get('ready') %}
-<p class="muted">emails loading...</p>
-{% elif not data.get('configured') %}
 <div class="emails-empty">
-  <p class="muted">{{ data.get('reason') or 'mailbox not configured' }}</p>
-  <p class="muted small">Set <code>EMAIL_IMAP_HOST</code>, <code>EMAIL_IMAP_USER</code> and
-  <code>EMAIL_IMAP_PASSWORD</code> (see <code>.env.example</code>) to connect a mailbox.</p>
+  <p class="muted">No mail pushed yet.</p>
+  <p class="muted small">Your n8n workflow fetches Trustworks + Dagrofa (Microsoft Graph) and
+  personal Gmail, then pushes to <code>/widgets/emails/state</code>. Trigger it to populate this card.</p>
 </div>
 {% else %}
 {% set buckets = data.get('buckets') or {} %}
 {% set labels = {'trustworks': 'Trustworks', 'dagrofa': 'Dagrofa', 'private': 'Private'} %}
 <div class="emails-grid">
   {% for key in ['trustworks', 'dagrofa', 'private'] %}
-  {% set mails = buckets.get(key) or [] %}
-  <section class="emails-col emails-col-{{ key }}">
+  {% set gated = (key == 'dagrofa' and not dagrofa_enabled) %}
+  {% set mails = [] if gated else (buckets.get(key) or []) %}
+  <section class="emails-col emails-col-{{ key }}{% if gated %} emails-col-dark{% endif %}">
     <header class="emails-col-head">
       <span class="emails-col-label">{{ labels[key] }}</span>
-      <span class="emails-col-count">{{ mails | length }}</span>
+      {% if gated %}<span class="ado-dark-badge">gated</span>{% else %}<span class="emails-col-count">{{ mails | length }}</span>{% endif %}
     </header>
-    {% if mails %}
+    {% if gated %}
+    <p class="muted small">Dagrofa mail is off until you confirm it is permitted. Set
+    <code>EMAILS_DAGROFA_ENABLED=true</code> to enable.</p>
+    {% elif mails %}
     <ul class="emails-list">
       {% for m in mails[:10] %}
       <li class="email-row{% if m.urgency == 'high' %} email-row-urgent{% endif %}"

@@ -225,42 +225,17 @@ def _fetch_sync(cfg: dict) -> list[dict]:
 # ------- public API -------
 
 async def fetch() -> dict:
+    # emails is source: n8n (FEAT-009). Real mail is fetched by the user's own
+    # n8n workflow, which holds ALL mailbox credentials (Trustworks + Dagrofa
+    # via Microsoft Graph/OAuth, personal Gmail via IMAP/API), and is PUSHED to
+    # POST /widgets/emails/state. This function is never scheduled. The IMAP
+    # helpers above are retained because the computerworld widget still reads
+    # the ComputerWorld newsletter over IMAP via _config / _part_text / _to_iso.
     from datetime import datetime
-    now_iso = datetime.now(timezone.utc).isoformat()
-    cfg = _config()
-    if cfg is None:
-        return _empty_payload(now_iso, configured=False)
-
-    try:
-        messages = await asyncio.to_thread(_fetch_sync, cfg)
-    except imaplib.IMAP4.error:
-        # Auth / protocol error. Do NOT echo the exception text - it can
-        # contain the login line. Surface a generic, secret-free message.
-        log.warning("[emails] IMAP login/protocol error for %s", cfg["host"])
-        payload = _empty_payload(now_iso, configured=True,
-                                 reason="mailbox login failed - check EMAIL_IMAP_* credentials")
-        return payload
-    except Exception as e:  # noqa: BLE001
-        # Network / TLS / DNS. Class name only, never the message body.
-        log.warning("[emails] fetch failed: %s", type(e).__name__)
-        return _empty_payload(now_iso, configured=True,
-                              reason=f"mailbox unreachable ({type(e).__name__})")
-
-    buckets: dict[str, list[dict]] = {b: [] for b in BUCKETS}
-    for m in messages:
-        bucket = m.pop("_bucket")
-        buckets[bucket].append(m)
-    for b in BUCKETS:
-        buckets[b].sort(key=lambda m: m.get("date") or "", reverse=True)
-
-    return {
-        "ready": True,
-        "configured": True,
-        "fetched_at": now_iso,
-        "reason": None,
-        "counts": {b: len(buckets[b]) for b in BUCKETS},
-        "buckets": buckets,
-    }
+    return _empty_payload(
+        datetime.now(timezone.utc).isoformat(),
+        configured=False, reason="awaiting n8n push",
+    )
 
 
 async def summary(data: dict) -> str:
