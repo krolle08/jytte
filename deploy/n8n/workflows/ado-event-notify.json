@@ -1,0 +1,209 @@
+{
+  "name": "ado-event-notify",
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all"
+  },
+  "pinData": {},
+  "nodes": [
+    {
+      "id": "trigger-webhook",
+      "name": "Webhook - ado-event",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-800, 0],
+      "webhookId": "ado-event-notify",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ado-event",
+        "responseMode": "responseNode",
+        "authentication": "basicAuth",
+        "options": {
+          "responseHeaders": {
+            "entries": [ { "name": "Content-Type", "value": "application/json" } ]
+          }
+        }
+      },
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "jytte-internal-basic",
+          "name": "Jytte internal (jytte:JYTTE_INTERNAL_SECRET)"
+        }
+      },
+      "notes": "ADO Service Hook payload arrives here. ADO can send Basic Auth on the webhook (configured in the ADO subscription); n8n verifies against the jytte-internal-basic credential (username 'jytte', password = env.JYTTE_INTERNAL_SECRET). Register that credential once in n8n UI - separate from ado-pat because auth flows opposite way here."
+    },
+    {
+      "id": "route-by-event",
+      "name": "Route by eventType",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [-600, 0],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "typeValidation": "strict", "version": 2 },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "pr-merged",
+                    "operator": { "type": "string", "operation": "equals" },
+                    "leftValue": "={{$json.body.eventType}}",
+                    "rightValue": "git.pullrequest.merged"
+                  }
+                ]
+              },
+              "outputKey": "pr-merged"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "typeValidation": "strict", "version": 2 },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "run-state",
+                    "operator": { "type": "string", "operation": "equals" },
+                    "leftValue": "={{$json.body.eventType}}",
+                    "rightValue": "ms.vss-pipelines.run-state-changed-event"
+                  }
+                ]
+              },
+              "outputKey": "run-state"
+            }
+          ]
+        },
+        "options": { "fallbackOutput": "extra", "renameFallbackOutput": "ignored" }
+      },
+      "notes": "ADO event types we care about: git.pullrequest.merged fires on PR completion (whether to dev or main - we look at target branch to disambiguate). ms.vss-pipelines.run-state-changed-event fires on pipeline run state transitions; we filter to 'completed' + result in the shape node."
+    },
+    {
+      "id": "shape-pr",
+      "name": "Shape PR merged card",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-400, -100],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "// ADO PR-merged payload. Target-branch tells us dev vs main.\nconst evt = ($input.first().json.body) || {};\nconst r = evt.resource || {};\nconst target = (r.targetRefName || '').replace('refs/heads/', '');\nconst source = (r.sourceRefName || '').replace('refs/heads/', '');\nconst repo = r.repository && r.repository.name || 'unknown';\nconst title = r.title || '(no title)';\nconst author = (r.createdBy && (r.createdBy.displayName || r.createdBy.uniqueName)) || 'unknown';\nconst prId = r.pullRequestId || 0;\nconst prUrl = (r._links && r._links.web && r._links.web.href)\n              || `https://dev.azure.com/${evt.publisherId || 'trustworks'}/App/_git/${repo}/pullrequest/${prId}`;\n\n// Filter: only notify for merges into dev or main.\nif (target !== 'dev' && target !== 'main') {\n  return [{ json: { _skip: true, reason: `target ${target} is not dev/main` } }];\n}\n\nconst colorMap = { dev: '00B294', main: 'FF8C00' };\nconst iconMap  = { dev: '&#128736;', main: '&#128640;' };\nconst label    = target === 'main' ? 'PROD merge (release cut)' : 'DEV merge';\n\nreturn [{ json: {\n  _skip: false,\n  card: {\n    '@type': 'MessageCard',\n    '@context': 'https://schema.org/extensions',\n    themeColor: colorMap[target],\n    summary: `${label}: ${title}`,\n    title: `${iconMap[target]} ${label}`,\n    sections: [{\n      activityTitle: `**${title}**`,\n      activitySubtitle: `${repo} - ${source} → ${target}`,\n      facts: [\n        { name: 'PR',     value: `#${prId}` },\n        { name: 'Author', value: author },\n        { name: 'Repo',   value: repo }\n      ],\n      markdown: true\n    }],\n    potentialAction: [{\n      '@type': 'OpenUri',\n      name: 'Open PR',\n      targets: [{ os: 'default', uri: prUrl }]\n    }]\n  }\n}}];"
+      }
+    },
+    {
+      "id": "shape-pipeline",
+      "name": "Shape pipeline card",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-400, 100],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "// ADO pipeline run-state-changed. Only notify on 'completed' state.\nconst evt = ($input.first().json.body) || {};\nconst r = evt.resource || {};\nconst run = r.run || r;\nconst state = run.state || r.state;\nconst result = run.result || r.result;\nconst pipeline = (r.pipeline && r.pipeline.name) || (run.pipeline && run.pipeline.name) || 'unknown';\nconst runId = run.id || r.id || 0;\nconst repo = 'app';\nconst runUrl = (run._links && run._links.web && run._links.web.href)\n               || (r._links && r._links.web && r._links.web.href)\n               || `https://dev.azure.com/trustworks/App/_build/results?buildId=${runId}`;\n\nif (state !== 'completed') {\n  return [{ json: { _skip: true, reason: `state=${state}, only notifying on completed` } }];\n}\n\nconst ok = result === 'succeeded';\nconst themeColor = ok ? '2ECC71' : 'E74C3C';\nconst icon = ok ? '&#9989;' : '&#10060;';\nconst label = ok ? 'Pipeline succeeded' : `Pipeline ${result || 'failed'}`;\n\nreturn [{ json: {\n  _skip: false,\n  card: {\n    '@type': 'MessageCard',\n    '@context': 'https://schema.org/extensions',\n    themeColor,\n    summary: `${label}: ${pipeline}`,\n    title: `${icon} ${label}`,\n    sections: [{\n      activityTitle: `**${pipeline}**`,\n      activitySubtitle: `Run #${runId} - ${result || state}`,\n      facts: [\n        { name: 'Pipeline', value: pipeline },\n        { name: 'Run',      value: `#${runId}` },\n        { name: 'Result',   value: result || state }\n      ],\n      markdown: true\n    }],\n    potentialAction: [{\n      '@type': 'OpenUri',\n      name: 'Open run',\n      targets: [{ os: 'default', uri: runUrl }]\n    }]\n  }\n}}];"
+      }
+    },
+    {
+      "id": "skip-check",
+      "name": "Skip if _skip",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-200, 0],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "typeValidation": "strict", "version": 2 },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "not-skipped",
+              "operator": { "type": "boolean", "operation": "false" },
+              "leftValue": "={{$json._skip}}",
+              "rightValue": false
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "post-teams",
+      "name": "POST Teams webhook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [0, -100],
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.TEAMS_WEBHOOK_TWAPP_SHIPPING}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [ { "name": "Content-Type", "value": "application/json" } ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{JSON.stringify($json.card)}}",
+        "options": { "response": { "response": { "fullResponse": true, "neverError": true } } }
+      },
+      "notes": "TEAMS_WEBHOOK_TWAPP_SHIPPING env var is the Incoming Webhook URL configured in the target Teams channel (Channel settings -> Manage channel -> Connectors -> Incoming Webhook)."
+    },
+    {
+      "id": "respond-ok",
+      "name": "200 OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [200, -100],
+      "parameters": {
+        "respondWith": "json",
+        "responseCode": 200,
+        "responseBody": "={\"status\":\"forwarded\"}",
+        "options": {}
+      }
+    },
+    {
+      "id": "respond-skip",
+      "name": "200 Skipped",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [0, 100],
+      "parameters": {
+        "respondWith": "json",
+        "responseCode": 200,
+        "responseBody": "={\"status\":\"skipped\",\"reason\":\"filtered out (target != dev/main OR pipeline state != completed)\"}",
+        "options": {}
+      }
+    },
+    {
+      "id": "respond-ignored",
+      "name": "200 Ignored (unknown event)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [-400, 300],
+      "parameters": {
+        "respondWith": "json",
+        "responseCode": 200,
+        "responseBody": "={\"status\":\"ignored\",\"reason\":\"eventType not in {git.pullrequest.merged, ms.vss-pipelines.run-state-changed-event}\"}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Webhook - ado-event":    { "main": [[ { "node": "Route by eventType", "type": "main", "index": 0 } ]] },
+    "Route by eventType": {
+      "main": [
+        [ { "node": "Shape PR merged card",  "type": "main", "index": 0 } ],
+        [ { "node": "Shape pipeline card",   "type": "main", "index": 0 } ],
+        [ { "node": "200 Ignored (unknown event)", "type": "main", "index": 0 } ]
+      ]
+    },
+    "Shape PR merged card":   { "main": [[ { "node": "Skip if _skip", "type": "main", "index": 0 } ]] },
+    "Shape pipeline card":    { "main": [[ { "node": "Skip if _skip", "type": "main", "index": 0 } ]] },
+    "Skip if _skip": {
+      "main": [
+        [ { "node": "POST Teams webhook", "type": "main", "index": 0 } ],
+        [ { "node": "200 Skipped", "type": "main", "index": 0 } ]
+      ]
+    },
+    "POST Teams webhook":     { "main": [[ { "node": "200 OK", "type": "main", "index": 0 } ]] }
+  },
+  "meta": {
+    "instanceId": "twapp-ado-event-notify",
+    "description": "Receives ADO Service Hook webhooks (git.pullrequest.merged, ms.vss-pipelines.run-state-changed-event), filters to interesting subsets (target dev/main; pipeline state completed), compiles a Teams MessageCard, and POSTs to TEAMS_WEBHOOK_TWAPP_SHIPPING. Auth via Basic Auth on the webhook node (jytte-internal-basic credential)."
+  }
+}
