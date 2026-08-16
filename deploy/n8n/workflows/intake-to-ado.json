@@ -1,0 +1,168 @@
+{
+  "name": "intake-to-ado",
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all"
+  },
+  "pinData": {},
+  "nodes": [
+    {
+      "id": "trigger-webhook",
+      "name": "Webhook - intake-to-ado",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-600, 0],
+      "webhookId": "intake-to-ado",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "intake-to-ado",
+        "responseMode": "responseNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              { "name": "Content-Type", "value": "application/json" }
+            ]
+          }
+        }
+      },
+      "notes": "Receives the portable payload from twapp's /intake-to-ado skill. Body shape: { feat_id, work_item_type, title, description, acceptance, tags, assignee, area, iteration }."
+    },
+    {
+      "id": "verify-secret",
+      "name": "Verify X-Jytte-Internal-Secret",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-400, 0],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "typeValidation": "strict", "version": 2 },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "secret-match",
+              "operator": { "type": "string", "operation": "equals" },
+              "leftValue": "={{$json[\"headers\"][\"x-jytte-internal-secret\"]}}",
+              "rightValue": "={{$env.JYTTE_INTERNAL_SECRET}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "notes": "Matches the jytte-main -> n8n auth convention documented in deploy/n8n/README.md."
+    },
+    {
+      "id": "reject-secret",
+      "name": "401 - secret mismatch",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [-200, 200],
+      "parameters": {
+        "respondWith": "json",
+        "responseCode": 401,
+        "responseBody": "={\"error\":\"unauthorized\",\"reason\":\"X-Jytte-Internal-Secret mismatch or missing\"}",
+        "options": {}
+      }
+    },
+    {
+      "id": "compile-patch",
+      "name": "Compile ADO JSON Patch",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-200, -100],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "// Compile a portable payload from twapp's /intake-to-ado skill\n// into an ADO REST 'JSON Patch' body.\n//\n// Incoming (from webhook body):\n//   feat_id:        \"FEAT-006\"\n//   work_item_type: \"User Story\" | \"Bug\"\n//   title:          string\n//   description:    string (HTML)\n//   acceptance:     string (HTML <ul>)\n//   tags:           string[] (semicolon-joined by ADO)\n//   assignee:       email\n//   area:           \"App\"\n//   iteration:      \"App\"\n//\n// Output:\n//   patch: JSON-Patch array shape ADO expects\n//   type:  URL-encoded work-item-type ('$User%20Story' or '$Bug')\n\nconst body = $input.first().json.body || $input.first().json;\n\nconst wiType = (body.work_item_type || 'User Story').trim();\nconst typePath = wiType === 'Bug' ? '$Bug' : '$User%20Story';\n\nconst tagsStr = Array.isArray(body.tags) ? body.tags.join('; ') : (body.tags || '');\n\nconst patch = [\n  { op: 'add', path: '/fields/System.Title',        value: body.title },\n  { op: 'add', path: '/fields/System.Description',  value: body.description || '' },\n  { op: 'add', path: '/fields/Microsoft.VSTS.Common.AcceptanceCriteria', value: body.acceptance || '' },\n  { op: 'add', path: '/fields/System.Tags',         value: tagsStr },\n  { op: 'add', path: '/fields/System.AreaPath',     value: body.area || 'App' },\n  { op: 'add', path: '/fields/System.IterationPath',value: body.iteration || 'App' }\n];\n\nif (body.assignee) {\n  patch.push({ op: 'add', path: '/fields/System.AssignedTo', value: body.assignee });\n}\n\nreturn [{ json: {\n  patch,\n  type: typePath,\n  org: $env.AZDO_ORG_TRUSTWORKS || 'Trustworks',\n  project: $env.AZDO_PROJECT_TRUSTWORKS || 'App',\n  feat_id: body.feat_id\n}}];"
+      },
+      "notes": "The skill sends a language-agnostic payload; this node knows the ADO field paths. If ADO field mapping changes, only this node is edited."
+    },
+    {
+      "id": "post-ado",
+      "name": "POST to ADO wit/workitems",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [0, -100],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://dev.azure.com/{{$json.org}}/{{$json.project}}/_apis/wit/workitems/{{$json.type}}?api-version=7.1",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json-patch+json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{JSON.stringify($json.patch)}}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "ado-pat",
+          "name": "ADO PAT (basic, empty user, PAT as password)"
+        }
+      },
+      "notes": "AZDO_PAT_TRUSTWORKS lives in the ado-pat credential (basic auth, empty username, PAT as password). Never edit this node to log the auth header or the raw response with the credential in it - use fullResponse: true only so we can inspect status codes downstream."
+    },
+    {
+      "id": "shape-response",
+      "name": "Shape response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [200, -100],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "// Translate ADO's response into the {id, url} shape the twapp skill\n// expects. On upstream failure, propagate the status so the skill can\n// map it to a user-facing message.\n\nconst r = $input.first().json;\nconst status = r.statusCode || 0;\n\nif (status >= 200 && status < 300) {\n  const wi = r.body || r;\n  const org = $('Compile ADO JSON Patch').item.json.org;\n  const project = $('Compile ADO JSON Patch').item.json.project;\n  const url = (wi._links && wi._links.html && wi._links.html.href)\n              || `https://dev.azure.com/${org}/${project}/_workitems/edit/${wi.id}`;\n  return [{ json: {\n    status: 200,\n    id: wi.id,\n    url,\n    feat_id: $('Compile ADO JSON Patch').item.json.feat_id\n  }}];\n}\n\n// Non-2xx: forward the ADO status + a scrubbed excerpt of the body.\n// Do NOT include auth headers or full response headers.\nlet excerpt = '';\ntry {\n  excerpt = typeof r.body === 'string' ? r.body : JSON.stringify(r.body);\n} catch (e) { excerpt = ''; }\nif (excerpt.length > 500) excerpt = excerpt.slice(0, 500) + '...';\n\nreturn [{ json: {\n  status: 502,\n  error: 'upstream-ado',\n  upstream_status: status,\n  upstream_excerpt: excerpt,\n  feat_id: $('Compile ADO JSON Patch').item.json.feat_id\n}}];"
+      }
+    },
+    {
+      "id": "respond-ok",
+      "name": "200 - work item created",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [400, -100],
+      "parameters": {
+        "respondWith": "json",
+        "responseCode": "={{$json.status}}",
+        "responseBody": "={{JSON.stringify({ id: $json.id, url: $json.url, upstream_status: $json.upstream_status, upstream_excerpt: $json.upstream_excerpt, error: $json.error })}}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Webhook - intake-to-ado": {
+      "main": [
+        [ { "node": "Verify X-Jytte-Internal-Secret", "type": "main", "index": 0 } ]
+      ]
+    },
+    "Verify X-Jytte-Internal-Secret": {
+      "main": [
+        [ { "node": "Compile ADO JSON Patch", "type": "main", "index": 0 } ],
+        [ { "node": "401 - secret mismatch", "type": "main", "index": 0 } ]
+      ]
+    },
+    "Compile ADO JSON Patch": {
+      "main": [ [ { "node": "POST to ADO wit/workitems", "type": "main", "index": 0 } ] ]
+    },
+    "POST to ADO wit/workitems": {
+      "main": [ [ { "node": "Shape response", "type": "main", "index": 0 } ] ]
+    },
+    "Shape response": {
+      "main": [ [ { "node": "200 - work item created", "type": "main", "index": 0 } ] ]
+    }
+  },
+  "meta": {
+    "instanceId": "twapp-intake-to-ado",
+    "description": "Consumes the portable payload from twapp's /intake-to-ado skill, verifies the X-Jytte-Internal-Secret header against JYTTE_INTERNAL_SECRET, compiles an ADO JSON Patch, POSTs it to https://dev.azure.com/${AZDO_ORG_TRUSTWORKS}/${AZDO_PROJECT_TRUSTWORKS}/_apis/wit/workitems using the ado-pat credential, and returns { id, url } to the caller. Non-2xx from ADO propagates as { upstream_status, upstream_excerpt }."
+  }
+}
