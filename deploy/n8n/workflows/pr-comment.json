@@ -1,0 +1,158 @@
+{
+  "name": "pr-comment",
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all"
+  },
+  "pinData": {},
+  "nodes": [
+    {
+      "id": "trigger-webhook",
+      "name": "Webhook - pr-comment",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-800, 0],
+      "webhookId": "pr-comment",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pr-comment",
+        "responseMode": "responseNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [ { "name": "Content-Type", "value": "application/json" } ]
+          }
+        }
+      }
+    },
+    {
+      "id": "verify-secret",
+      "name": "Verify X-Jytte-Internal-Secret",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-600, 0],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "typeValidation": "strict", "version": 2 },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "secret-match",
+              "operator": { "type": "string", "operation": "equals" },
+              "leftValue": "={{$json[\"headers\"][\"x-jytte-internal-secret\"]}}",
+              "rightValue": "={{$env.JYTTE_INTERNAL_SECRET}}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "reject-secret",
+      "name": "401 - secret mismatch",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [-400, 200],
+      "parameters": {
+        "respondWith": "json",
+        "responseCode": 401,
+        "responseBody": "={\"error\":\"unauthorized\",\"reason\":\"X-Jytte-Internal-Secret mismatch or missing\"}",
+        "options": {}
+      }
+    },
+    {
+      "id": "resolve-repo-id",
+      "name": "GET repo GUID by name",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-400, -100],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://dev.azure.com/{{$env.AZDO_ORG_TRUSTWORKS || 'Trustworks'}}/{{$env.AZDO_PROJECT_TRUSTWORKS || 'App'}}/_apis/git/repositories?api-version=7.1",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "options": {}
+      },
+      "credentials": {
+        "httpBasicAuth": { "id": "ado-pat", "name": "ADO PAT (basic, empty user, PAT as password)" }
+      }
+    },
+    {
+      "id": "compile-thread",
+      "name": "Compile thread body",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-200, -100],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const repos = $input.first().json.value || [];\nconst incoming = $('Webhook - pr-comment').item.json.body || $('Webhook - pr-comment').item.json;\nconst repoName = incoming.repo || 'app';\nconst repo = repos.find(r => r.name === repoName);\nif (!repo) throw new Error(`repo '${repoName}' not found`);\nreturn [{ json: {\n  repo_id: repo.id,\n  repo_name: repoName,\n  pr_id: incoming.pr_id,\n  org: $env.AZDO_ORG_TRUSTWORKS || 'Trustworks',\n  project: $env.AZDO_PROJECT_TRUSTWORKS || 'App',\n  thread: { comments: [{ content: incoming.body, commentType: 'text' }], status: 'active' }\n} }];"
+      }
+    },
+    {
+      "id": "post-thread",
+      "name": "POST ADO thread",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [0, -100],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://dev.azure.com/{{$json.org}}/{{$json.project}}/_apis/git/repositories/{{$json.repo_id}}/pullrequests/{{$json.pr_id}}/threads?api-version=7.1",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [ { "name": "Content-Type", "value": "application/json" } ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{JSON.stringify($json.thread)}}",
+        "options": { "response": { "response": { "fullResponse": true, "neverError": true } } }
+      },
+      "credentials": {
+        "httpBasicAuth": { "id": "ado-pat", "name": "ADO PAT (basic, empty user, PAT as password)" }
+      }
+    },
+    {
+      "id": "shape-response",
+      "name": "Shape response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [200, -100],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const r = $input.first().json;\nconst ctx = $('Compile thread body').item.json;\nconst status = r.statusCode || 0;\nif (status >= 200 && status < 300) {\n  const thread = r.body || r;\n  const commentId = (thread.comments && thread.comments[0] && thread.comments[0].id) || null;\n  const url = `https://dev.azure.com/${ctx.org}/${ctx.project}/_git/${ctx.repo_name}/pullrequest/${ctx.pr_id}`;\n  return [{ json: { status: 200, pr_id: ctx.pr_id, comment_id: commentId, url } }];\n}\nlet excerpt = '';\ntry { excerpt = typeof r.body === 'string' ? r.body : JSON.stringify(r.body); } catch(e) {}\nif (excerpt.length > 500) excerpt = excerpt.slice(0, 500) + '...';\nreturn [{ json: { status: 502, error: 'upstream-ado', upstream_status: status, upstream_excerpt: excerpt } }];"
+      }
+    },
+    {
+      "id": "respond",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [400, -100],
+      "parameters": {
+        "respondWith": "json",
+        "responseCode": "={{$json.status}}",
+        "responseBody": "={{JSON.stringify({ pr_id: $json.pr_id, comment_id: $json.comment_id, url: $json.url, upstream_status: $json.upstream_status, upstream_excerpt: $json.upstream_excerpt, error: $json.error })}}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Webhook - pr-comment": { "main": [[ { "node": "Verify X-Jytte-Internal-Secret", "type": "main", "index": 0 } ]] },
+    "Verify X-Jytte-Internal-Secret": {
+      "main": [
+        [ { "node": "GET repo GUID by name", "type": "main", "index": 0 } ],
+        [ { "node": "401 - secret mismatch", "type": "main", "index": 0 } ]
+      ]
+    },
+    "GET repo GUID by name": { "main": [[ { "node": "Compile thread body", "type": "main", "index": 0 } ]] },
+    "Compile thread body":   { "main": [[ { "node": "POST ADO thread", "type": "main", "index": 0 } ]] },
+    "POST ADO thread":       { "main": [[ { "node": "Shape response", "type": "main", "index": 0 } ]] },
+    "Shape response":        { "main": [[ { "node": "Respond", "type": "main", "index": 0 } ]] }
+  },
+  "meta": {
+    "instanceId": "twapp-pr-comment",
+    "description": "Posts a new comment thread on an ADO PR. Body: { repo, pr_id, body }."
+  }
+}

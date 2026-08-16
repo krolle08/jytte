@@ -1,0 +1,189 @@
+{
+  "name": "pr-complete",
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all"
+  },
+  "pinData": {},
+  "nodes": [
+    {
+      "id": "trigger-webhook",
+      "name": "Webhook - pr-complete",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-1000, 0],
+      "webhookId": "pr-complete",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pr-complete",
+        "responseMode": "responseNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [ { "name": "Content-Type", "value": "application/json" } ]
+          }
+        }
+      },
+      "notes": "Body from twapp /pr complete: { op:'complete', repo, pr_id, strategy, delete_source, transition_work_items }. Refreshes lastMergeSourceCommit before PATCHing."
+    },
+    {
+      "id": "verify-secret",
+      "name": "Verify X-Jytte-Internal-Secret",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-800, 0],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "typeValidation": "strict", "version": 2 },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "secret-match",
+              "operator": { "type": "string", "operation": "equals" },
+              "leftValue": "={{$json[\"headers\"][\"x-jytte-internal-secret\"]}}",
+              "rightValue": "={{$env.JYTTE_INTERNAL_SECRET}}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "reject-secret",
+      "name": "401 - secret mismatch",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [-600, 200],
+      "parameters": {
+        "respondWith": "json",
+        "responseCode": 401,
+        "responseBody": "={\"error\":\"unauthorized\",\"reason\":\"X-Jytte-Internal-Secret mismatch or missing\"}",
+        "options": {}
+      }
+    },
+    {
+      "id": "resolve-repo-id",
+      "name": "GET repo GUID by name",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-600, -100],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://dev.azure.com/{{$env.AZDO_ORG_TRUSTWORKS || 'Trustworks'}}/{{$env.AZDO_PROJECT_TRUSTWORKS || 'App'}}/_apis/git/repositories?api-version=7.1",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "options": {}
+      },
+      "credentials": {
+        "httpBasicAuth": { "id": "ado-pat", "name": "ADO PAT (basic, empty user, PAT as password)" }
+      }
+    },
+    {
+      "id": "resolve-pr",
+      "name": "GET PR to refresh commit id",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-400, -100],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const repos = $input.first().json.value || [];\nconst incoming = $('Webhook - pr-complete').item.json.body || $('Webhook - pr-complete').item.json;\nconst repoName = incoming.repo || 'app';\nconst repo = repos.find(r => r.name === repoName);\nif (!repo) throw new Error(`repo '${repoName}' not found`);\nreturn [{ json: { repo_id: repo.id, repo_name: repoName, pr_id: incoming.pr_id, strategy: incoming.strategy || 'noFastForward', delete_source: !!incoming.delete_source, transition_work_items: !!incoming.transition_work_items, org: $env.AZDO_ORG_TRUSTWORKS || 'Trustworks', project: $env.AZDO_PROJECT_TRUSTWORKS || 'App' } }];"
+      }
+    },
+    {
+      "id": "get-pr-fresh",
+      "name": "GET PR (fresh commit id)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-200, -100],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://dev.azure.com/{{$json.org}}/{{$json.project}}/_apis/git/repositories/{{$json.repo_id}}/pullrequests/{{$json.pr_id}}?api-version=7.1",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "options": { "response": { "response": { "fullResponse": true, "neverError": true } } }
+      },
+      "credentials": {
+        "httpBasicAuth": { "id": "ado-pat", "name": "ADO PAT (basic, empty user, PAT as password)" }
+      }
+    },
+    {
+      "id": "compile-patch",
+      "name": "Compile complete PATCH",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [0, -100],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const r = $input.first().json;\nconst ctx = $('GET PR to refresh commit id').item.json;\nif ((r.statusCode || 0) < 200 || (r.statusCode || 0) >= 300) {\n  return [{ json: { _abort: true, upstream_status: r.statusCode, upstream_excerpt: (typeof r.body === 'string' ? r.body : JSON.stringify(r.body || {})).slice(0,500) } }];\n}\nconst pr = r.body || r;\nif (pr.status !== 'active') {\n  return [{ json: { _abort: true, upstream_status: 409, upstream_excerpt: `PR status is '${pr.status}', not 'active'` } }];\n}\nconst patchBody = {\n  status: 'completed',\n  lastMergeSourceCommit: { commitId: pr.lastMergeSourceCommit.commitId },\n  completionOptions: {\n    mergeStrategy: ctx.strategy,\n    deleteSourceBranch: ctx.delete_source,\n    transitionWorkItems: ctx.transition_work_items\n  }\n};\nreturn [{ json: { ...ctx, patch: patchBody } }];"
+      }
+    },
+    {
+      "id": "patch-pr",
+      "name": "PATCH ADO complete-PR",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [200, -100],
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://dev.azure.com/{{$json.org}}/{{$json.project}}/_apis/git/repositories/{{$json.repo_id}}/pullrequests/{{$json.pr_id}}?api-version=7.1",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [ { "name": "Content-Type", "value": "application/json" } ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{JSON.stringify($json.patch)}}",
+        "options": { "response": { "response": { "fullResponse": true, "neverError": true } } }
+      },
+      "credentials": {
+        "httpBasicAuth": { "id": "ado-pat", "name": "ADO PAT (basic, empty user, PAT as password)" }
+      }
+    },
+    {
+      "id": "shape-response",
+      "name": "Shape response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, -100],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const r = $input.first().json;\nconst ctx = $('GET PR to refresh commit id').item.json;\nif (ctx._abort) return [{ json: { status: 502, error: 'upstream-ado', upstream_status: ctx.upstream_status, upstream_excerpt: ctx.upstream_excerpt } }];\nconst status = r.statusCode || 0;\nif (status >= 200 && status < 300) {\n  const pr = r.body || r;\n  const url = `https://dev.azure.com/${ctx.org}/${ctx.project}/_git/${ctx.repo_name}/pullrequest/${ctx.pr_id}`;\n  const mc = (pr.lastMergeCommit && pr.lastMergeCommit.commitId) || null;\n  return [{ json: { status: 200, pr_id: ctx.pr_id, url, merge_commit: mc, repo: ctx.repo_name } }];\n}\nlet excerpt = '';\ntry { excerpt = typeof r.body === 'string' ? r.body : JSON.stringify(r.body); } catch(e) {}\nif (excerpt.length > 500) excerpt = excerpt.slice(0, 500) + '...';\nreturn [{ json: { status: 502, error: 'upstream-ado', upstream_status: status, upstream_excerpt: excerpt } }];"
+      }
+    },
+    {
+      "id": "respond",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [600, -100],
+      "parameters": {
+        "respondWith": "json",
+        "responseCode": "={{$json.status}}",
+        "responseBody": "={{JSON.stringify({ pr_id: $json.pr_id, url: $json.url, merge_commit: $json.merge_commit, repo: $json.repo, upstream_status: $json.upstream_status, upstream_excerpt: $json.upstream_excerpt, error: $json.error })}}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Webhook - pr-complete": { "main": [[ { "node": "Verify X-Jytte-Internal-Secret", "type": "main", "index": 0 } ]] },
+    "Verify X-Jytte-Internal-Secret": {
+      "main": [
+        [ { "node": "GET repo GUID by name", "type": "main", "index": 0 } ],
+        [ { "node": "401 - secret mismatch", "type": "main", "index": 0 } ]
+      ]
+    },
+    "GET repo GUID by name":        { "main": [[ { "node": "GET PR to refresh commit id", "type": "main", "index": 0 } ]] },
+    "GET PR to refresh commit id":  { "main": [[ { "node": "GET PR (fresh commit id)", "type": "main", "index": 0 } ]] },
+    "GET PR (fresh commit id)":     { "main": [[ { "node": "Compile complete PATCH", "type": "main", "index": 0 } ]] },
+    "Compile complete PATCH":       { "main": [[ { "node": "PATCH ADO complete-PR", "type": "main", "index": 0 } ]] },
+    "PATCH ADO complete-PR":        { "main": [[ { "node": "Shape response", "type": "main", "index": 0 } ]] },
+    "Shape response":               { "main": [[ { "node": "Respond", "type": "main", "index": 0 } ]] }
+  },
+  "meta": {
+    "instanceId": "twapp-pr-complete",
+    "description": "Completes (merges) an active ADO Pull Request. Refreshes lastMergeSourceCommit inline before PATCHing to avoid stale-commit 409s."
+  }
+}

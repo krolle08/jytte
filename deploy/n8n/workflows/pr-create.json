@@ -1,0 +1,165 @@
+{
+  "name": "pr-create",
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all"
+  },
+  "pinData": {},
+  "nodes": [
+    {
+      "id": "trigger-webhook",
+      "name": "Webhook - pr-create",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-800, 0],
+      "webhookId": "pr-create",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pr-create",
+        "responseMode": "responseNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [ { "name": "Content-Type", "value": "application/json" } ]
+          }
+        }
+      },
+      "notes": "Body from twapp /pr create skill: { op:'create', repo, source, target, title, description, reviewers[], work_item, draft }."
+    },
+    {
+      "id": "verify-secret",
+      "name": "Verify X-Jytte-Internal-Secret",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-600, 0],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "typeValidation": "strict", "version": 2 },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "secret-match",
+              "operator": { "type": "string", "operation": "equals" },
+              "leftValue": "={{$json[\"headers\"][\"x-jytte-internal-secret\"]}}",
+              "rightValue": "={{$env.JYTTE_INTERNAL_SECRET}}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "reject-secret",
+      "name": "401 - secret mismatch",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [-400, 200],
+      "parameters": {
+        "respondWith": "json",
+        "responseCode": 401,
+        "responseBody": "={\"error\":\"unauthorized\",\"reason\":\"X-Jytte-Internal-Secret mismatch or missing\"}",
+        "options": {}
+      }
+    },
+    {
+      "id": "resolve-repo-id",
+      "name": "GET repo GUID by name",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-400, -100],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://dev.azure.com/{{$env.AZDO_ORG_TRUSTWORKS || 'Trustworks'}}/{{$env.AZDO_PROJECT_TRUSTWORKS || 'App'}}/_apis/git/repositories?api-version=7.1",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "options": {}
+      },
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "ado-pat",
+          "name": "ADO PAT (basic, empty user, PAT as password)"
+        }
+      }
+    },
+    {
+      "id": "compile-pr-body",
+      "name": "Compile ADO PR body",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-200, -100],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "// Compile the ADO PR create body from the portable payload.\nconst repos = $input.first().json.value || [];\nconst incoming = $('Webhook - pr-create').item.json.body || $('Webhook - pr-create').item.json;\n\nconst repoName = incoming.repo || 'app';\nconst repo = repos.find(r => r.name === repoName);\nif (!repo) throw new Error(`repo '${repoName}' not found in ADO project`);\n\nconst body = {\n  sourceRefName: `refs/heads/${incoming.source}`,\n  targetRefName: `refs/heads/${incoming.target}`,\n  title: incoming.title,\n  description: incoming.description || '',\n  isDraft: Boolean(incoming.draft)\n};\n\nreturn [{ json: {\n  body,\n  repo_id: repo.id,\n  repo_name: repoName,\n  work_item: incoming.work_item || null,\n  org: $env.AZDO_ORG_TRUSTWORKS || 'Trustworks',\n  project: $env.AZDO_PROJECT_TRUSTWORKS || 'App'\n}}];"
+      }
+    },
+    {
+      "id": "post-pr",
+      "name": "POST ADO create-PR",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [0, -100],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://dev.azure.com/{{$json.org}}/{{$json.project}}/_apis/git/repositories/{{$json.repo_id}}/pullrequests?api-version=7.1",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [ { "name": "Content-Type", "value": "application/json" } ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{JSON.stringify($json.body)}}",
+        "options": { "response": { "response": { "fullResponse": true, "neverError": true } } }
+      },
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "ado-pat",
+          "name": "ADO PAT (basic, empty user, PAT as password)"
+        }
+      }
+    },
+    {
+      "id": "shape-response",
+      "name": "Shape response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [200, -100],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const r = $input.first().json;\nconst status = r.statusCode || 0;\nconst ctx = $('Compile ADO PR body').item.json;\n\nif (status >= 200 && status < 300) {\n  const pr = r.body || r;\n  const url = `https://dev.azure.com/${ctx.org}/${ctx.project}/_git/${ctx.repo_name}/pullrequest/${pr.pullRequestId}`;\n  return [{ json: { status: 200, id: pr.pullRequestId, url, repo: ctx.repo_name, work_item: ctx.work_item } }];\n}\n\nlet excerpt = '';\ntry { excerpt = typeof r.body === 'string' ? r.body : JSON.stringify(r.body); } catch(e) {}\nif (excerpt.length > 500) excerpt = excerpt.slice(0, 500) + '...';\nreturn [{ json: { status: 502, error: 'upstream-ado', upstream_status: status, upstream_excerpt: excerpt } }];"
+      }
+    },
+    {
+      "id": "respond",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [400, -100],
+      "parameters": {
+        "respondWith": "json",
+        "responseCode": "={{$json.status}}",
+        "responseBody": "={{JSON.stringify({ id: $json.id, url: $json.url, repo: $json.repo, work_item: $json.work_item, upstream_status: $json.upstream_status, upstream_excerpt: $json.upstream_excerpt, error: $json.error })}}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Webhook - pr-create": { "main": [[ { "node": "Verify X-Jytte-Internal-Secret", "type": "main", "index": 0 } ]] },
+    "Verify X-Jytte-Internal-Secret": {
+      "main": [
+        [ { "node": "GET repo GUID by name", "type": "main", "index": 0 } ],
+        [ { "node": "401 - secret mismatch", "type": "main", "index": 0 } ]
+      ]
+    },
+    "GET repo GUID by name": { "main": [[ { "node": "Compile ADO PR body", "type": "main", "index": 0 } ]] },
+    "Compile ADO PR body":  { "main": [[ { "node": "POST ADO create-PR", "type": "main", "index": 0 } ]] },
+    "POST ADO create-PR":   { "main": [[ { "node": "Shape response", "type": "main", "index": 0 } ]] },
+    "Shape response":       { "main": [[ { "node": "Respond", "type": "main", "index": 0 } ]] }
+  },
+  "meta": {
+    "instanceId": "twapp-pr-create",
+    "description": "Opens a new ADO Pull Request from a portable payload sent by twapp's /pr create skill. Auth via ado-pat credential; secret gate via X-Jytte-Internal-Secret."
+  }
+}
