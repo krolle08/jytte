@@ -28,11 +28,11 @@
       },
       "credentials": {
         "httpBasicAuth": {
-          "id": "jytte-internal-basic",
-          "name": "Jytte internal (jytte:JYTTE_INTERNAL_SECRET)"
+          "id": "NKfMtz9dRjAacOIR",
+          "name": "Jytte internal"
         }
       },
-      "notes": "ADO Service Hook payload arrives here. ADO can send Basic Auth on the webhook (configured in the ADO subscription); n8n verifies against the jytte-internal-basic credential (username 'jytte', password = env.JYTTE_INTERNAL_SECRET). Register that credential once in n8n UI - separate from ado-pat because auth flows opposite way here."
+      "notes": "ADO Service Hook payload arrives here. ADO can send Basic Auth on the webhook (configured in the ADO subscription); n8n verifies against the 'Jytte internal' credential (username 'jytte', password = env.JYTTE_INTERNAL_SECRET). NOTE: n8n auto-generates the credential id and it can't be renamed via UI - if the credential is recreated on another n8n instance, the new id must be pasted here and the workflow reimported."
     },
     {
       "id": "route-by-event",
