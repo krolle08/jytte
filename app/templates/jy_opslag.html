@@ -1,0 +1,188 @@
+{% extends "shell.html" %}
+{% block title %}Opslagsværk :: Jytte{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="/static/jy_opslag.css" />{% endblock %}
+
+{% block content %}
+{# Opslagsværk: tools and concepts worth looking up again.
+
+   Source is config/opslagsvaerk.yml, bind-mounted read-only, so adding
+   an entry on the host shows on refresh without a rebuild.
+
+   FILTERING IS CLIENT-SIDE AND DELIBERATELY SO. Every entry is already
+   in the DOM; the search and the chips only set `hidden`. A server
+   round trip would re-render the page and throw the viewport back to
+   the top, which breaks the one hard UI rule this project has: no
+   interaction may move the viewport unless the user asked to go
+   somewhere. #}
+
+<div class="hd">
+  <div class="hd-id">
+    <span class="eyebrow plain">Værktøjer og begreber værd at slå op igen</span>
+    <h1 class="pg">Opslagsværk</h1>
+  </div>
+  {% if ready %}
+  <div class="hd-right">
+    <span class="pn-src">{{ counts.entries }} opslag &middot; {{ counts.links }} links &middot; {{ counts.notes }} noter</span>
+  </div>
+  {% endif %}
+</div>
+
+{% if not ready %}
+<div class="lg-note">
+  <h2>Opslagsværket kan ikke læses</h2>
+  <p>{{ reason }}</p>
+  <p>Filen er <code class="mono">config/opslagsvaerk.yml</code> og bliver
+    bind-monteret ind som <code class="mono">/jytte/config</code>. Er
+    mounten væk, er det den der mangler - ikke data.</p>
+</div>
+{% else %}
+
+<div class="op-bar">
+  <input type="search" id="op-q" class="op-q" autocomplete="off"
+         placeholder="Søg i titler, noter, tags og værter"
+         aria-label="Søg i opslagsværket" />
+  <div class="op-chips" role="group" aria-label="Filtrér på type">
+    <button type="button" class="op-chip is-on" data-kind="">Alle</button>
+    {% for k in kinds %}
+    <button type="button" class="op-chip" data-kind="{{ k.key }}">{{ k.label }}<i>{{ k.n }}</i></button>
+    {% endfor %}
+  </div>
+</div>
+
+{% if tags %}
+<div class="op-tags" role="group" aria-label="Filtrér på tag">
+  {% for t in tags %}
+  <button type="button" class="op-tag" data-tag="{{ t }}">{{ t }}</button>
+  {% endfor %}
+</div>
+{% endif %}
+
+<p class="op-count" id="op-count" aria-live="polite"></p>
+
+<div class="op-list" id="op-list">
+  {% for e in entries %}
+  <article class="op-card" id="op-{{ e.slug }}"
+           data-kind="{{ e.kind }}"
+           data-tags="{{ e.tags|join(',') }}"
+           data-hay="{{ e.haystack }}">
+    <div class="op-h">
+      <h2 class="op-t">{{ e.title }}</h2>
+      <span class="pill {{ e.kind_pill }}">{{ e.kind_label }}</span>
+      {% if e.added %}<span class="op-added">{{ e.added }}</span>{% endif %}
+    </div>
+
+    {% if e.summary %}<p class="op-sum">{{ e.summary }}</p>{% endif %}
+    {% if e.why %}<p class="op-why">{{ e.why }}</p>{% endif %}
+
+    {% if e.links %}
+    <div class="op-links">
+      {% for l in e.links %}
+      <a class="op-link" href="{{ l.url }}" target="_blank" rel="noopener noreferrer">
+        <span class="op-link-l">{{ l.label }}</span>
+        <span class="op-link-h mono">{{ l.host }}</span>
+        {% if l.note %}<span class="op-link-n">{{ l.note }}</span>{% endif %}
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if e.notes %}
+    {# The part that grows. Dated, newest first, so the entry shows how
+       the understanding developed and not only where it landed. #}
+    <div class="op-notes">
+      <span class="op-notes-h">Noter</span>
+      {% for n in e.notes %}
+      <div class="op-note">
+        <span class="op-note-d mono">{{ n.at }}</span>
+        <p>{{ n.text }}</p>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if e.tags %}
+    <div class="op-cardtags">
+      {% for t in e.tags %}<span class="op-ct">{{ t }}</span>{% endfor %}
+    </div>
+    {% endif %}
+  </article>
+  {% endfor %}
+</div>
+
+<p class="op-empty" id="op-empty" hidden>Ingen opslag matcher.</p>
+
+<div class="lg-note" style="margin-top:28px">
+  <h2>Sådan tilføjer du et opslag</h2>
+  <p>Redigér <code class="mono">config/opslagsvaerk.yml</code> og hent siden
+    igen. Mappen er bind-monteret, så der skal ikke bygges om.</p>
+  <p class="f-gul">Men lige nu virker det ikke på denne maskine: Docker
+    Desktop cacher en bind-monteret sti ved første læsning og udleverer
+    den samme indhold bagefter. Nye filer kommer igennem, rettelser i en
+    eksisterende fil gør ikke - heller ikke efter genstart. Se
+    <b>Known issue</b> i <code class="mono">CLAUDE.md</code>.</p>
+  <p>Et opslag er værd at skrive når du kan besvare <b>hvorfor</b> i mere
+    end én sætning. Et link uden den begrundelse er et bogmærke, og det
+    har browseren allerede. <code class="mono">notes</code> er den del der
+    vokser: hver note får en dato, så du kan se hvad du vidste hvornår.</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block script_extra %}
+<script>
+  // Filtering only sets `hidden`. Nothing navigates, nothing re-renders,
+  // the scroll position never moves. See the comment at the top of this
+  // template for why that is a rule and not a preference.
+  (function () {
+    var q = document.getElementById("op-q");
+    if (!q) return;
+    var cards = [].slice.call(document.querySelectorAll(".op-card"));
+    var count = document.getElementById("op-count");
+    var empty = document.getElementById("op-empty");
+    var kind = "";
+    var tag = "";
+
+    function apply() {
+      var needle = q.value.trim().toLowerCase();
+      var shown = 0;
+      cards.forEach(function (c) {
+        var okText = !needle || c.getAttribute("data-hay").indexOf(needle) !== -1;
+        var okKind = !kind || c.getAttribute("data-kind") === kind;
+        var tags = (c.getAttribute("data-tags") || "").split(",");
+        var okTag = !tag || tags.indexOf(tag) !== -1;
+        var show = okText && okKind && okTag;
+        c.hidden = !show;
+        if (show) shown++;
+      });
+      empty.hidden = shown !== 0;
+      count.textContent = shown === cards.length
+        ? cards.length + " opslag"
+        : shown + " af " + cards.length + " opslag";
+    }
+
+    q.addEventListener("input", apply);
+    document.querySelectorAll(".op-chip").forEach(function (b) {
+      b.addEventListener("click", function () {
+        kind = b.getAttribute("data-kind");
+        document.querySelectorAll(".op-chip").forEach(function (o) {
+          o.classList.toggle("is-on", o === b);
+        });
+        apply();
+      });
+    });
+    document.querySelectorAll(".op-tag").forEach(function (b) {
+      b.addEventListener("click", function () {
+        // Clicking the active tag clears it, so the filter never
+        // becomes a trap you have to reload out of.
+        var t = b.getAttribute("data-tag");
+        tag = (tag === t) ? "" : t;
+        document.querySelectorAll(".op-tag").forEach(function (o) {
+          o.classList.toggle("is-on", o.getAttribute("data-tag") === tag);
+        });
+        apply();
+      });
+    });
+    apply();
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "shell.html" %}
+{% block title %}Skoleferier :: Jytte{% endblock %}
+
+{# Page-scoped warm palette. Its own stylesheet rather than an append to
+   jytte.css, for the same reason body.warm was scoped on /ai: warmth is
+   deliberate and local, and no other page should inherit a token from
+   it by accident. Linked here, so it is not downloaded elsewhere. #}
+{% block head_extra %}
+<link rel="stylesheet" href="/static/jy_vacation.css" />
+{% endblock %}
+
+{% block content %}
+{# Danish school holidays. Not in the design handoff, so no mock number
+   and no legacy page - built in the new shell from the start.
+
+   The dates are computed in app/widgets/vacation/fetch.py, never
+   scraped. The body is a separate partial because the region toggle
+   swaps it over HTMX; a link would reload the page and throw the
+   viewport to the top. #}
+
+<div class="vac">
+  {% if not ready %}
+  <div class="vac-top">
+    <div>
+      <p class="vac-kicker">Danske skoleferier</p>
+      <h1>Ferier</h1>
+    </div>
+  </div>
+  <div class="vac-foot">
+    <h2>Skoleferier er ikke beregnet endnu</h2>
+    <p>{{ reason }}</p>
+    <p>Widget'en henter intet og bruger ingen credentials. Den regner datoerne
+      ud fra reglerne i <code>app/widgets/vacation/fetch.py</code>, så den
+      eneste måde den kan være tom på er at modulet ikke er indlæst.</p>
+  </div>
+  {% else %}
+  <div id="vac-body">
+    {% include "_vac_body.html" %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

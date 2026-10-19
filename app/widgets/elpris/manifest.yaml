@@ -1,0 +1,15 @@
+name: elpris
+title: Elpriser
+# Day-ahead prices are published once a day, around 13:00 CET, for the
+# whole of tomorrow. Nothing changes in between, so the only reason to
+# refresh at all is to move "lige nu" onto the next quarter-hour and to
+# pick up tomorrow's publication when it lands.
+refresh_minutes: 15
+client_refresh_seconds: 300
+claude_analyzer: false
+expose_mcp: true
+watcher: false
+# No credential of any kind. Energi Data Service is open: see
+# app/widgets/elpris/CLAUDE.md. This is why the widget fetches in
+# Python rather than going through n8n - the n8n hop exists to keep
+# secrets out of Jytte, and there is no secret here.

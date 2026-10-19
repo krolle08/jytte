@@ -1,0 +1,181 @@
+/* ======================================================================
+   POC section.
+
+   Loaded only by pages under /poc. Two jobs:
+
+   1. Make a POC look unmistakably unfinished without making it ugly.
+      The banner and the dashed edges are the whole mechanism - the
+      rest of the page uses the normal tokens, because a POC that
+      looks nothing like the app proves nothing about the app.
+
+   2. The systemmonitor layout: ward strip, alert feed, bed cards.
+
+   Severity reuses the palette's existing meanings rather than adding
+   colours: aqua = healthy, gul = needs attention, coral = failed.
+   ====================================================================== */
+
+/* ---- "this is not production" ---------------------------------------- */
+.poc-band {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 11px 16px; margin-bottom: 22px;
+  border: 1px dashed var(--line-pill); border-radius: 10px;
+  background: repeating-linear-gradient(
+    135deg, transparent 0 10px, rgba(243, 212, 161, .035) 10px 20px);
+}
+.poc-band .pill { flex: none; }
+.poc-band-t { font-size: 13px; color: var(--text-2); min-width: 0; }
+.poc-band-t b { color: var(--text); font-weight: 600; }
+.poc-band-x { margin-left: auto; font-size: 12px; }
+
+/* ---- index ----------------------------------------------------------- */
+.poc-list { display: flex; flex-direction: column; gap: 14px; margin-top: 18px; }
+.poc-card {
+  background: var(--panel); border: 1px solid var(--line);
+  border-left: 3px solid var(--grey); border-radius: 0 14px 14px 0;
+  padding: 18px 20px; display: flex; flex-direction: column; gap: 10px;
+  min-width: 0;
+}
+.poc-card[data-stage="wip"]    { border-left-color: var(--coral); }
+.poc-card[data-stage="review"] { border-left-color: var(--gul); }
+.poc-card[data-stage="klar"]   { border-left-color: var(--aqua); }
+
+.poc-card-h { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.poc-card-t {
+  font-size: 17px; font-weight: 600; letter-spacing: -.01em; color: var(--text);
+  text-decoration: none;
+}
+.poc-card-t:hover { color: var(--aqua); }
+.poc-one { font-size: 13.5px; color: var(--muted); }
+.poc-proves {
+  font-size: 13px; color: var(--text-2); line-height: 1.6;
+  border-left: 2px solid var(--line-strong); padding-left: 12px;
+}
+.poc-block { display: flex; flex-direction: column; gap: 7px; margin-top: 2px; }
+.poc-block-h {
+  font-size: 11px; font-weight: 500; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--faint);
+}
+.poc-block li { font-size: 12.5px; color: var(--muted); line-height: 1.55; }
+.poc-block ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+.poc-src { font-size: 12px; color: var(--fainter); line-height: 1.55; }
+
+/* ---- ward strip ------------------------------------------------------ */
+.poc-ward { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.poc-ward .v.is-crit { color: var(--coral); }
+.poc-ward .v.is-warn { color: var(--gul); }
+.poc-ward .v.is-ok   { color: var(--aqua); }
+
+/* ---- alert feed ------------------------------------------------------ */
+.poc-alerts { display: flex; flex-direction: column; }
+.poc-alert {
+  display: grid; grid-template-columns: 3px minmax(0, 1.1fr) minmax(0, 1.4fr) auto;
+  gap: 14px; align-items: center;
+  padding: 11px 18px; border-top: 1px solid var(--line-soft);
+}
+.poc-alerts > .poc-alert:first-child { border-top: 0; }
+.poc-alert .edge { width: 3px; height: 26px; border-radius: 2px; background: var(--grey); }
+.poc-alert[data-level="kritisk"]     .edge { background: var(--coral); }
+.poc-alert[data-level="observation"] .edge { background: var(--gul); }
+.poc-alert-n { font-size: 13.5px; color: var(--text); font-weight: 500; }
+.poc-alert-w { font-size: 12.5px; color: var(--muted); }
+.poc-alert-k { font-family: var(--mono); font-size: 11px; color: var(--fainter); }
+
+/* ---- beds ------------------------------------------------------------ */
+.poc-group { margin-top: 26px; }
+.poc-group-h {
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  padding: 0 2px 10px;
+}
+.poc-group-n { font-size: 14px; font-weight: 600; color: var(--text); }
+.poc-beds {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(258px, 1fr));
+  gap: 12px;
+}
+.poc-bed {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+  padding: 14px 16px 15px; display: flex; flex-direction: column; gap: 9px;
+  min-width: 0;
+}
+.poc-bed[data-level="kritisk"]     { border-color: rgba(227, 160, 143, .34); }
+.poc-bed[data-level="observation"] { border-color: rgba(243, 212, 161, .28); }
+
+.poc-bed-h { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.poc-bed-n {
+  font-size: 14px; font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+.poc-bed-h .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.poc-bed-src { margin-left: auto; font-family: var(--mono); font-size: 10.5px; color: var(--fainter); flex: none; }
+
+/* The cadence bar. Read right to left: rightmost slot is now. */
+.poc-pulse { display: flex; gap: 2px; height: 20px; align-items: flex-end; }
+.poc-pulse i {
+  flex: 1; border-radius: 1px; background: var(--aqua-3); height: 7px;
+}
+.poc-pulse i[data-s="ok"]      { background: var(--aqua-2); height: 14px; }
+.poc-pulse i[data-s="missed"]  { background: var(--coral); height: 20px; opacity: .78; }
+.poc-pulse i[data-s="unknown"] { background: var(--line-strong); height: 5px; }
+
+.poc-vitals {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;
+  border-top: 1px solid var(--line-soft); padding-top: 9px;
+}
+.poc-vital { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.poc-vital span {
+  font-size: 9.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--fainter);
+}
+.poc-vital b {
+  font-family: var(--mono); font-size: 12.5px; font-weight: 500;
+  font-variant-numeric: tabular-nums; color: var(--text-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.poc-vital b.is-crit { color: var(--coral); }
+.poc-vital b.is-warn { color: var(--gul); }
+
+.poc-why { font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+.poc-err {
+  font-family: var(--mono); font-size: 11px; line-height: 1.5; color: var(--coral);
+  background: var(--inset); border: 1px solid var(--line-soft); border-radius: 7px;
+  padding: 7px 9px; overflow-wrap: anywhere;
+}
+
+@media (max-width: 860px) {
+  .poc-ward { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .poc-alert { grid-template-columns: 3px minmax(0, 1fr); row-gap: 4px; }
+  .poc-alert-k { display: none; }
+}
+
+/* ---- certificates wall ----------------------------------------------- */
+.poc-certs {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 16px; margin-top: 20px;
+}
+.poc-cert {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+  overflow: hidden; display: flex; flex-direction: column; min-width: 0;
+}
+.poc-cert-img {
+  display: block; background: var(--inset); border-bottom: 1px solid var(--line-soft);
+  /* A certificate is a landscape document. Fixing the ratio keeps the
+     grid even without cropping anyone's name off the bottom. */
+  aspect-ratio: 4 / 3; max-width: 100%;
+  display: grid; place-items: center; padding: 10px;
+}
+.poc-cert-img img {
+  max-width: 100%; max-height: 100%; object-fit: contain; display: block;
+  border-radius: 4px;
+}
+.poc-cert-doc {
+  font-size: 22px; letter-spacing: .08em; color: var(--faint);
+  border: 1px dashed var(--line-pill); border-radius: 10px; padding: 18px 26px;
+}
+.poc-cert-b { padding: 13px 16px 15px; display: flex; flex-direction: column; gap: 7px; }
+.poc-cert-h { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.poc-cert-t {
+  font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.35;
+  min-width: 0; text-wrap: balance;
+}
+.poc-cert-m {
+  display: flex; gap: 12px; flex-wrap: wrap;
+  font-size: 11.5px; color: var(--fainter);
+}

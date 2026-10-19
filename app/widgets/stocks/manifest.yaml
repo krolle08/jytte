@@ -1,0 +1,14 @@
+name: stocks
+title: Aktier
+# Reads a Nordnet CSV export off a mounted folder, not an API: Nordnet
+# has no automatable read path for a private customer (all three were
+# probed - see CLAUDE.md here). A local file costs nothing to stat, so
+# the half-hour loop is only there to pick up a newly dropped export
+# without a restart.
+refresh_minutes: 30
+client_refresh_seconds: 300
+claude_analyzer: false
+expose_mcp: false
+watcher: false
+# Real surface is /stocks in the new design.
+page_only: true

@@ -1,0 +1,75 @@
+{# Dashboard card for the bank widget. Payload is pushed by the n8n
+   workflow `bank` (deploy/n8n/workflows/bank.json), shape:
+
+     ready, provider, fetched_at, stale_days,
+     totals{balance_oere, accounts, in_30d_oere, out_30d_oere},
+     accounts[{id, name, bank, iban_tail, currency,
+               balance_oere, available_oere, balance_at}],
+     transactions[{id, account_id, date, text, counterparty,
+                   amount_oere, currency, kind}]
+
+   Amounts arrive as INTEGER minor units (project rule 1) and are
+   pre-formatted by the workflow into `*_kr` strings so this template
+   never does money arithmetic in Jinja.
+
+   No full IBAN, by design - the workflow sends the last four digits
+   only, the same way calendar.json sends attendee names and not their
+   addresses. A cached widget payload is not the place for an account
+   number.
+
+   Stale/error chrome is NOT this template's job - freshness_banner.html
+   renders that from state.consecutive_failures / state.last_error. #}
+{% set data = state.data or {} %}
+{% if not data.get('ready') %}
+<p class="muted">{{ data.get('reason') or 'bank ikke klar endnu' }}</p>
+{% else %}
+{% set totals = data.get('totals') or {} %}
+{% set accounts = data.get('accounts') or [] %}
+{% set txs = data.get('transactions') or [] %}
+
+<div class="mail-head">
+  <span class="mail-count">{{ totals.get('balance_kr') or '0,00' }}</span>
+  <span class="muted small">
+    {# konto / konti, not konto + "i". Danish plurals are not a suffix. #}
+    kr over {{ accounts|length }} {{ 'konto' if accounts|length == 1 else 'konti' }}
+    {%- if totals.get('out_30d_kr') %} :: {{ totals.get('out_30d_kr') }} ud / 30 dage{% endif %}
+  </span>
+</div>
+
+{% if accounts %}
+<ul class="mail-list">
+  {% for a in accounts %}
+  <li class="mail-item">
+    <span class="mail-from">{{ a.get('name') or a.get('bank') or 'konto' }}</span>
+    <span class="mail-subject">
+      {%- if a.get('iban_tail') %}&middot;&middot;&middot;{{ a.get('iban_tail') }}{% endif -%}
+    </span>
+    <span class="mail-when muted small">{{ a.get('balance_kr') }} {{ a.get('currency') or 'DKK' }}</span>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+{% if txs %}
+<ul class="mail-list">
+  {% for t in txs[:6] %}
+  <li class="mail-item">
+    <span class="mail-from">{{ t.get('date') or '' }}</span>
+    <span class="mail-subject">{{ t.get('counterparty') or t.get('text') or '(uden tekst)' }}</span>
+    <span class="mail-when muted small">{{ t.get('amount_kr') }}</span>
+  </li>
+  {% endfor %}
+</ul>
+{% if txs|length > 6 %}<p class="muted small">viser 6 af {{ txs|length }}</p>{% endif %}
+{% else %}
+<p class="muted">ingen posteringer i vinduet</p>
+{% endif %}
+
+{# A consent expires after 90 days and the bank starts refusing from
+   its side, not n8n's - so a quiet, aging balance is the symptom to
+   surface, not an error banner that never fires. #}
+{% if (data.get('stale_days') or 0) >= 2 %}
+<p class="mail-foot muted small">saldo er {{ data.get('stale_days') }} dage gammel</p>
+{% endif %}
+{% endif %}
+{% if state.updated_at %}<p class="ts">opdateret <span data-ts="{{ state.updated_at }}">{{ state.updated_at[:16] }}</span></p>{% endif %}

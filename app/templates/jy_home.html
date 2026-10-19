@@ -1,0 +1,170 @@
+{% extends "shell.html" %}
+{% block title %}Jytte{% endblock %}
+
+{% block content %}
+{# Mock 1a. Structure, spacing and colour follow the handoff; the data
+   is real widget state. Where a source does not exist yet the panel
+   says so instead of showing invented rows. #}
+
+<div class="hd">
+  <div class="hd-id">
+    <span class="eyebrow">{{ eyebrow }}</span>
+    <h1 class="pg">{{ greeting }}</h1>
+  </div>
+  <div class="hd-right">
+    {# Not wired yet: there is no search index. It is a button rather
+       than an input so it cannot look like it accepts typing. #}
+    <button class="search" type="button" disabled title="Ikke bygget endnu">
+      <span>Søg i mail, opgaver, vault&hellip;</span>
+      <kbd>&#8984;K</kbd>
+    </button>
+    <span class="sync">
+      <span class="dot" style="background: var(--aqua)" aria-hidden="true"></span>
+      {% if task_state.last_success_at %}
+      <span data-ts="{{ task_state.last_success_at }}">{{ task_state.last_success_at[:16] }}</span>
+      {% else %}ingen hentning endnu{% endif %}
+    </span>
+  </div>
+</div>
+
+<div class="strip">
+  {% for s in strip %}
+  <div>
+    <span class="eyebrow">{{ s.label }}</span>
+    <span class="v">{{ s.value }}</span>
+    <span class="s{% if s.tone %} is-{{ s.tone }}{% endif %}">{{ s.sub }}</span>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="board board-3" data-board="home">
+
+  {# ---- Mail ---------------------------------------------------- #}
+  <section class="pn" data-card="mail">
+    <div class="pn-h">
+      <span class="pn-t">Mail</span>
+      <span class="pn-src">email-widget &middot; n8n/Graph</span>
+      <div class="pn-act">
+        <div class="seg" role="group" aria-label="Mail-filter">
+          <button aria-pressed="true" disabled>Alle</button>
+          <button aria-pressed="false" disabled>Arbejde</button>
+          <button aria-pressed="false" disabled>Privat</button>
+        </div>
+      </div>
+    </div>
+    <div class="pn-body">
+      {% if mail %}
+      {% for m in mail %}
+      <a class="row" href="{{ m.url or '#' }}" style="grid-template-columns:8px minmax(0,1fr) auto"
+         {% if m.url %}target="_blank" rel="noopener"{% endif %}>
+        <span class="dot" style="margin-top:7px; background: {{ 'var(--aqua)' if m.unread else 'transparent' }}"></span>
+        <span class="col" style="gap:2px">
+          <span style="font-size:13px; font-weight:{{ 500 if m.unread else 400 }}">{{ m.frm }}</span>
+          <span class="clip f-t2" style="font-size:13px">{{ m.subject }}</span>
+          <span class="clip f-faint" style="font-size:12px">{{ m.preview or m.why }}</span>
+        </span>
+        <span class="col" style="align-items:flex-end; gap:6px">
+          <span class="mono f-faint" style="font-size:11px">{{ m.time }}</span>
+          <span class="pill {{ m.tone }}">{{ m.src }}</span>
+        </span>
+      </a>
+      {% endfor %}
+      {% else %}
+      <p class="empty">
+        Ingen mail i cache. Flowet <code class="mono">deploy/n8n/workflows/email.json</code>
+        er skrevet men inaktivt: det venter på Entra-registreringen, så
+        Jytte selv aldrig har en credential.
+      </p>
+      {% endif %}
+    </div>
+  </section>
+
+  {# ---- Today (calendar) ---------------------------------------- #}
+  <section class="pn pn-pad" data-card="calendar">
+    <div class="pn-h">
+      <span class="pn-t">I dag</span>
+      <span class="pn-src">calendar-widget &middot; n8n/Graph</span>
+    </div>
+    {# The gul now-line, as the mock. #}
+    <div style="display:grid; grid-template-columns:48px minmax(0,1fr); gap:10px; align-items:center">
+      <span class="mono f-gul" style="font-size:11px">{{ now_hhmm }}</span>
+      <div style="height:1px; background:var(--gul); opacity:.6"></div>
+    </div>
+    <div class="pn-body" style="display:flex; flex-direction:column; gap:8px">
+      {% if events %}
+      {% for e in events %}
+      <div style="display:grid; grid-template-columns:48px minmax(0,1fr); gap:10px">
+        <span class="col mono" style="gap:2px; padding-top:10px; font-size:11px">
+          <span class="f-t2">{{ e.start }}</span>
+          <span style="color:var(--fainter)">{{ e.end }}</span>
+        </span>
+        <div class="col" style="gap:4px; padding:10px 12px; border-radius:10px;
+             background: var(--{{ e.tone ~ '-t' if e.tone else 'grey-t' }})">
+          <span style="font-size:13px; font-weight:500">{{ e.title }}</span>
+          <span style="display:flex; gap:8px; align-items:center; font-size:12px; color:var(--muted)">
+            <span class="clip">{{ e.where }}</span>
+            {% if e.kind %}
+            <span style="margin-left:auto; font-size:10px; letter-spacing:.06em; text-transform:uppercase;
+                         color: var(--{{ e.tone or 'muted' }})">{{ e.kind }}</span>
+            {% endif %}
+          </span>
+          {% if e.join %}<a href="{{ e.join }}" target="_blank" rel="noopener"
+             style="font-size:12px">Deltag i Teams</a>{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+      {% else %}
+      <p class="empty">
+        Ingen kalender-kilde endnu. Flowet
+        <code class="mono">deploy/n8n/workflows/calendar.json</code> findes,
+        men mangler <code class="mono">Calendars.Read</code> på samme
+        Entra-registrering som mailen. Aaben beslutning 2 i roadmappen.
+      </p>
+      {% endif %}
+    </div>
+  </section>
+
+  {# ---- Tasks --------------------------------------------------- #}
+  <section class="pn" data-card="tasks">
+    <div class="pn-h">
+      <span class="pn-t">Opgaver</span>
+      <span class="pn-src">vault &middot; tasks-widget</span>
+    </div>
+    <div class="pn-body">
+      {% if tasks %}
+      {% for k in tasks %}
+      <div class="row" style="grid-template-columns:16px minmax(0,1fr)">
+        <span style="width:14px; height:14px; margin-top:2px; border-radius:4px;
+              border:1.5px solid {{ 'var(--aqua)' if k.done else 'var(--line-pill)' }};
+              background: {{ 'var(--aqua)' if k.done else 'transparent' }}"></span>
+        <span class="col" style="gap:3px">
+          <span style="font-size:13px; color: {{ 'var(--faint)' if k.done else 'var(--text)' }};
+                text-decoration: {{ 'line-through' if k.done else 'none' }}">{{ k.title }}</span>
+          <span style="display:flex; gap:8px; font-size:11px; color:var(--faint)">
+            {% if k.project %}<span class="clip">{{ k.project }}</span><span>&middot;</span>{% endif %}
+            {% if k.due %}<span style="color: var(--{{ k.due_tone or 'faint' }})">{{ k.due }}</span>{% endif %}
+            <span class="mono" style="margin-left:auto">{{ k.src }}</span>
+          </span>
+        </span>
+      </div>
+      {% endfor %}
+      {% else %}
+      <p class="empty">Ingen åbne opgaver i <code class="mono">Nichlas/Tasks</code>.</p>
+      {% endif %}
+    </div>
+  </section>
+</div>
+
+<div class="tiles">
+  {% for t in tiles %}
+  <a class="tile" href="{{ t.href }}">
+    <span class="col" style="gap:4px">
+      <span class="eyebrow">{{ t.label }}</span>
+      <span class="v" style="color: var(--{{ t.tone or 'text' }})">{{ t.value }}</span>
+      <span class="clip" style="font-size:12px; color:var(--muted)">{{ t.sub }}</span>
+    </span>
+    <span class="arw" aria-hidden="true">&rarr;</span>
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}

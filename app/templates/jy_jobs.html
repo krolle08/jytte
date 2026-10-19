@@ -1,0 +1,243 @@
+{% extends "shell.html" %}
+{% block title %}Jobs :: Jytte{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="/static/jy_jobs.css" />{% endblock %}
+
+{% block content %}
+{# Jobs: every n8n workflow as one row.
+
+   /workflows draws one flow at a time and answers "how does this
+   work". It cannot answer "which of my jobs are switched on", because
+   that is a question about all of them at once. This page is that
+   list, and the two link to each other in both directions.
+
+   FILTERING IS CLIENT-SIDE AND DELIBERATELY SO, same as /opslag: the
+   search and the chips only set `hidden`. A server round trip would
+   re-render and throw the viewport to the top, which breaks the one
+   hard UI rule this project has.
+
+   The status column is honest about being second-hand. See the module
+   docstring in app/jobs.py for why live state is not read. #}
+
+<div class="hd">
+  <div class="hd-id">
+    <span class="eyebrow plain">Alle n8n-workflows i én tabel</span>
+    <h1 class="pg">Jobs</h1>
+  </div>
+  <div class="hd-right">
+    {% if ready %}<span class="pn-src">{{ counts.total }} jobs &middot; {{ counts.nodes }} trin</span>{% endif %}
+    <a class="btn ghost" href="{{ n8n_url }}" target="_blank" rel="noopener noreferrer">Åbn n8n &#8599;</a>
+  </div>
+</div>
+
+{% if not ready %}
+<div class="lg-note">
+  <h2>Joblisten kan ikke læses</h2>
+  <p>{{ reason }}</p>
+  <p>Kilden er <code class="mono">deploy/n8n/workflows/*.json</code>, som
+    bind-monteres ind som <code class="mono">/jytte/n8n-workflows</code>.
+    Mangler mounten, er det den der mangler - ikke dine jobs. De kører
+    videre i n8n uanset hvad denne side kan se.</p>
+  <div class="row-act"><a class="btn ghost" href="/workflows">Gå til flow-canvas</a></div>
+</div>
+{% else %}
+
+<div class="strip">
+  <div>
+    <span class="eyebrow">Aktive</span>
+    <span class="v">{{ counts.active }}</span>
+    <span class="s">af {{ counts.total }} jobs</span>
+  </div>
+  <div>
+    <span class="eyebrow">Slukkede</span>
+    <span class="v">{{ counts.inactive }}</span>
+    <span class="s{% if counts.inactive %} is-warn{% endif %}">afventer opsætning</span>
+  </div>
+  <div>
+    <span class="eyebrow">Planlagte</span>
+    <span class="v">{{ counts.plan }}</span>
+    <span class="s">kører af sig selv</span>
+  </div>
+  <div>
+    <span class="eyebrow">Webhooks</span>
+    <span class="v">{{ counts.hook }}</span>
+    <span class="s">venter på et kald</span>
+  </div>
+</div>
+
+<div class="jb-bar">
+  <input type="search" id="jb-q" class="jb-q" autocomplete="off"
+         placeholder="Søg i navn, beskrivelse, udløser og system"
+         aria-label="Søg i jobs" />
+  <div class="seg" id="jb-st" role="group" aria-label="Filtrér på status">
+    <button type="button" data-st="" aria-pressed="true">Alle <i>{{ counts.total }}</i></button>
+    <button type="button" data-st="on" aria-pressed="false">Aktive <i>{{ counts.active }}</i></button>
+    <button type="button" data-st="off" aria-pressed="false">Slukkede <i>{{ counts.inactive }}</i></button>
+  </div>
+  <div class="seg" id="jb-sys" role="group" aria-label="Filtrér på system">
+    <button type="button" data-sys="" aria-pressed="true">Alle systemer</button>
+    {% for s in systems %}
+    <button type="button" data-sys="{{ s }}" aria-pressed="false">{{ s }}</button>
+    {% endfor %}
+  </div>
+</div>
+
+<p class="jb-count" id="jb-count" aria-live="polite"></p>
+
+<section class="pn" style="padding:0; overflow:hidden">
+  <div class="jb-wrap">
+    <table class="jb">
+      <thead>
+        <tr>
+          <th scope="col">Status</th>
+          <th scope="col">Navn</th>
+          <th scope="col">Beskrivelse</th>
+          <th scope="col">Udløser</th>
+          <th scope="col" class="num">Trin</th>
+          <th scope="col">System</th>
+          <th scope="col" class="act">n8n</th>
+        </tr>
+      </thead>
+      <tbody id="jb-rows">
+        {% for j in jobs %}
+        <tr class="{{ 'is-on' if j.active else 'is-off' }}"
+            data-st="{{ 'on' if j.active else 'off' }}"
+            data-sys="{{ j.system }}"
+            data-hay="{{ j.hay }}">
+          <td>
+            <span class="jb-st {{ 'on' if j.active else 'off' }}">
+              <span class="dot"></span><b>{{ j.status }}</b>
+            </span>
+          </td>
+          <td>
+            <span class="jb-name">
+              <b>{{ j.name }}</b>
+              <span class="jb-file">{{ j.file }}</span>
+            </span>
+          </td>
+          <td class="jb-desc">
+            {% if j.desc_short %}
+            <p>{{ j.desc_short }}</p>
+            {% if j.desc_long %}
+            {# The long notes run to 900 characters. One line in the
+               cell keeps the table a table; the rest is one click
+               away and does not move the page. #}
+            <details>
+              <summary>Hele noten</summary>
+              <p class="jb-full">{{ j.desc_long }}</p>
+            </details>
+            {% endif %}
+            {% else %}
+            <span class="jb-none">ingen beskrivelse i filens meta-felt</span>
+            {% endif %}
+            {% if j.creds %}
+            <div class="jb-creds">
+              {% for c in j.creds %}<span class="jb-cred">{{ c }}</span>{% endfor %}
+            </div>
+            {% endif %}
+          </td>
+          <td>
+            <span class="jb-trig">
+              <span class="pill {{ 'aqua' if j.trigger.kind == 'plan' else ('lilac' if j.trigger.kind == 'hook' else 'line') }}">{{ j.trigger.label }}</span>
+              <span class="mono">{{ j.trigger.detail }}</span>
+            </span>
+          </td>
+          <td class="num mono tnum">{{ j.nodes }}</td>
+          <td><span class="pill line">{{ j.system }}</span></td>
+          <td class="act">
+            {% if j.href %}
+            <a class="jb-open" href="{{ j.href }}" target="_blank" rel="noopener noreferrer">Åbn &#8599;</a>
+            {% else %}
+            <span class="jb-open" aria-disabled="true" title="Filen har intet id, så der er intet at linke til">intet id</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<p class="jb-empty" id="jb-empty" hidden>Ingen jobs matcher.</p>
+
+{% if broken %}
+<div class="lg-note" style="margin-top:20px; border-left:2px solid var(--coral)">
+  <h2>{{ broken|length }} fil(er) kunne ikke læses</h2>
+  {% for b in broken %}
+  <p><code class="mono">{{ b.file }}</code>: {{ b.why }}</p>
+  {% endfor %}
+  <p>En fil der ikke kan parses bliver heller ikke importeret af
+    <code class="mono">deploy/n8n/init.sh</code>, så jobbet kører ikke.</p>
+</div>
+{% endif %}
+
+<div class="lg-note" style="margin-top:24px">
+  <h2>Hvor Status kommer fra</h2>
+  <p>Kolonnen læses af <code class="mono">active</code> i
+    <code class="mono">{{ dir }}</code>, altså den <b>committede</b>
+    tilstand. <code class="mono">deploy/n8n/init.sh</code> importerer de
+    filer ved hver containerstart, så filen er det n8n ender med at køre.</p>
+  <p class="f-gul">Men slår du et job til eller fra inde i n8n's egen UI,
+    står filen stadig som før, og så lyver denne kolonne indtil du
+    eksporterer workflowet tilbage. Derfor går «Åbn» direkte til jobbet
+    i n8n, hvor den levende tilstand står.</p>
+  <p>Den levende værdi er fravalgt to gange: n8n's API kræver en
+    API-nøgle, og dette projekt må ikke selv udstede legitimationer;
+    n8n's SQLite kører i WAL-tilstand, hvor en read-only mount enten
+    fejler eller - værre - udleverer et øjebliksbillede fra før WAL'en,
+    og den database indeholder i øvrigt den krypterede credential-store.
+    Begrundelsen står i <code class="mono">app/jobs.py</code>.</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block script_extra %}
+<script>
+  // Filtering only sets `hidden`. Nothing navigates, nothing re-renders,
+  // the scroll position never moves. Same contract as /opslag.
+  (function () {
+    var q = document.getElementById("jb-q");
+    if (!q) return;
+    var rows = [].slice.call(document.querySelectorAll("#jb-rows tr"));
+    var count = document.getElementById("jb-count");
+    var empty = document.getElementById("jb-empty");
+    var st = "";
+    var sys = "";
+
+    function apply() {
+      var needle = q.value.trim().toLowerCase();
+      var shown = 0;
+      rows.forEach(function (r) {
+        var okText = !needle || r.getAttribute("data-hay").indexOf(needle) !== -1;
+        var okSt = !st || r.getAttribute("data-st") === st;
+        var okSys = !sys || r.getAttribute("data-sys") === sys;
+        var show = okText && okSt && okSys;
+        r.hidden = !show;
+        if (show) shown++;
+      });
+      empty.hidden = shown !== 0;
+      count.textContent = shown === rows.length
+        ? rows.length + " jobs"
+        : shown + " af " + rows.length + " jobs";
+    }
+
+    function wire(groupId, attr, set) {
+      var group = document.getElementById(groupId);
+      if (!group) return;
+      group.querySelectorAll("button").forEach(function (b) {
+        b.addEventListener("click", function () {
+          set(b.getAttribute(attr) || "");
+          group.querySelectorAll("button").forEach(function (o) {
+            o.setAttribute("aria-pressed", o === b ? "true" : "false");
+          });
+          apply();
+        });
+      });
+    }
+
+    q.addEventListener("input", apply);
+    wire("jb-st", "data-st", function (v) { st = v; });
+    wire("jb-sys", "data-sys", function (v) { sys = v; });
+    apply();
+  })();
+</script>
+{% endblock %}

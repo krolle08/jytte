@@ -1,0 +1,155 @@
+{% extends "shell.html" %}
+{% block title %}Azure DevOps :: Jytte{% endblock %}
+
+{% block content %}
+{# Mock 1f. Work items, pull requests in two groups, pipeline runs.
+
+   Multi-org is kept: the org selector switches instance, as the old
+   page did. A section that failed to fetch says so instead of
+   rendering as zero - the Dagrofa PAT is 401 today, and "0 pull
+   requests" would read as good news. #}
+
+<div class="hd">
+  <div class="hd-id">
+    <span class="eyebrow">{{ label if ready else "Azure DevOps" }}</span>
+    <h1 class="pg">Azure DevOps</h1>
+  </div>
+  {% if ready %}
+  <div class="hd-right">
+    <div class="seg" role="group" aria-label="Organisation">
+      {% for o in orgs %}
+      <a class="jy-ctx" href="?org={{ o }}" aria-pressed="{{ 'true' if o == org else 'false' }}">{{ o }}</a>
+      {% endfor %}
+    </div>
+    <span class="sync">
+      <span class="dot" style="background: var(--{{ 'coral' if errors else 'aqua' }})"></span>
+      {% if fetched_at %}<span data-ts="{{ fetched_at }}">{{ fetched_at[:16] }}</span>{% endif %}
+    </span>
+  </div>
+  {% endif %}
+</div>
+
+{% if not ready %}
+<div class="lg-note">
+  <h2>Ingen ADO-data</h2>
+  <p>{{ reason }}</p>
+  <div class="row-act"><a class="btn ghost" href="/legacy/ado">Aabn den gamle side</a></div>
+</div>
+{% else %}
+
+{% if errors %}
+<div class="pn" style="padding:14px 18px; border-color:rgba(227,160,143,.3); background:var(--coral-t)">
+  <span class="pn-t" style="color:var(--coral)">{{ errors|length }} sektion(er) kunne ikke hentes</span>
+  {% for k, v in errors.items() %}
+  <p class="ai2-foot" style="margin:6px 0 0"><span class="mono">{{ k }}</span>: {{ v }}</p>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="strip">
+  {% for s in strip %}
+  <div>
+    <span class="eyebrow">{{ s.label }}</span>
+    <span class="v">{{ s.value }}</span>
+    <span class="s{% if s.tone %} is-{{ s.tone }}{% endif %}">{{ s.sub }}</span>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="board" data-board="devops">
+  {# ---- work items ------------------------------------------- #}
+  <section class="pn" data-card="workitems">
+    <div class="pn-h">
+      <span class="pn-t">Mine work items</span>
+      <span class="pn-src">{{ iteration or "ingen iteration" }}</span>
+    </div>
+    <div class="pn-body">
+      {% for t in work_items %}
+      <a class="row" href="{{ t.web_url }}" target="_blank" rel="noopener"
+         style="grid-template-columns:8px minmax(0,1fr) auto">
+        <span class="dot" style="margin-top:6px; background:var(--{{ t.tone or 'faint' }})"></span>
+        <span class="col" style="gap:2px">
+          <span class="clip" style="font-size:13px">{{ t.title }}</span>
+          <span style="font-size:11px; color:var(--faint); display:flex; gap:8px">
+            <span class="mono">#{{ t.id }}</span><span>{{ t.type }}</span>
+            {% if t.area %}<span class="clip">{{ t.area }}</span>{% endif %}
+          </span>
+        </span>
+        <span class="row-meta"><span class="pill {{ t.tone }}">{{ t.state }}</span></span>
+      </a>
+      {% endfor %}
+      {% if not work_items %}<p class="empty">Ingen work items i denne iteration.</p>{% endif %}
+    </div>
+  </section>
+
+  {# ---- pull requests ---------------------------------------- #}
+  <section class="pn" data-card="prs">
+    <div class="pn-h">
+      <span class="pn-t">Pull requests</span>
+      <span class="pn-src">{{ mine|length }} mine &middot; {{ awaiting|length }} afventer mig</span>
+    </div>
+    <div class="pn-body">
+      {% if awaiting %}
+      <p class="jy-group f-gul">Afventer mit review</p>
+      {% for p in awaiting %}
+      <a class="row row-grp" href="{{ p.web_url }}" target="_blank" rel="noopener">
+        <span class="col" style="gap:2px">
+          <span class="clip" style="font-size:13px">{{ p.title }}</span>
+          <span style="font-size:11px; color:var(--faint); display:flex; gap:8px">
+            <span class="mono">!{{ p.id }}</span><span class="clip">{{ p.repo }}</span>
+            <span>{{ p.creator }}</span>
+          </span>
+        </span>
+        <span class="mono f-faint" style="font-size:11px" data-ts="{{ p.created }}"
+              data-ts-label="">{{ (p.created or '')[:10] }}</span>
+      </a>
+      {% endfor %}
+      {% endif %}
+      {% if mine %}
+      <p class="jy-group">Mine</p>
+      {% for p in mine %}
+      <a class="row row-grp" href="{{ p.web_url }}" target="_blank" rel="noopener">
+        <span class="col" style="gap:2px">
+          <span class="clip" style="font-size:13px">{{ p.title }}</span>
+          <span style="font-size:11px; color:var(--faint); display:flex; gap:8px">
+            <span class="mono">!{{ p.id }}</span><span class="clip">{{ p.repo }}</span>
+            <span class="clip">{{ p.source }} &rarr; {{ p.target }}</span>
+          </span>
+        </span>
+        <span class="mono f-faint" style="font-size:11px" data-ts="{{ p.created }}"
+              data-ts-label="">{{ (p.created or '')[:10] }}</span>
+      </a>
+      {% endfor %}
+      {% endif %}
+      {% if not mine and not awaiting %}<p class="empty">Ingen åbne PR'er.</p>{% endif %}
+    </div>
+  </section>
+
+  {# ---- pipelines -------------------------------------------- #}
+  <section class="pn" data-card="pipelines">
+    <div class="pn-h">
+      <span class="pn-t">Pipelines</span>
+      <span class="pn-src">default-branch &middot; {{ failing|length }} fejler</span>
+      {% if running %}<span class="pill gul">{{ running|length }} kører</span>{% endif %}
+    </div>
+    <div class="pn-body">
+      {% for p in latest %}
+      <a class="row row-grp" href="{{ p.web_url }}" target="_blank" rel="noopener">
+        <span class="col" style="gap:2px">
+          <span class="clip" style="font-size:13px">{{ p.pipeline }}</span>
+          <span class="mono clip" style="font-size:11px; color:var(--faint)">{{ p.branch }}
+            {% if p.requested_by %}&middot; {{ p.requested_by }}{% endif %}</span>
+        </span>
+        <span class="row-meta">
+          <span class="pill {{ p.tone }}">{{ p.result or p.status }}</span>
+          <span class="mono f-faint" style="font-size:11px" data-ts="{{ p.finished or p.started }}"
+                data-ts-label="">{{ (p.finished or p.started or '')[:10] }}</span>
+        </span>
+      </a>
+      {% endfor %}
+      {% if not latest %}<p class="empty">Ingen pipelines hentet.</p>{% endif %}
+    </div>
+  </section>
+</div>
+{% endif %}
+{% endblock %}

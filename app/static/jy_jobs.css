@@ -1,0 +1,123 @@
+/* Jobs - the n8n workflow table.
+
+   A real <table>, not a grid of divs. The data is tabular, the browser
+   already knows how to align a tabular header to its column, and a
+   screen reader announces "column 3 of 7" for free. The grid-based
+   pseudo-tables elsewhere in this codebase predate that reasoning and
+   are not a precedent to copy.
+
+   Own stylesheet so no other page downloads it. */
+
+.jb-wrap { overflow-x: auto; }
+
+.jb {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.jb thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--panel);
+  text-align: left;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--aqua);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.jb th.num, .jb td.num { text-align: right; }
+.jb th.act, .jb td.act { text-align: right; white-space: nowrap; }
+
+.jb tbody tr { border-bottom: 1px solid var(--line-soft); }
+.jb tbody tr:last-child { border-bottom: none; }
+.jb tbody tr:hover { background: rgba(250, 248, 244, .025); }
+
+/* An inactive job is the thing you came here to find, so it is not
+   greyed out. Only its status cell is muted; the row stays readable. */
+.jb tbody tr.is-off .jb-name { color: var(--text); }
+
+.jb td { padding: 11px 12px; vertical-align: top; }
+
+/* ---- status ---------------------------------------------------- */
+.jb-st { display: flex; align-items: center; gap: 7px; white-space: nowrap; }
+.jb-st .dot { width: 7px; height: 7px; }
+.jb-st.on  .dot { background: var(--aqua); }
+.jb-st.off .dot { background: var(--line-pill); }
+.jb-st.on  b { color: var(--aqua); font-weight: 600; }
+.jb-st.off b { color: var(--muted); font-weight: 500; }
+.jb-st b { font-size: 12px; }
+
+/* ---- name ------------------------------------------------------ */
+.jb-name { display: flex; flex-direction: column; gap: 3px; min-width: 150px; }
+.jb-name > b { font-size: 13.5px; font-weight: 600; color: var(--text); }
+.jb-file { font-family: var(--mono); font-size: 10.5px; color: var(--fainter); }
+
+/* ---- description ----------------------------------------------- */
+.jb-desc { max-width: 520px; color: var(--text-2); line-height: 1.5; font-size: 12.5px; }
+.jb-desc p { margin: 0; }
+.jb-desc details { margin: 0; }
+.jb-desc summary {
+  cursor: pointer; list-style: none; color: var(--aqua);
+  font-size: 11.5px; margin-top: 4px;
+}
+.jb-desc summary::-webkit-details-marker { display: none; }
+.jb-desc summary:hover { color: var(--gul); }
+.jb-desc details[open] summary { color: var(--muted); }
+.jb-desc .jb-full { margin-top: 6px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.jb-none { color: var(--fainter); font-style: italic; }
+
+/* ---- trigger --------------------------------------------------- */
+/* align-items matters: a flex column stretches its children, which
+   turned the Planlagt pill into a full-width bar. */
+.jb-trig {
+  display: flex; flex-direction: column; gap: 4px;
+  align-items: flex-start; min-width: 150px; max-width: 230px;
+}
+/* `anywhere`, not `break-all`: break-all split "basicAuth" across two
+   lines mid-word. This breaks at the slashes instead. */
+.jb-trig .mono {
+  font-size: 11px; color: var(--muted);
+  word-break: normal; overflow-wrap: anywhere;
+}
+
+/* ---- credential types ------------------------------------------ */
+.jb-creds { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+.jb-cred {
+  font-family: var(--mono); font-size: 10px; color: var(--faint);
+  border: 1px solid var(--line-pill); border-radius: 4px; padding: 1px 5px;
+}
+
+/* ---- the open button ------------------------------------------- */
+.jb-open {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; padding: 5px 11px; border-radius: 7px;
+  border: 1px solid var(--line-pill); color: var(--text-2);
+  background: none; white-space: nowrap;
+}
+.jb-open:hover { border-color: var(--aqua); color: var(--aqua); text-decoration: none; }
+.jb-open[aria-disabled="true"] { opacity: .4; pointer-events: none; }
+
+/* ---- filter bar ------------------------------------------------ */
+.jb-bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin: 18px 0 12px;
+}
+.jb-q {
+  flex: 1 1 240px; min-width: 180px;
+  background: var(--panel); color: var(--text);
+  border: 1px solid var(--line); border-radius: 9px;
+  padding: 9px 12px; font-size: 13px; font-family: inherit;
+}
+.jb-q::placeholder { color: var(--fainter); }
+.jb-q:focus { outline: none; border-color: var(--aqua-3); }
+
+.jb-count { font-family: var(--mono); font-size: 11.5px; color: var(--faint); margin: 0 0 8px; }
+
+.jb-empty { color: var(--muted); font-size: 13.5px; margin-top: 18px; }

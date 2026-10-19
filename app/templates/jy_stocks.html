@@ -1,0 +1,70 @@
+{% extends "shell.html" %}
+{% block title %}Stocks :: Jytte{% endblock %}
+
+{% block content %}
+{# Mock 1i. The one screen with no legacy page behind it: there was no
+   stocks widget at all. The widget now exists and loads, but it is not
+   wired to a provider - picking one means minting a key, which is an
+   operator decision, not mine. It reports exactly what it needs. #}
+
+<div class="hd">
+  <div class="hd-id">
+    <span class="eyebrow">Stocks &middot; nyt widget</span>
+    <h1 class="pg">Aktier</h1>
+  </div>
+</div>
+
+{% if not ready %}
+<div class="lg-note">
+  <h2>Widget findes, men er ikke koblet til en kursudbyder</h2>
+  <p>{{ reason }}</p>
+  {% if needs %}
+  <p>Mangler i <code class="mono">.env</code>, aldrig i repoet:</p>
+  <div class="col" style="gap:6px">
+    {% for n in needs %}
+    <span style="font-size:12.5px">
+      <code class="mono f-gul">{{ n.var }}</code>
+      <span class="f-muted">&middot; {{ n.why }}</span>
+    </span>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <p>Kræver udbyderen en nøgle, skal hentningen ligge i <b>n8n</b> og pushe
+    til <code class="mono">POST /widgets/stocks/state</code>: Jytte holder
+    aldrig en credential. Formen står i
+    <code class="mono">app/widgets/stocks/CLAUDE.md</code>.</p>
+</div>
+{% else %}
+
+<div class="strip">
+  {% for s in strip %}
+  <div>
+    <span class="eyebrow">{{ s.label }}</span>
+    <span class="v">{{ s.value }}</span>
+    <span class="s{% if s.tone %} is-{{ s.tone }}{% endif %}">{{ s.sub }}</span>
+  </div>
+  {% endfor %}
+</div>
+
+<section class="pn">
+  <div class="pn-h">
+    <span class="pn-t">Beholdning</span>
+    <span class="pn-src">{{ holdings|length }} positioner</span>
+  </div>
+  <div class="pn-body">
+    {% for h in holdings %}
+    <div class="row" style="grid-template-columns:minmax(0,1fr) auto auto auto">
+      <span class="col" style="gap:2px">
+        <span class="mono" style="font-size:13px; font-weight:600">{{ h.ticker }}</span>
+        <span class="clip" style="font-size:11px; color:var(--faint)">{{ h.name }}</span>
+      </span>
+      <span class="mono tnum" style="font-size:12.5px">{{ h.value }}</span>
+      <span class="mono tnum" style="font-size:12.5px; color: var(--{{ 'aqua' if (h.today_pct or 0) >= 0 else 'coral' }})">{{ h.today_pct }}%</span>
+      <span class="mono tnum" style="font-size:12.5px; color: var(--{{ 'aqua' if (h.return_pct or 0) >= 0 else 'coral' }})">{{ h.return_pct }}%</span>
+    </div>
+    {% endfor %}
+    {% if not holdings %}<p class="empty">Ingen positioner.</p>{% endif %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

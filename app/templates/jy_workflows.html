@@ -1,0 +1,148 @@
+{% extends "shell.html" %}
+{% block title %}Workflows :: Jytte{% endblock %}
+
+{% block content %}
+{# Mock 1d. Workflow list, canvas, and the four-column step detail.
+
+   Columns come from aiview.layer(), which the handoff explicitly
+   accepts in place of the mock's curves. Three things the mock shows
+   are not logged anywhere and are therefore absent rather than faked:
+   the last-22-runs history bars, duration and tokens per step, and the
+   attempt number. The step detail says so in its run line. #}
+
+{% if not ready %}
+<div class="hd"><div class="hd-id">
+  <span class="eyebrow">Workflows</span><h1 class="pg">Workflows</h1>
+</div></div>
+<div class="lg-note">
+  <h2>Ingen scanning indlæst</h2>
+  <p>Kør <code class="mono">python scripts/scan_ai.py</code> på hosten og genindlæs.</p>
+</div>
+{% else %}
+
+<div class="hd">
+  <div class="hd-id">
+    <span class="eyebrow">Workflows &middot; {{ sel.eng }}</span>
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap">
+      <h1 class="pg">{{ sel.n }}</h1>
+      <span class="pill {{ 'aqua' if sel.run == 'aktiv' else '' }}">{{ sel.run }}</span>
+    </div>
+  </div>
+  <div class="hd-right">
+    {# The mock shows the last 22 runs as bars. n8n execution history is
+       not read by the scanner, so there is nothing to draw. #}
+    <span class="pn-src">ingen kørselshistorik scannet</span>
+    {# This page draws one flow at a time. "Which of my jobs are on"
+       is a question about all of them, and /jobs is that table. #}
+    <a class="btn ghost" href="/jobs">Alle jobs i tabel</a>
+    {% if sel.eng == 'n8n' %}
+    <a class="btn ghost" href="{{ n8n_url }}" target="_blank" rel="noopener">Åbn i n8n &#8599;</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="jy-wf">
+  <aside class="jy-wf-list">
+    {% for th in themes %}
+    <span class="eyebrow" style="padding:0 10px 8px; display:block">{{ th.name }}</span>
+    {% for pr in th.projects %}
+    {% for w in pr.wfs %}
+    <a class="jy-wf-item{% if w.id == sel_id %} is-sel{% endif %}" href="?wf={{ w.id }}">
+      <span class="dot {{ 'jy-ok' if w.c == 'good' else 'jy-warn' }}"></span>
+      <span class="col" style="gap:2px; min-width:0">
+        <span class="clip" style="font-size:13px">{{ w.n }}</span>
+        <span style="font-size:11px; color:var(--faint)">{{ pr.name }} &middot; {{ w.cols }} trin dybt</span>
+      </span>
+      <span class="mono" style="font-size:10px; color:var(--faint)">{{ w.nodes|length }}</span>
+    </a>
+    {% endfor %}
+    {% endfor %}
+    {% endfor %}
+  </aside>
+
+  <div class="col" style="gap:20px; min-width:0">
+    {# ---- canvas ---------------------------------------------- #}
+    <div class="jy-canvas">
+      <div class="jy-canvas-in" id="jy-flow"
+           style="width:{{ sel.cols * 200 + 60 }}px; height:{{ sel.rows * 140 + 120 }}px">
+        <svg width="{{ sel.cols * 200 + 60 }}" height="{{ sel.rows * 140 + 120 }}" aria-hidden="true">
+          {% for e in sel.e %}
+          {% set a = node_pos[e.s] %}{% set b = node_pos[e.t] %}
+          {% if a and b %}
+          {% set x1 = a.x + 152 %}{% set x2 = b.x %}
+          {% set mid = x1 + ([24, (x2 - x1) / 2]|max) %}
+          <path data-straight="{{ 1 if e.straight else 0 }}"
+                d="{% if e.straight %}M{{ x1 }},{{ a.y }} L{{ x2 }},{{ b.y }}{% else %}M{{ x1 }},{{ a.y }} C{{ mid }},{{ a.y }} {{ mid }},{{ b.y }} {{ x2 }},{{ b.y }}{% endif %}"
+                fill="none" stroke="{{ 'var(--coral)' if e.back else 'rgba(250,248,244,.28)' }}"
+                stroke-width="{{ 1.6 if e.straight else 1.2 }}"
+                {% if e.back %}stroke-dasharray="5 4"{% endif %} />
+          {% endif %}
+          {% endfor %}
+        </svg>
+
+        {% for n in ordered %}
+        {% set p = node_pos[n.id] %}
+        <a class="jy-node k-{{ n.k }}{% if detail and n.id == detail.id %} is-sel{% endif %}"
+           href="?wf={{ sel_id }}&amp;step={{ n.id|urlencode }}"
+           style="left:{{ p.x }}px; top:{{ p.y }}px">
+          <span class="jy-node-h">
+            <span class="jy-node-no">{{ n.no }}</span>
+            <span class="jy-node-k">{{ n.k }}</span>
+          </span>
+          <span class="jy-node-t clip2">{{ n.w }}</span>
+          {% if n.r %}<span class="jy-node-r mono clip">{{ n.r }}</span>{% endif %}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    {# ---- step detail ----------------------------------------- #}
+    {% if detail %}
+    <section class="pn" style="padding:16px 18px; gap:14px">
+      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap">
+        <span class="jy-node-no is-big">{{ detail.no }}</span>
+        <span class="pn-t">{{ detail.title }}</span>
+        <span class="pn-src">{{ detail.run_line }}</span>
+        <div class="pn-act">
+          {% if detail.prev %}<a class="pill line" href="?wf={{ sel_id }}&amp;step={{ detail.prev|urlencode }}">&larr; forrige</a>{% endif %}
+          {% if detail.next %}<a class="pill line" href="?wf={{ sel_id }}&amp;step={{ detail.next|urlencode }}">næste &rarr;</a>{% endif %}
+        </div>
+      </div>
+      <div class="jy-step">
+        <div class="col" style="gap:6px">
+          <span class="eyebrow">Hvad sker der</span>
+          <span style="font-size:12.5px; line-height:1.55; color:var(--text-2)">
+            {{ detail.note or "Kilden har ingen note på trinnet." }}</span>
+        </div>
+        <div class="col" style="gap:6px; min-width:0">
+          <span class="eyebrow">Udfører</span>
+          <div class="jy-inset mono">{{ detail.k }} &middot; {{ detail.id }}</div>
+        </div>
+        <div class="col" style="gap:6px">
+          <span class="eyebrow">Ind &rarr; ud</span>
+          <span class="f-faint" style="font-size:12px">Ikke scannet: n8n-nodens input og
+            output gemmes ikke i workflow-filen.</span>
+        </div>
+        <div class="col" style="gap:8px">
+          <span class="eyebrow">Bruger</span>
+          <div class="jp-chips">
+            {% for u in detail.uses %}
+            <button class="pill {{ 'aqua' if u.kind == 'skill' else 'lilac' }}"
+                    data-{{ u.kind }}="{{ u.name }}">{{ u.kind }} &middot; {{ u.name }}</button>
+            {% endfor %}
+            {% if not detail.uses %}<span class="ai2-na">ingen agents eller skills</span>{% endif %}
+          </div>
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    <p class="ai2-foot">{{ sel.source }}</p>
+  </div>
+</div>
+
+{% include "_jy_panel.html" %}
+<script type="application/json" id="ai-data">{{ payload|tojson }}</script>
+<script src="/static/jy_ai.js" defer></script>
+{% endif %}
+{% endblock %}

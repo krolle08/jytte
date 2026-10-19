@@ -1,0 +1,58 @@
+{% extends "shell.html" %}
+{% block title %}Løn :: Jytte{% endblock %}
+
+{% block content %}
+{# Net pay per person, computed from each one's skattekort. Not in the
+   design handoff; built in the new shell from the start.
+
+   The engine is app/widgets/salary/calc.py and is pinned to a real
+   payslip by tests/test_salary_calc.py, so every figure below is one
+   the arithmetic has been shown to reproduce to the oere.
+
+   One card per person, each its own partial (_sal_card.html) so the
+   form can swap in and out over HTMX without touching the rest of the
+   page. Editing one person must not repaint the other. #}
+
+<div class="hd">
+  <div class="hd-id">
+    <span class="eyebrow">Løn &middot; beregnet fra skattekortet</span>
+    <h1 class="pg">Løn</h1>
+  </div>
+  {% if ready and household_net_oere %}
+  <div class="hd-right">
+    <span class="pn-src">husstand netto {{ fmt(household_net_oere) }} kr/md</span>
+  </div>
+  {% endif %}
+</div>
+
+{% if not ready %}
+<div class="lg-note">
+  <h2>Løn kan ikke beregnes</h2>
+  <p>{{ reason }}</p>
+</div>
+{% else %}
+
+<div class="sal-cols">
+  {% for p in people %}
+    {% include "_sal_card.html" %}
+  {% endfor %}
+</div>
+
+<div class="lg-note" style="margin-top:18px">
+  <h2>Hvorfor der ikke står kommuneskat her</h2>
+  <p>Trækprocenten på dit skattekort indeholder allerede kommuneskat,
+    kirkeskat, bundskat, beskæftigelsesfradrag og personfradrag. SKAT har
+    regnet dem ud fra din forskudsopgørelse, så de regnes ikke om her.</p>
+  <p>Det betyder også en begrænsning, sagt lige ud: beregningen er
+    præcis ved din nuværende løn, men den kan ikke sige hvad en
+    lønforhøjelse ville koste. Skattekortet er udstedt til den indkomst
+    du har oplyst.</p>
+  <p>Nettolønnen herover bliver læst af <a href="/budget">budgettet</a> som
+    en indtægt. Den kopieres ikke derover, den hentes, så de to sider kan
+    ikke komme til at vise hver sit tal.</p>
+  <p class="f-faint" style="font-size:12px">Motoren er efterprøvet mod en
+    rigtig lønseddel, linje for linje, og låst fast af
+    <code class="mono">tests/test_salary_calc.py</code>.</p>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,71 @@
+{# Entry list for the NEW /budget page. Same endpoints as the legacy
+   partial, different markup.
+
+   Deliberately no totals block: the page above already shows the
+   household strip and the three per-person columns, both built from the
+   same summarise(). Repeating them here would be a third place for the
+   same number to be computed and a third place for it to disagree.
+
+   Every control posts `view=jy` so the swap comes back as this partial
+   rather than the legacy one. #}
+
+{% for c in categories %}
+{% set cat_entries = entries_by_category.get(c.slug) or [] %}
+<div class="jb-cat">
+  <div class="jb-cat-h">
+    <span class="jb-cat-n">{{ c.name }}</span>
+    <span class="pill {{ 'aqua' if c.kind == 'income' else 'line' }}">{{ c.kind }}</span>
+    <span class="jb-cat-sum mono tnum">
+      {% if cat_entries %}{{ fmt(cat_entries | sum(attribute='amount_cents')) }}{% endif %}
+    </span>
+    <button type="button" class="jb-mini" title="Tilføj til {{ c.name }}"
+            hx-get="/widgets/budget/entries/new/form?category_slug={{ c.slug }}&view=jy"
+            hx-target="#budget-add-pane" hx-swap="innerHTML">+</button>
+  </div>
+
+  {% if not cat_entries %}
+  <p class="jb-empty">ingen poster</p>
+  {% else %}
+  <div class="jb-rows">
+    {% for e in cat_entries %}
+    <div class="jb-row" id="entry-{{ e.id }}">
+      <span class="jb-name">
+        {{ e.name }}
+        {% if e.derived is defined and e.derived %}
+        <span class="jb-owner is-derived">fra Løn</span>
+        {% endif %}
+        {% if e.owner %}
+          {% for p in people if p.slug == e.owner %}
+          <span class="jb-owner">{{ p.name }}</span>
+          {% endfor %}
+        {% else %}
+          <span class="jb-owner is-shared">Fælles</span>
+        {% endif %}
+      </span>
+      <span class="jb-amt mono tnum">{{ e.amount }}</span>
+      <span class="jb-rec">
+        {{ e.recurrence }}{% if e.due_day %} &middot; d. {{ e.due_day }}
+        {% elif e.due_date %} &middot; {{ e.due_date[:10] }}{% endif %}
+      </span>
+      <span class="jb-act">
+        {% if e.derived is defined and e.derived %}
+        {# Derived from a salary profile, not a stored row. There is
+           nothing to edit here: change it on /salary and this follows. #}
+        <a class="jb-mini" href="/salary" title="Beregnet på /salary">&#8599;</a>
+        {% else %}
+        <button type="button" class="jb-mini" title="Redigér"
+                hx-get="/widgets/budget/entries/{{ e.id }}/form?view=jy"
+                hx-target="#budget-add-pane" hx-swap="innerHTML">&#9998;</button>
+        <button type="button" class="jb-mini is-del" title="Slet"
+                hx-post="/widgets/budget/entries/{{ e.id }}/delete"
+                hx-vals='{"view": "jy"}'
+                hx-target="#budget-list" hx-swap="innerHTML"
+                hx-confirm="Slet {{ e.name }}?">&times;</button>
+        {% endif %}
+      </span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endfor %}

@@ -1,0 +1,314 @@
+{
+  "id": "jytteVaultRefresh01",
+  "name": "vault-refresh",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "errorWorkflow": "jytteVaultRefresh01"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "notes": "Daily status of the LLM-Wiki refresh for the `vault` widget. The refresh runs on the HOST (Task Scheduler -> refresh_views.py) and writes LLM-Wiki/.graph/refresh-status.json; this workflow reads it from the read-only /vault-status mount. No credentials. Never writes to the vault."
+  },
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "30 6 * * *"
+            }
+          ]
+        }
+      },
+      "name": "Daily 06:30",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "fileSelector": "/vault-status/refresh-status.json",
+        "options": {}
+      },
+      "name": "Read refresh-status.json",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Normalize LLM-Wiki/.graph/refresh-status.json into the Jytte `vault`\n// widget payload. The file is written on the host by refresh_views.py\n// (Windows Task Scheduler, 06:00). This workflow only reads it.\nconst STALE_HOURS = Number($env.VAULT_STALE_HOURS || 26);\nconst buf = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst s = JSON.parse(buf.toString('utf8'));\nconst ageHours = Math.round((Date.now() - Date.parse(s.generated_at)) / 36e5 * 10) / 10;\nconst stale = !(ageHours <= STALE_HOURS);\nconst failed = (s.steps || []).filter(x => x.exit !== 0)\n  .map(x => ({ name: x.name, exit: x.exit, tail: x.tail || [] }));\nconst payload = {\n  ready: true,\n  source: 'n8n',\n  // Own cadence, so Systemmonitor can triage a stalled push instead of 'ukendt'.\n  expected_minutes: 1440,\n  stale_after_minutes: STALE_HOURS * 60,\n  state: s.state,\n  stale,\n  age_hours: ageHours,\n  generated_at: s.generated_at,\n  duration_s: s.duration_s ?? null,\n  reason: s.reason || null,\n  failed_steps: failed,\n  workstreams_changed: s.workstreams_changed || [],\n  validator: s.validator || {},\n  graph: s.graph || {},\n  // Open-questions register counts (build_open_questions.py via refresh_views.py).\n  // Totals only: the register page itself is the detail view.\n  open_questions: s.open_questions ? {\n    totals: s.open_questions.totals || {},\n    by_wiki: s.open_questions.by_wiki || {},\n    ingest_queue: s.open_questions.ingest_queue ?? 0,\n  } : null,\n};\nconst v = payload.validator;\npayload.summary = stale\n  ? `vault: refresh er ${ageHours} timer gammel`\n  : `vault: ${s.state}, ${payload.workstreams_changed.length} arbejdsbord opdateret, ${v.errors ?? '?'} fejl / ${v.warnings ?? '?'} advarsler`\n    + (payload.open_questions ? `, ${payload.open_questions.totals.questions ?? '?'} aabne spoergsmaal` : '');\n// Problem flag drives the /error branch so the freshness banner shows it.\npayload._problem = stale || s.state === 'failed'\n  ? { code: stale ? 'stale' : 'refresh-failed',\n      message: stale ? `refresh-status.json is ${ageHours} h old (limit ${STALE_HOURS} h)`\n                     : `steps failed: ${failed.map(f => f.name).join(', ')}` }\n  : null;\nreturn [{ json: payload }];\n"
+      },
+      "name": "Normalize status",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.JYTTE_BASE_URL}}/widgets/vault/state",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Jytte-Internal-Secret",
+              "value": "={{$env.JYTTE_INTERNAL_SECRET}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify(Object.fromEntries(Object.entries($json).filter(([k]) => k !== '_problem'))) }}",
+        "options": {}
+      },
+      "name": "POST -> Jytte /state",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "1",
+              "leftValue": "={{ $('Normalize status').item.json._problem !== null }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "Problem?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.JYTTE_BASE_URL}}/widgets/vault/error",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Jytte-Internal-Secret",
+              "value": "={{$env.JYTTE_INTERNAL_SECRET}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ code: $('Normalize status').item.json._problem.code, message: $('Normalize status').item.json._problem.message, execution_id: $execution.id, workflow_id: $workflow.id }) }}",
+        "options": {}
+      },
+      "name": "POST -> Jytte /error (problem)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        -80
+      ]
+    },
+    {
+      "parameters": {},
+      "name": "On any error",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "code",
+              "value": "={{$json.execution && $json.execution.error && ($json.execution.error.httpCode || $json.execution.error.name) || 'unknown'}}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "message",
+              "value": "={{$json.execution && $json.execution.error && ($json.execution.error.message || JSON.stringify($json.execution.error)) || 'unknown'}}",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "execution_id",
+              "value": "={{$json.execution && $json.execution.id}}",
+              "type": "string"
+            },
+            {
+              "id": "4",
+              "name": "workflow_id",
+              "value": "={{$json.workflow && $json.workflow.id}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Shape error payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.JYTTE_BASE_URL}}/widgets/vault/error",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Jytte-Internal-Secret",
+              "value": "={{$env.JYTTE_INTERNAL_SECRET}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "name": "POST -> Jytte /error",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        260
+      ]
+    }
+  ],
+  "connections": {
+    "Daily 06:30": {
+      "main": [
+        [
+          {
+            "node": "Read refresh-status.json",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read refresh-status.json": {
+      "main": [
+        [
+          {
+            "node": "Normalize status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize status": {
+      "main": [
+        [
+          {
+            "node": "POST -> Jytte /state",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "POST -> Jytte /state": {
+      "main": [
+        [
+          {
+            "node": "Problem?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Problem?": {
+      "main": [
+        [
+          {
+            "node": "POST -> Jytte /error (problem)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "On any error": {
+      "main": [
+        [
+          {
+            "node": "Shape error payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shape error payload": {
+      "main": [
+        [
+          {
+            "node": "POST -> Jytte /error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

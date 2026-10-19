@@ -1,0 +1,138 @@
+# Kategorier til bankoverblikket.
+#
+# HVORFOR FARVEN IKKE STAAR PR. KATEGORI
+# Hver gruppe har en `kuloer` (0-359 paa farvecirklen). Kategorierne i
+# gruppen faar afskygninger af den af sig selv, saa Dagligvarer og
+# Supermarked ligner hinanden og ikke ligner Transport. Tilfoejer du
+# en kategori, skal du altsaa ikke vaelge en farve - og du kan ikke
+# komme til at give to grupper samme udseende ved et uheld.
+#
+# Vil du alligevel styre en enkelt, saa skriv `farve: "#RRGGBB"` paa
+# kategorien. Den vinder.
+#
+# RAEKKEFOELGEN BETYDER NOGET
+# En kategoris plads i filen bestemmer dens afskygning. Indsaet derfor
+# nye kategorier NEDERST i deres gruppe; saetter du en ind i midten,
+# skifter alle de foelgende farve, og saa kan to maaneder ikke
+# sammenlignes med oejnene. Samme regel som budgetkategorierne.
+#
+# `fast: true` betyder "det her er en fast udgift" - husleje, abonne-
+# menter, forsikring. Siden bruger det til at skille det du har bundet
+# dig til fra det du besluttede i butikken.
+
+grupper:
+  - id: bolig
+    navn: Bolig
+    kuloer: 13          # samme hue som --coral
+    kategorier:
+      - {id: husleje,      navn: Husleje og realkredit, fast: true}
+      - {id: el,           navn: El,                    fast: true}
+      - {id: varme,        navn: Varme,                 fast: true}
+      - {id: vand,         navn: Vand og renovation,    fast: true}
+      - {id: internet,     navn: Internet og TV,        fast: true}
+      - {id: husforsikring, navn: "Forsikring, bolig", fast: true}
+      - {id: vedligehold,  navn: Vedligehold og haven}
+
+  - id: dagligvarer
+    navn: Dagligvarer
+    kuloer: 150
+    kategorier:
+      - {id: supermarked,  navn: Supermarked}
+      - {id: bager,        navn: Bager og slagter}
+      - {id: kiosk,        navn: Kiosk og tank-butik}
+      - {id: apotek,       navn: Apotek}
+
+  - id: spisning
+    navn: Spisning ude
+    kuloer: 36          # samme hue som --gul
+    kategorier:
+      - {id: restaurant,   navn: Restaurant}
+      - {id: takeaway,     navn: Takeaway og fast food}
+      - {id: cafe,         navn: Cafe og bager-kaffe}
+      - {id: bar,          navn: Bar og natteliv}
+
+  - id: transport
+    navn: Transport
+    kuloer: 205
+    kategorier:
+      - {id: braendstof,   navn: Braendstof og opladning}
+      - {id: kollektiv,    navn: Bus og tog,            fast: true}
+      - {id: parkering,    navn: Parkering og broafgift}
+      - {id: bilservice,   navn: Bilservice og daek}
+      - {id: bilforsikring, navn: Bilforsikring og ejerafgift, fast: true}
+      - {id: taxa,         navn: Taxa og delebil}
+
+  - id: abonnement
+    navn: Abonnementer
+    kuloer: 278
+    kategorier:
+      - {id: streaming,    navn: Streaming,             fast: true}
+      - {id: telefon,      navn: Telefon og mobil,      fast: true}
+      - {id: software,     navn: Software og cloud,     fast: true}
+      - {id: medlemskab,   navn: Medlemskaber,          fast: true}
+      - {id: avis,         navn: Aviser og magasiner,   fast: true}
+
+  - id: sundhed
+    navn: Sundhed
+    kuloer: 183         # samme hue som --aqua
+    kategorier:
+      - {id: laege,        navn: Laege og speciallaege}
+      - {id: tandlaege,    navn: Tandlaege}
+      - {id: medicin,      navn: Medicin}
+      - {id: traening,     navn: Traening,              fast: true}
+      - {id: sundhedsforsikring, navn: Sundhedsforsikring, fast: true}
+
+  - id: shopping
+    navn: Shopping
+    kuloer: 315
+    kategorier:
+      - {id: toej,         navn: Toej og sko}
+      - {id: elektronik,   navn: Elektronik}
+      - {id: hjem,         navn: Hjem og interioer}
+      - {id: boeger,       navn: Boeger og spil}
+      - {id: gaver,        navn: Gaver}
+
+  - id: fritid
+    navn: Fritid
+    kuloer: 86
+    kategorier:
+      - {id: oplevelser,   navn: Oplevelser og biograf}
+      - {id: rejser,       navn: Rejser og hotel}
+      - {id: sport,        navn: Sport og udstyr}
+      - {id: hobby,        navn: Hobby}
+
+  - id: boern
+    navn: Boern
+    kuloer: 245         # samme hue som --lilac
+    kategorier:
+      - {id: institution,  navn: Daginstitution,        fast: true}
+      - {id: boerneting,   navn: Toej og legetoej}
+      - {id: boerneaktivitet, navn: Aktiviteter og kontingent, fast: true}
+
+  - id: oekonomi
+    navn: Oekonomi
+    kuloer: 58
+    kategorier:
+      - {id: gebyr,        navn: Gebyrer}
+      - {id: renter,       navn: Renter og afdrag,      fast: true}
+      - {id: opsparing,    navn: Opsparing og investering, fast: true}
+      - {id: skat,         navn: Skat og det offentlige}
+      - {id: aconto,       navn: Acontobetaling,        fast: true}
+
+  - id: indtaegt
+    navn: Indtaegt
+    kuloer: 115
+    kategorier:
+      - {id: loen,         navn: Loen,                  fast: true}
+      - {id: refusion,     navn: Refusion og tilbagebetaling}
+      - {id: overfoersel,  navn: Overfoersel ind}
+      - {id: anden_indtaegt, navn: Anden indtaegt}
+
+# Alt der ikke rammer en regel havner her. Bucket'en er med vilje
+# synlig: hvor mange kroner der ligger i den, er det eneste aerlige
+# maal for hvor god kategoriseringen faktisk er. En side der skjulte
+# den, ville se faerdig ud laenge foer den var det.
+ukategoriseret:
+  id: ukategoriseret
+  navn: Ukategoriseret
+  farve: "#86868F"      # --fainter. Graa, saa den aldrig ligner et svar.

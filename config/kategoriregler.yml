@@ -1,0 +1,216 @@
+# Regler: fra posteringstekst til kategori.
+#
+# HVORDAN DET VIRKER
+# Hver postering proeves mod reglerne OPPEFRA OG NED, og den foerste
+# der rammer vinder. Derfor staar det specifikke oeverst og det brede
+# nederst: "circle k" skal ramme braendstof foer "k" rammer noget som
+# helst andet.
+#
+# Der sammenlignes mod posteringens tekst OG modpart, slaaet sammen,
+# smaa bogstaver, uden dobbelte mellemrum. Du behoever ikke taenke paa
+# store bogstaver eller paa om banken skriver "NETTO 4711" eller
+# "Netto Sydhavn".
+#
+#   tekst:  <liste>   rammer hvis EN af dem findes i teksten, som
+#                     understreng. Fint til lange, entydige navne.
+#   ord:    <liste>   rammer kun som HELT ord. Brug det altid til
+#                     korte ord. `bar` som understreng ramte
+#                     "Fiskebar", og `su` rammer Supermarked, Sushi og
+#                     SUNSET BOULEVARD - og `su` er en indtaegtsregel,
+#                     saa et indkoeb ville vaere bogfoert som penge ind.
+#   regex:  <liste>   rammer hvis et af udtrykkene matcher. Brug det
+#                     kun naar `tekst` ikke kan: regex er sjovere at
+#                     skrive og vaerre at fejlfinde.
+#   beloeb_min / beloeb_maks
+#                     oere, absolut vaerdi. Giver mening naar samme
+#                     modtager daekker to ting - en overfoersel paa
+#                     12.000 er husleje, en paa 200 er ikke.
+#   retning: ud | ind rammer kun udgifter henholdsvis indtaegter.
+#                     Naesten altid det du vil have paa en indtaegts-
+#                     regel, saa en tilbagebetaling fra samme butik
+#                     ikke lander som et koeb.
+#
+# AI RORER IKKE DEN HER FIL AUTOMATISK
+# Projektets regel 4: ingen model i den deterministiske sti. En
+# kategorisering skal kunne forklares med "den ramte linje 23", ikke
+# med "modellen mente". Claude maa gerne LAESE de ukategoriserede og
+# FORESLAA en linje til dig - men det er dig der skriver den ind.
+#
+# NAAR NOGET ER FORKERT
+# Find posteringen paa /bank, laes teksten, og tilfoej en linje her.
+# Det er hele loopet. Der er ikke noget der skal traenes op igen.
+
+regler:
+
+  # ---- bolig ---------------------------------------------------------
+  - kategori: el
+    tekst: [andel energi, andel el, norlys, ewii, ok el, nrgi, elnet, radius, cerius, energi fyn, elforsyning]
+  - kategori: varme
+    tekst: [fjernvarme, hofor varme, varmeforsyning, naturgas, evida]
+  - kategori: vand
+    tekst: [hofor vand, vandforsyning, forsyning a/s, renovation, affald, arc i/s]
+  - kategori: internet
+    tekst: [yousee, stofa, hiper, fastspeed, kviknet, waoo, altibox, bolignet, antenneforening]
+  - kategori: husleje
+    tekst: [husleje, boligselskab, ejerforening, grundejerforening, realkredit, totalkredit, nykredit rk, boligydelse]
+  - kategori: husforsikring
+    tekst: [indboforsikring, husforsikring, alm. brand, almbrand, topdanmark, tryg forsikring, gjensidige, lb forsikring, if forsikring]
+  - kategori: vedligehold
+    tekst: [bauhaus, silvan, jem & fix, jem og fix, stark, xl-byg, johannes fog, plantorama]
+
+  # ---- dagligvarer ----------------------------------------------------
+  - kategori: supermarked
+    tekst: [netto, rema 1000, rema1000, foetex, fotex, bilka, kvickly, superbrugsen, dagli brugsen, dagli'brugsen,
+            lidl, aldi, meny, irma, spar koebmand, loetus, nemlig.com, coop 365, 365discount]
+  - kategori: bager
+    tekst: [bager, konditori, slagter, lagkagehuset, emmerys]
+  - kategori: kiosk
+    tekst: [kiosk, 7-eleven, 7 eleven, seven eleven, shell select]
+  - kategori: apotek
+    tekst: [apotek, apotekeren, matas]
+
+  # ---- spisning ute ---------------------------------------------------
+  # Takeaway foer restaurant: "wolt" og "just eat" er leveringsled, ikke
+  # restauranter, og du vil kunne se dem for sig.
+  - kategori: takeaway
+    tekst: [wolt, just eat, justeat, hungry.dk, foodora, mcdonald, burger king, sunset boulevard,
+            joe & the juice, domino, pizza, kebab, sushi take]
+  - kategori: cafe
+    tekst: [cafe, kaffe, coffee, baresso, starbucks, espresso house]
+  - kategori: bar
+    # `bar` som HELT ord: som understreng ramte den "Fiskebar" og
+    # sendte en restaurantregning i natteliv-bunken.
+    ord: [bar, pub]
+    tekst: [bodega, vinbar, cocktail, natklub, brewpub, oelbar]
+  - kategori: restaurant
+    # `kro` som helt ord: ellers rammer den "Mikrobryggeriet",
+    # "Elektro" og alt andet med kro i.
+    ord: [kro]
+    tekst: [restaurant, spisehus, bistro, brasserie, madhus, smoerrebroed]
+
+  # ---- transport -------------------------------------------------------
+  - kategori: braendstof
+    # ingo og q8 som hele ord: "ingo" ramte ellers Bingo og Flamingo,
+    # og "q8" er kort nok til at dukke op i et referencenummer.
+    ord: [ingo, q8, f24, monta, clever]
+    tekst: [circle k, circlek, shell, ok benzin, ok a.m.b.a, uno-x, unox, spirii, e.on drive]
+  - kategori: kollektiv
+    tekst: [dsb, rejsekort, movia, midttrafik, fynbus, nordjyllands trafikselskab, arriva, metroselskabet, din offentlige transport]
+  - kategori: parkering
+    tekst: [easypark, parkpark, apcoa, q-park, onepark, parkering, storebaelt, oeresundsbron, brobizz, sund & baelt]
+  - kategori: bilservice
+    tekst: [autoservice, bilcenter, daekcenter, fdm, synshal, bilsyn, applus, autoteknik, mekonomen, carl christensen]
+  - kategori: bilforsikring
+    tekst: [bilforsikring, ejerafgift, vaegtafgift, groen ejerafgift, motorstyrelsen]
+  - kategori: taxa
+    tekst: [taxa, taxi, dantaxi, 4x35, drivenow, greenmobility, share now]
+
+  # ---- abonnementer -----------------------------------------------------
+  - kategori: streaming
+    ord: [hbo, max.com]
+    tekst: [netflix, disney, viaplay, tv 2 play, spotify, youtube premium, apple tv, skyshowtime, podimo, storytel, mofibo]
+  - kategori: telefon
+    tekst: [telenor, telia, 3 danmark, oister, cbb mobil, callme, lebara, telmore, yousee mobil]
+  - kategori: software
+    tekst: [apple.com/bill, google storage, google one, microsoft, adobe, dropbox, icloud, jetbrains, github, openai, anthropic, notion, figma]
+  - kategori: medlemskab
+    # 3f og ida som hele ord: "ida" ramte ellers "Davida", "Fluida"
+    # og enhver tekst med ida i.
+    ord: [3f, ida]
+    tekst: [fagforening, hk danmark, dansk metal, djoef, prosa, a-kasse, akasse, fagligt faellesskab]
+  - kategori: avis
+    tekst: [politiken, berlingske, jyllands-posten, information, weekendavisen, zetland, finans.dk, boersen, ingenioeren]
+
+  # ---- sundhed -----------------------------------------------------------
+  - kategori: tandlaege
+    tekst: [tandlaege, tandklinik, tandplejen, godt smil]
+  - kategori: laege
+    tekst: [laegehus, laegerne, speciallaege, privathospital, fysioterapi, kiropraktor, psykolog]
+  - kategori: medicin
+    tekst: [receptmedicin, medicintilskud]
+  - kategori: traening
+    tekst: [fitness world, sats, puregym, loop fitness, fitness dk, fitnessdk, crossfit, svoemmehal, yoga]
+  - kategori: sundhedsforsikring
+    tekst: [sundhedsforsikring, dansk sundhedssikring, pfa helbred, sygeforsikring danmark]
+
+  # ---- shopping ------------------------------------------------------------
+  - kategori: toej
+    # only, zara, nike, h&m som hele ord: korte navne der ellers
+    # dukker op midt i andre ord og i referencenumre.
+    ord: [only, zara, nike, "h&m", hm.com]
+    tekst: [zalando, bestseller, jack & jones, vero moda, magasin du nord, illum, adidas, deichmann, skoringen]
+  - kategori: elektronik
+    tekst: [elgiganten, power.dk, proshop, komplett, computersalg, apple store, av-cables, hifi klubben]
+  - kategori: hjem
+    tekst: [ikea, jysk, ilva, sinnerup, soestrene grene, flying tiger, kop & kande, imerco, normal]
+  - kategori: boeger
+    tekst: [saxo.com, bog & ide, arnold busck, williams dam, faraos, steam, playstation, nintendo, xbox]
+  - kategori: gaver
+    tekst: [gavekort, interflora, blomster]
+
+  # ---- fritid ---------------------------------------------------------------
+  - kategori: oplevelser
+    tekst: [nordisk film biograf, cinemaxx, biograf, tivoli, zoo, museum, billetlugen, ticketmaster, koncert]
+  - kategori: rejser
+    # sas og tui som hele ord: begge er korte nok til at dukke op
+    # midt i et andet navn eller et referencenummer.
+    ord: [sas, tui, dfds]
+    tekst: [norwegian, ryanair, booking.com, airbnb, hotel, momondo, scandlines, stena line, apollorejser, spies rejser]
+  - kategori: sport
+    # `sport` som helt ord: som understreng ramte den "Transport".
+    ord: [sport, stadium]
+    tekst: [sportmaster, intersport, sport 24, decathlon]
+  - kategori: hobby
+    tekst: [panduro, bog og papir, hobby, garnbutik]
+
+  # ---- boern -------------------------------------------------------------------
+  - kategori: institution
+    tekst: [daginstitution, vuggestue, boernehave, sfo, dagpleje, pladsanvisning]
+  - kategori: boerneting
+    tekst: [bilka leg, br legetoej, fars legetoej, toys r us, lego]
+  - kategori: boerneaktivitet
+    tekst: [boerneklub, spejder, musikskole, idraetsforening, kontingent]
+
+  # ---- oekonomi ----------------------------------------------------------------
+  - kategori: gebyr
+    tekst: [gebyr, rykkergebyr, overtraeksrente, kortgebyr, valutatillaeg]
+  - kategori: renter
+    tekst: [renteudgift, laan, afdrag, kreditforening, santander, resurs bank, ekspres bank]
+  - kategori: opsparing
+    tekst: [opsparing, nordnet, saxo bank, pension, pfa, danica, velliv, sampension, investering]
+  - kategori: skat
+    tekst: [skattestyrelsen, skat.dk, gaeldsstyrelsen, udbetaling danmark, restskat, b-skat]
+  - kategori: aconto
+    tekst: [aconto, acontobetaling]
+
+  # ---- indtaegt ---------------------------------------------------------------
+  # retning: ind paa dem alle. Ellers lander en tilbagebetaling TIL en
+  # arbejdsgiver som "loen", hvilket er praecis forkert vej.
+  - kategori: loen
+    retning: ind
+    tekst: [loen, loenoverfoersel, salary, trustworks, feriepenge, feriekonto]
+  - kategori: refusion
+    retning: ind
+    tekst: [refusion, tilbagebetaling, retur, kreditnota, overskydende skat]
+  - kategori: overfoersel
+    retning: ind
+    tekst: [overfoersel, mobilepay fra, fra konto]
+  - kategori: anden_indtaegt
+    retning: ind
+    # `su` SKAL vaere et helt ord. Som understreng rammer den
+    # Supermarked, Sushi og SUNSET BOULEVARD.
+    ord: [su]
+    tekst: [boernepenge, boerne- og ungeydelse, boligstoette, dagpenge, su-styrelsen]
+
+  # ---- sidste udvej -----------------------------------------------------------
+  # MobilePay staar HELT nederst med vilje. Det er en betalingsmaade og
+  # ikke en kategori, saa alt hvad der kan genkendes paa modtageren
+  # skal have ramt noget ovenfor foerst. Rammer det her, er det reelt
+  # ukategoriseret - men det er mere aerligt at sige "MobilePay" end at
+  # lade som om vi ved hvad pengene gik til.
+  #
+  # Den er udkommenteret, fordi "jeg ved det ikke" hoerer hjemme i
+  # Ukategoriseret-bunken hvor du kan se hvor stor den er. Slaa den til
+  # hvis du hellere vil have bunken mindre end aerlig.
+  # - kategori: ukategoriseret
+  #   tekst: [mobilepay, danske mobilepay]

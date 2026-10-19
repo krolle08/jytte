@@ -1,0 +1,399 @@
+{
+  "id": "jytteElForbrug01",
+  "name": "elforbrug",
+  "active": false,
+  "nodes": [
+    {
+      "id": "cron",
+      "name": "Dagligt 07:10",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -440,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "10 7 * * *"
+            }
+          ]
+        }
+      },
+      "notes": "En gang i doegnet. DataHub opdaterer maalerdata en gang dagligt og ligger selv ca. et doegn bagud, saa hyppigere koersler henter de samme tal igen."
+    },
+    {
+      "id": "config",
+      "name": "Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -220,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// How far back to ask DataHub for. Metering data lands about a day\n// late, so \"today\" is always empty and asking for it is not an error,\n// it is just a wasted row. 30 days is one invoice period plus slack.\nconst DAYS = 30;\n\nconst pad = (n) => String(n).padStart(2, '0');\nconst iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;\n\nconst now = new Date();\nconst to = new Date(now);\nto.setDate(to.getDate() - 1);          // yesterday, inclusive\nconst from = new Date(to);\nfrom.setDate(from.getDate() - DAYS);\n\nreturn [{\n  json: {\n    date_from: iso(from),\n    date_to: iso(to),\n    // Day. Hour would be 30x the rows for a chart that shows days.\n    // Swap to 'Hour' only when the page actually draws hours.\n    aggregation: 'Day',\n  },\n}];"
+      },
+      "notes": "Datointerval. Beregnes her, ikke i hver node, saa der kun er eet sted at aendre perioden."
+    },
+    {
+      "id": "token",
+      "name": "Hent data access token",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.eloverblik.dk/CustomerApi/api/token",
+        "options": {},
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_ELOVERBLIK_CREDENTIAL_ID",
+          "name": "eloverblik"
+        }
+      }
+    },
+    {
+      "id": "have-token",
+      "name": "Udpak token",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// The token call answers { result: '<jwt>' }. Everything after this\n// uses that, NOT the refresh token: the refresh token is a year-long\n// credential and must not travel on every request.\nconst token = $json.result;\nif (!token) {\n  throw new Error('Eloverblik gav intet data access token. Er refresh-token udloebet?');\n}\nconst cfg = $('Config').first().json;\nreturn [{ json: { token, ...cfg } }];"
+      },
+      "notes": "Byt refresh-token til et data access token, der holder 24 timer. Resten af flowet bruger KUN det korte token."
+    },
+    {
+      "id": "meteringpoints",
+      "name": "Hent maalepunkter",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.eloverblik.dk/CustomerApi/api/meteringpoints/meteringpoints?includeAll=false",
+        "options": {},
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.token }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "ids",
+      "name": "Udpak maalepunkter",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// { result: [ { meteringPointId, streetName, buildingNumber, postcode,\n//               cityName, typeOfMP, ... } ] }\nconst rows = ($json.result || []);\nif (!rows.length) {\n  throw new Error('Ingen maalepunkter paa kontoen.');\n}\nconst prev = $('Udpak token').first().json;\nconst cfg = $('Config').first().json;\n\n// Back-reference the Code node, never the HTTP node it unpacked.\n// 'Hent data access token' answers { result: '<jwt>' } and has no\n// .token, so this was undefined and 'Hent forbrug' sent\n// 'Bearer undefined' - a 401 three nodes after the real mistake.\nif (!prev.token) {\n  throw new Error('Intet data access token i kaeden. Peger denne node paa Udpak token?');\n}\n\nconst meters = rows.map((r) => ({\n  id: String(r.meteringPointId || ''),\n  address: [r.streetName, r.buildingNumber, r.postcode, r.cityName]\n    .filter(Boolean).join(' ').trim(),\n  type: String(r.typeOfMP || ''),\n}));\n\nreturn [{\n  json: {\n    token: prev.token,\n    ...cfg,\n    meters,\n    ids: meters.map((m) => m.id),\n  },\n}];"
+      },
+      "notes": "Adresse og id pr. maalepunkt. Et id er ikke en hemmelighed, men adressen er personhenfoerbar og vises kun paa /el."
+    },
+    {
+      "id": "timeseries",
+      "name": "Hent forbrug",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://api.eloverblik.dk/CustomerApi/api/meterdata/gettimeseries/' + $json.date_from + '/' + $json.date_to + '/' + $json.aggregation }}",
+        "options": {},
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.token }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ meteringPoints: { meteringPoint: $json.ids } }) }}"
+      }
+    },
+    {
+      "id": "normalize",
+      "name": "Normalisér til dage",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Eloverblik answers in CIM / Ebix shape, which is deeply nested and\n// uses strings for every number:\n//\n//   result[].MyEnergyData_MarketDocument.TimeSeries[]\n//     .Period[] { timeInterval:{start,end},\n//                 Point[]{ position, 'out_Quantity.quantity' } }\n//\n// That last key is FLAT. The dot is part of the key name, not a\n// nesting, which is how Eloverblik serialises CIM to JSON.\n//\n// Flatten to one row per day. Consumption is stored as INTEGER\n// thousandths of a kWh (kwh_x1000) - the no-floats rule in\n// CLAUDE.md applies to meter readings for the same reason it applies\n// to money, and Eloverblik reports three decimals so nothing is lost.\n\nconst toX1000 = (s) => {\n  const n = parseFloat(String(s == null ? '0' : s).replace(',', '.'));\n  return isNaN(n) ? 0 : Math.round(n * 1000);\n};\n\n// Eloverblik timestamps are UTC. A Danish day starts at 22:00Z in\n// summer and 23:00Z in winter, so taking the UTC date labels every\n// reading ONE DAY EARLY. Nothing on a bar chart would ever show that.\n//\n// And the offset cannot be added in milliseconds either: the last\n// Sunday in October is 25 hours long, so a 30-day window that spans\n// it would drift by an hour and eventually by a day.\n//\n// So: resolve the start to a Danish CALENDAR date, then add whole\n// days to that date at UTC noon, which no DST shift can move across\n// a midnight.\nconst DK = new Intl.DateTimeFormat('en-CA', {\n  timeZone: 'Europe/Copenhagen',\n  year: 'numeric', month: '2-digit', day: '2-digit',\n});\nconst pad = (n) => String(n).padStart(2, '0');\nconst dayOf = (isoStr, offsetDays) => {\n  const base = DK.format(new Date(isoStr));            // YYYY-MM-DD, Danish\n  const [y, m, d] = base.split('-').map(Number);\n  const noon = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));\n  noon.setUTCDate(noon.getUTCDate() + offsetDays);\n  return `${noon.getUTCFullYear()}-${pad(noon.getUTCMonth() + 1)}-${pad(noon.getUTCDate())}`;\n};\n\nconst prev = $('Udpak maalepunkter').first().json;\nconst byDay = new Map();\n\n// Reading p.out_Quantity.quantity returns undefined, because there is\n// no out_Quantity object - the key is the whole string\n// 'out_Quantity.quantity'. The old nested read fell through to '0' and\n// published thirty days of 0,000 kWh with nothing raising an error.\n// Both shapes are accepted here so a future flattening change cannot\n// break it the other way.\nconst quantityOf = (p) => {\n  if (p['out_Quantity.quantity'] != null) { return p['out_Quantity.quantity']; }\n  if (p.out_Quantity && p.out_Quantity.quantity != null) { return p.out_Quantity.quantity; }\n  return null;\n};\n\nlet seen = 0;\nlet missing = 0;\nlet firstPoint = null;\n\nfor (const item of $input.all()) {\n  const results = (item.json && item.json.result) || [];\n  for (const r of results) {\n    const doc = r.MyEnergyData_MarketDocument || {};\n    for (const ts of (doc.TimeSeries || [])) {\n      for (const per of (ts.Period || [])) {\n        const start = (per.timeInterval || {}).start;\n        if (!start) { continue; }\n        for (const p of (per.Point || [])) {\n          // position is 1-based within the period\n          const pos = parseInt(p.position, 10);\n          if (isNaN(pos)) { continue; }\n          const day = dayOf(start, pos - 1);\n          const raw = quantityOf(p);\n          seen += 1;\n          if (firstPoint === null) { firstPoint = p; }\n          if (raw == null) { missing += 1; }\n          byDay.set(day, (byDay.get(day) || 0) + toX1000(raw));\n        }\n      }\n    }\n  }\n}\n\n// One missing reading is ordinary. EVERY reading missing means the\n// response shape has moved, and posting a flat zero line to Jytte\n// would read as a month without electricity. Fail the node instead,\n// and name the keys that were actually there.\nif (seen > 0 && missing === seen) {\n  throw new Error('Ingen maalinger kunne laeses ud af '\n    + seen + ' punkter. Point-noeglerne er: '\n    + Object.keys(firstPoint || {}).join(', '));\n}\n\nconst days = [...byDay.entries()]\n  .sort((a, b) => (a[0] < b[0] ? -1 : 1))\n  .map(([date, x1000]) => ({\n    date,\n    kwh_x1000: x1000,\n    kwh: (x1000 / 1000).toFixed(3).replace('.', ','),\n  }));\n\n// Bar heights, so the page does no arithmetic. Guard the all-zero\n// case: dividing by a zero max would make every bar NaN%.\nconst top = days.reduce((m, d) => Math.max(m, d.kwh_x1000), 0) || 1;\nfor (const d of days) {\n  d.bar = Math.max(2, Math.round((100 * d.kwh_x1000) / top));\n}\n\nconst total = days.reduce((s, d) => s + d.kwh_x1000, 0);\n\nreturn [{\n  json: {\n    ready: days.length > 0,\n    reason: days.length ? '' : 'Eloverblik svarede, men uden maalinger i perioden.',\n    source: 'eloverblik',\n    meters: prev.meters || [],\n    days,\n    total_kwh: (total / 1000).toFixed(1).replace('.', ','),\n    total_kwh_x1000: total,\n    period: { from: prev.date_from, to: prev.date_to },\n    // Declared so /poc/systems can judge this widget instead of\n    // printing \"kadence ukendt\". Daily, with a generous staleness\n    // window because DataHub itself is a day behind.\n    expected_minutes: 1440,\n    stale_after_minutes: 2880,\n    fetched_at: new Date().toISOString(),\n  },\n}];"
+      },
+      "notes": "Fladgoer CIM-strukturen til en raekke pr. dag. kwh_x1000 er heltal: ingen floats, samme regel som beloeb."
+    },
+    {
+      "id": "post-state",
+      "name": "POST -> Jytte /state",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.JYTTE_BASE_URL}}/widgets/elforbrug/state",
+        "options": {},
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Jytte-Internal-Secret",
+              "value": "={{$env.JYTTE_INTERNAL_SECRET}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}"
+      }
+    },
+    {
+      "id": "error-trigger",
+      "name": "On any error",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -440,
+        240
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "shape-error",
+      "name": "Shape error payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -220,
+        240
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "code",
+              "type": "string",
+              "value": "={{$json.execution && $json.execution.error && ($json.execution.error.httpCode || $json.execution.error.name) || 'unknown'}}"
+            },
+            {
+              "id": "2",
+              "name": "message",
+              "type": "string",
+              "value": "={{$json.execution && $json.execution.error && ($json.execution.error.message || JSON.stringify($json.execution.error)) || 'unknown'}}"
+            },
+            {
+              "id": "3",
+              "name": "execution_id",
+              "type": "string",
+              "value": "={{$json.execution && $json.execution.id}}"
+            },
+            {
+              "id": "4",
+              "name": "workflow_id",
+              "type": "string",
+              "value": "={{$json.workflow && $json.workflow.id}}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "post-error",
+      "name": "POST -> Jytte /error",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        240
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.JYTTE_BASE_URL}}/widgets/elforbrug/error",
+        "options": {},
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Jytte-Internal-Secret",
+              "value": "={{$env.JYTTE_INTERNAL_SECRET}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}"
+      }
+    }
+  ],
+  "connections": {
+    "Dagligt 07:10": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Hent data access token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hent data access token": {
+      "main": [
+        [
+          {
+            "node": "Udpak token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Udpak token": {
+      "main": [
+        [
+          {
+            "node": "Hent maalepunkter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hent maalepunkter": {
+      "main": [
+        [
+          {
+            "node": "Udpak maalepunkter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Udpak maalepunkter": {
+      "main": [
+        [
+          {
+            "node": "Hent forbrug",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hent forbrug": {
+      "main": [
+        [
+          {
+            "node": "Normalisér til dage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalisér til dage": {
+      "main": [
+        [
+          {
+            "node": "POST -> Jytte /state",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On any error": {
+      "main": [
+        [
+          {
+            "node": "Shape error payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shape error payload": {
+      "main": [
+        [
+          {
+            "node": "POST -> Jytte /error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "errorWorkflow": "jytteElForbrug01"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "notes": "Metering data for the `elforbrug` widget, from Eloverblik (Energinet DataHub). CREDENTIAL RULE: the refresh token lives only in n8n's encrypted credential store as an HTTP Header Auth credential named `eloverblik` (header Authorization, value 'Bearer <refresh token>'). Jytte holds no energy credential and has no Python client - the widget is source: n8n. BEFORE ACTIVATING: log in at eloverblik.dk with MitID, create a refresh token under your name top right (valid one year), add it as that credential, and repoint the 'Hent data access token' node at it. The flow then exchanges it for a 24-hour data access token and uses only that. Spot prices are NOT fetched here - they come from Energi Data Service, which needs no credential, so the `elpris` widget fetches them in plain Python. Consumption is pushed as integer thousandths of a kWh. The payload declares expected_minutes so /poc/systems can judge it instead of reporting an unknown cadence."
+  }
+}

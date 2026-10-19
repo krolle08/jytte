@@ -13,7 +13,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from jinja2 import ChoiceLoader, FileSystemLoader
 
-from app import claude, db, mcp_server, sse, watchdog
+from app import (aiview, bankauth, claude, db, frontpage, jyviews,
+                 mcp_server, nav, sse, today, watchdog)
 from app.registry import WidgetRegistry
 from app.sse import sse_router
 
@@ -47,6 +48,10 @@ async def lifespan(app: FastAPI):
     await db.init_db()
     await registry.start(scheduler)
     mcp_server.attach_widgets(registry)
+    # Before the first request can arrive, and after uvicorn has set up
+    # its access logger: the bank callback carries a code in the query
+    # string and uvicorn would log it verbatim.
+    bankauth.install_log_filter()
 
     # F5 watchdog: 60s cadence freshness/health check across all widgets
     async def _watchdog_job():
@@ -75,6 +80,10 @@ if DOCS_DIR.exists():
     app.mount("/docs-files", StaticFiles(directory=str(DOCS_DIR)), name="docs-files")
 app.mount("/mcp", mcp_server.mcp_asgi_app())
 app.include_router(sse_router)
+# The bank consent callback. Its own module and no shell, because a
+# tunnel in front of Jytte makes this one path reachable from the
+# internet; see the docstring in app/bankauth.py.
+app.include_router(bankauth.router)
 
 for _w in registry.list():
     if _w.router is not None:
@@ -86,22 +95,299 @@ def health():
     return {"status": "ok", "widgets": [w.name for w in registry.list()]}
 
 
-@app.get("/", response_class=HTMLResponse)
-async def dashboard(request: Request):
+# ----------------------------------------------------------------------
+# New dark UI, from docs/Home monitoring dashboard UI mockups.
+#
+# Nine screens (1a..1i) behind one 232px sidebar. Screens that are not
+# rebuilt yet render the shell plus an honest "not migrated" state with
+# a link to their legacy page, rather than a placeholder that pretends
+# to be the real thing. Everything built before the redesign lives on
+# under /legacy/* and is unchanged - see app/nav.py.
+# ----------------------------------------------------------------------
+
+async def _shell(request: Request, active: str, template: str, ctx: dict | None = None):
     templates: Jinja2Templates = request.app.state.templates
-    return templates.TemplateResponse(
-        "dashboard.html",
-        {
-            "request": request,
-            "widgets": registry.list(),
-            "claude_enabled": bool(os.getenv("ANTHROPIC_API_KEY")),
-            "active_tab": "dashboard",
-        },
-    )
+    out = {"request": request, "nav": await nav.context(registry, active)}
+    out.update(ctx or {})
+    # A dict key named `items` (or keys/values/get/...) resolves to the
+    # bound method in Jinja, not to the key. That has cost this project
+    # three 500s, so every context is checked here and fails with the
+    # offending key name instead of a bare TypeError from a template.
+    jyviews.assert_no_shadow({k: v for k, v in out.items() if k != "request"},
+                             f"{template} context")
+    return templates.TemplateResponse(template, out)
+
+
+@app.get("/", response_class=HTMLResponse)
+async def home(request: Request):
+    """Mock 1a. Mail, calendar and tasks over a stat strip, then four
+    link tiles. Composition is app/home.py; it reuses the widget state
+    app/today.py already reads, so nothing fetches twice."""
+    from app import home as home_mod
+    return await _shell(request, "home", "jy_home.html", await home_mod.build(registry))
+
+
+@app.get("/ai", response_class=HTMLResponse)
+async def jy_ai(request: Request):
+    """Mock 1b."""
+    return await _shell(request, "ai", "jy_ai.html", await aiview.build_stack(registry))
+
+
+@app.get("/constellation", response_class=HTMLResponse)
+async def jy_constellation(request: Request, sel: str | None = None, ctx: str = "all"):
+    """Mock 1c."""
+    return await _shell(request, "constellation", "jy_constellation.html",
+                        await aiview.build_constellation(registry, sel=sel, ctx=ctx))
+
+
+@app.get("/workflows", response_class=HTMLResponse)
+async def jy_workflows(request: Request, wf: str | None = None, step: str | None = None):
+    """Mock 1d."""
+    return await _shell(request, "workflows", "jy_workflows.html",
+                        await aiview.build_workflows(registry, wf_id=wf, step=step))
+
+
+@app.get("/projects", response_class=HTMLResponse)
+async def jy_projects(request: Request):
+    """Mock 1e."""
+    return await _shell(request, "projects", "jy_projects.html",
+                        await jyviews.projects(registry))
+
+
+@app.get("/devops", response_class=HTMLResponse)
+async def jy_devops(request: Request, org: str | None = None):
+    """Mock 1f."""
+    return await _shell(request, "devops", "jy_devops.html",
+                        await jyviews.devops(registry, org=org))
+
+
+@app.get("/news", response_class=HTMLResponse)
+async def jy_news(request: Request, cat: str | None = None):
+    """Mock 1g."""
+    return await _shell(request, "news", "jy_news.html",
+                        await jyviews.news(registry, cat=cat))
 
 
 @app.get("/budget", response_class=HTMLResponse)
-async def budget_tab(request: Request):
+async def jy_budget(request: Request):
+    """Mock 1h."""
+    return await _shell(request, "budget", "jy_budget.html",
+                        await jyviews.budget(registry))
+
+
+@app.get("/stocks", response_class=HTMLResponse)
+async def jy_stocks(request: Request):
+    """Mock 1i. No provider wired; the widget reports what it needs."""
+    return await _shell(request, "stocks", "jy_stocks.html",
+                        await jyviews.stocks(registry))
+
+
+@app.get("/salary", response_class=HTMLResponse)
+async def jy_salary(request: Request):
+    """Net pay per person, computed from each one's skattekort figures.
+    Not in the design handoff - added on request."""
+    return await _shell(request, "salary", "jy_salary.html",
+                        await jyviews.salary(registry))
+
+
+@app.get("/vacation", response_class=HTMLResponse)
+async def jy_vacation(request: Request, r: str | None = None, partial: int = 0):
+    """Danish school holidays. Not in the design handoff - added on
+    request, modelled on danmarkshelligdage.dk/da/skoleferier. `r` is
+    the winter-holiday region, 'oest' (uge 7) or 'vest' (uge 8).
+
+    `partial=1` returns just the swappable body. The region toggle is
+    HTMX rather than a link so that selecting a region never reloads the
+    page and never moves the viewport."""
+    ctx = await jyviews.vacation(registry, region=r)
+    if partial:
+        templates: Jinja2Templates = request.app.state.templates
+        return templates.TemplateResponse("_vac_body.html", {"request": request, **ctx})
+    return await _shell(request, "vacation", "jy_vacation.html", ctx)
+
+
+# ----------------------------------------------------------------------
+# POC'S - the bottom group in the sidebar.
+#
+# Everything under /poc is unfinished by declaration. The register in
+# app/poc/catalog.py carries each one's stage and, more usefully, the
+# list of things that are not true yet; a POC is promotable only when
+# that list is empty. Keeping these on their own URL prefix and their
+# own sidebar group is what stops a half-built number being read as a
+# production figure three weeks later.
+# ----------------------------------------------------------------------
+
+@app.get("/poc", response_class=HTMLResponse)
+async def poc_index(request: Request):
+    """The POC register: what is WIP, what is waiting for a decision,
+    and what is blocking each one from leaving /poc."""
+    from app.poc import catalog
+    return await _shell(request, "poc", "poc_index.html",
+                        {"pocs": catalog.POCS, "s": catalog.summary()})
+
+
+@app.get("/poc/systems", response_class=HTMLResponse)
+async def poc_systems(request: Request):
+    """POC: a patient-monitoring layout over Jytte's own systems.
+
+    Reads cached widget state plus two live probes (n8n healthz, mount
+    presence). Refreshes nothing: it reports on the fetchers rather
+    than joining them."""
+    from app.poc import catalog, systems
+    ctx = await systems.build(registry)
+    ctx["poc"] = catalog.by_key("poc-systems")
+    return await _shell(request, "poc-systems", "poc_systems.html", ctx)
+
+
+@app.get("/poc/certifikater", response_class=HTMLResponse)
+async def poc_certifikater(request: Request):
+    """POC: the credentials wall. Course certificates read off
+    assets/certificates/. NOT X.509 - see app/poc/certificates.py."""
+    from app.poc import catalog, certificates
+    ctx = certificates.build()
+    ctx["poc"] = catalog.by_key("poc-certifikater")
+    return await _shell(request, "poc-certifikater", "poc_certifikater.html", ctx)
+
+
+@app.get("/poc/certifikater/fil/{name}")
+async def poc_certifikat_file(name: str):
+    """Serve one certificate image.
+
+    Not StaticFiles: the folder is mounted outside app/static, and a
+    certificate is personal enough that it should go through a handler
+    rather than a blanket mount. `resolve()` answers only for a name it
+    found by listing the folder, so a traversal attempt has nothing to
+    match against."""
+    from fastapi.responses import FileResponse
+    from app.poc import certificates
+    p = certificates.resolve(name)
+    if p is None:
+        raise HTTPException(status_code=404, detail="ukendt fil")
+    return FileResponse(p)
+
+
+@app.get("/poc/wow", response_class=HTMLResponse)
+async def poc_wow(request: Request):
+    """POC: the newest WoW Forever beta note as a game-styled
+    walkthrough. The wowforever widget's analyzer note when it is valid
+    and newer, else the newest hand file - see app/poc/wowforever.py."""
+    from app.poc import catalog, wowforever
+    w = registry.get("wowforever")
+    state = await w.latest() if w else {}
+    ctx = wowforever.build(widget_data=state.get("data"))
+    ctx["poc"] = catalog.by_key("poc-wow")
+    return await _shell(request, "poc-wow", "poc_wowforever.html", ctx)
+
+
+@app.get("/bank", response_class=HTMLResponse)
+async def jy_bank(request: Request):
+    """Where the money went, by category.
+
+    Reads the `bank` widget's cached payload and runs it through
+    app/kategori.py, a pure rule engine - project rule 4 keeps models
+    out of this path, because a categorisation has to be explainable
+    as "it matched line 23" for the rules to ever improve. The share
+    of spend no rule caught is printed in the strip, not hidden."""
+    from app import bankview
+    return await _shell(request, "bank", "jy_bank.html",
+                        await bankview.build(registry))
+
+
+@app.get("/el", response_class=HTMLResponse)
+async def jy_el(request: Request):
+    """Spot price, what it actually costs, and consumption.
+
+    Composes two widgets: `elpris` (Energi Data Service, open, no
+    credential, so it fetches in plain Python) and `elforbrug`
+    (Eloverblik via n8n, because its refresh token is a credential).
+    Tariffs come from config/el.yml; while that is empty the page says
+    it is showing raw spot rather than inventing a total."""
+    from app import elview
+    return await _shell(request, "el", "jy_el.html", await elview.build(registry))
+
+
+@app.get("/jobs", response_class=HTMLResponse)
+async def jy_jobs(request: Request):
+    """Every n8n workflow as a table row: name, what it does, whether
+    it is armed, how often it fires, and a link into n8n.
+
+    /workflows draws one flow at a time, so it cannot answer "which of
+    my jobs are switched on". Source is the committed workflow JSON,
+    bind-mounted read-only; app/jobs.py documents why the live state is
+    not read."""
+    from app import jobs
+    return await _shell(request, "jobs", "jy_jobs.html", jobs.load())
+
+
+@app.get("/opslag", response_class=HTMLResponse)
+async def opslagsvaerk(request: Request):
+    """Opslagsværk: tools and concepts worth looking up again.
+
+    Source is config/opslagsvaerk.yml, bind-mounted read-only, so adding
+    an entry on the host needs no rebuild. Filtering is client-side; see
+    the template for why that is a rule here."""
+    from app import opslag
+    return await _shell(request, "opslag", "jy_opslag.html", opslag.load())
+
+
+@app.get("/legacy", response_class=HTMLResponse)
+async def legacy_index(request: Request):
+    """Index of everything built before the redesign. Kept so screens
+    can be migrated one at a time without losing anything in between."""
+    return await _shell(request, "legacy", "jy_legacy.html",
+                        {"pages": nav.LEGACY_PAGES})
+
+
+# ----------------------------------------------------------------------
+# Legacy pages. Bodies unchanged from before the redesign; they render
+# with the old base.html and styles.css, so each looks as it always did.
+# ----------------------------------------------------------------------
+@app.get("/legacy/today", response_class=HTMLResponse)
+async def legacy_today(request: Request):
+    """Today view - roadmap step 0 of docs/home-monitor.
+
+    Panels follow the PoC: daily brief, calendar, mail, vault tasks,
+    pull requests, pipelines, taskboard. Composition is app/today.py.
+    Anything needing a credential is fetched by n8n, never here."""
+    templates: Jinja2Templates = request.app.state.templates
+    ctx = await today.build(registry)
+    ctx.update({"request": request, "active_tab": "today"})
+    return templates.TemplateResponse("today.html", ctx)
+
+
+@app.get("/legacy/dashboard", response_class=HTMLResponse)
+async def legacy_dashboard(request: Request):
+    """The earlier prioritised-boxes front page, kept at /dashboard.
+    See app/frontpage.py for the composition and
+    app/widgets/{tasks/buckets,email/highlight}.py for the
+    categorization (both skeleton placeholders pending the spec)."""
+    templates: Jinja2Templates = request.app.state.templates
+    ctx = await frontpage.build(registry)
+    ctx.update(
+        {
+            "request": request,
+            "claude_enabled": bool(os.getenv("ANTHROPIC_API_KEY")),
+            "active_tab": "dashboard",
+        }
+    )
+    return templates.TemplateResponse("frontpage.html", ctx)
+
+
+@app.get("/frontpage/box/{slug}", response_class=HTMLResponse)
+async def frontpage_box(request: Request, slug: str):
+    """One front-page box, re-rendered whole. The box element swaps
+    itself with hx-swap="outerHTML" when its feeding widget fires SSE,
+    so the header count and the body always come from the same read."""
+    ctx = await frontpage.box_context(registry, slug)
+    if ctx is None:
+        raise HTTPException(status_code=404, detail="unknown front-page box")
+    templates: Jinja2Templates = request.app.state.templates
+    ctx["request"] = request
+    return templates.TemplateResponse(frontpage.BOX_TEMPLATE, ctx)
+
+
+@app.get("/legacy/budget", response_class=HTMLResponse)
+async def legacy_budget(request: Request):
     """Full editor page for F7. Inline server-rendered list + HTMX add/edit."""
     from app.widgets.budget import db_budget
     entries = await db_budget.list_entries(include_inactive=False)
@@ -124,8 +410,8 @@ async def budget_tab(request: Request):
     )
 
 
-@app.get("/news", response_class=HTMLResponse)
-async def news_tab(request: Request):
+@app.get("/legacy/news", response_class=HTMLResponse)
+async def legacy_news(request: Request):
     """Full categorized news view with photos + summaries + click-to-source."""
     w = registry.get("news")
     if w is None:
@@ -142,8 +428,29 @@ async def news_tab(request: Request):
     )
 
 
-@app.get("/ado", response_class=HTMLResponse)
-async def ado_tab(request: Request):
+@app.get("/legacy/ai", response_class=HTMLResponse)
+async def legacy_ai(request: Request, wf: str | None = None):
+    """AI architecture view: constellation, workflow list, flow canvas.
+    Data comes from the aistack widget, which reads the host-side scan."""
+    ctx = await aiview.build(registry, wf_id=wf)
+    ctx.update({"request": request, "active_tab": "ai"})
+    templates: Jinja2Templates = request.app.state.templates
+    return templates.TemplateResponse("ai_tab.html", ctx)
+
+
+@app.get("/legacy/projects", response_class=HTMLResponse)
+async def legacy_projects(request: Request):
+    """Projects page: AI projects and normal projects, read out of the
+    llm-wiki sub-wikis. Content lives in the vault - this view is
+    strictly read-only, see app/widgets/projects/fetch.py."""
+    ctx = await frontpage.projects_page_context(registry)
+    ctx.update({"request": request, "active_tab": "projects"})
+    templates: Jinja2Templates = request.app.state.templates
+    return templates.TemplateResponse("projects_tab.html", ctx)
+
+
+@app.get("/legacy/ado", response_class=HTMLResponse)
+async def legacy_ado(request: Request):
     """Dedicated tab for the Azure DevOps widget. Renders the full
     multi-instance breakdown (ORG -> PROJECT -> sections)."""
     w = registry.get("azuredevops")

@@ -1,0 +1,14 @@
+{# WoW Forever card. Newest note and the latest newsy blue posts; the
+   full walkthrough is /poc/wow. See app/widgets/wowforever/CLAUDE.md. #}
+{% set d = data %}
+{% if not d.ready %}
+<p class="empty">{{ d.reason or "Ingen WoW-noter hentet endnu." }}</p>
+{% else %}
+<div class="col" style="gap:8px">
+  <a href="/poc/wow" style="font-weight:600">{{ (d.note or {}).title or d.notes_post.topic_title }}</a>
+  {% if d.note_error %}<span class="pill coral">{{ d.note_error }}</span>{% endif %}
+  {% for p in d.blue_posts[:3] %}
+  <a href="{{ p.url }}" target="_blank" rel="noopener noreferrer" style="font-size:12px">{{ p.title }}</a>
+  {% endfor %}
+</div>
+{% endif %}

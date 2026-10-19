@@ -1,0 +1,14 @@
+name: vault
+title: Vault
+# source: n8n - the daily vault refresh runs on the HOST (Windows Task
+# Scheduler -> LLM-Wiki/scripts/refresh_views.py) and writes
+# LLM-Wiki/.graph/refresh-status.json. The n8n workflow `vault-refresh`
+# reads that file from a read-only mount at 06:30 and pushes it to
+# POST /widgets/vault/state. Jytte never runs the scripts and never
+# writes to the vault.
+source: n8n
+refresh_minutes: null
+client_refresh_seconds: 600
+claude_analyzer: false
+expose_mcp: false
+watcher: false

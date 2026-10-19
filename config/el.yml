@@ -1,0 +1,73 @@
+# Elpriser - dine egne tal oven paa spotprisen.
+#
+# HVORFOR DEN HER FIL FINDES
+# Energi Data Service udleverer spotprisen og intet andet. Det du
+# faktisk betaler er spotpris + nettarif + afgifter + moms, og de dele
+# afhaenger af dit maalepunkt og dit netselskab. Ingen aaben kilde
+# kender dem for netop din adresse.
+#
+# Saa laenge `oere_pr_kwh` staar tom, viser /el raa spotpris og siger
+# det hoejt. Den gaetter aldrig et tal: en forkert totalpris er
+# vaerre end en aerlig halv pris.
+#
+# HVOR TALLENE STAAR
+# Paa din regning fra Andel Energi, under "Transport og afgifter".
+# De samme satser ligger i Eloverblik under dit maalepunkt
+# (Maalepunkt -> Tariffer), som ogsaa er stedet Jytte vil hente dem
+# automatisk den dag `elforbrug`-workflowet har et token.
+#
+# ALLE TAL ER OERE PR. kWh UDEN MOMS.
+# Moms laegges paa til sidst, paa summen. Skriv komma som punktum.
+
+omraade: DK2            # DK2 = Sjaelland og Bornholm. DK1 = Jylland og Fyn.
+leverandoer: Andel Energi
+
+tillaeg:
+  - navn: Elafgift
+    oere_pr_kwh: 1
+    kilde: "Staten. Satsen aendres typisk 1. januar."
+
+  - navn: Nettarif
+    oere_pr_kwh: 41.3608
+    kilde: "Dit netselskab. Radius, Cerius, N1 - staar paa regningen."
+    # Flere netselskaber har tre satser over doegnet. Udfyld
+    # `tidsbaand` i stedet for `oere_pr_kwh` hvis dit har det, saa
+    # regner siden pr. kvarter i stedet for pr. doegn.
+    # Timerne er fra-og-med/til-og-ikke-med, lokal tid.
+    tidsbaand:
+      - navn: Lavlast
+        fra: 3
+        til: 4
+        oere_pr_kwh: 184
+      - navn: Hoejlast
+        fra: 17
+        til: 18
+        oere_pr_kwh: 311
+  #    - navn: Spidslast
+   #     fra: 17
+   #     til: 21
+    #    oere_pr_kwh: 0.00
+
+  - navn: Systemtarif
+    oere_pr_kwh: 9
+    kilde: "Energinet."
+
+  - navn: Transmissionstarif
+    oere_pr_kwh: 5.38
+    kilde: "Energinet."
+
+  - navn: Tillaeg fra Andel
+    oere_pr_kwh:
+    kilde: "Din aftale med Andel Energi. Spotpris-produkter har et fast tillaeg."
+
+# Faste beloeb pr. maaned. De er ikke pr. kWh og indgaar derfor ikke i
+# oere/kWh-tallet - siden viser dem for sig, saa de ikke forsvinder.
+abonnementer:
+  - navn: Abonnement, Andel Energi
+    kr_pr_maaned: 20
+  - navn: Abonnement, netselskab
+    kr_pr_maaned: 51.05
+  - navn: Abonnement, Energinet
+    kr_pr_maaned: 19.48
+
+moms_pct: 25

@@ -1,0 +1,25 @@
+<title>Home Monitor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="app.css">
+
+<header><div class="bar">
+  <div class="brand"><span class="dot" aria-hidden="true"></span>Home Monitor</div>
+  <nav aria-label="Views">
+    <button id="nav-today" type="button" aria-pressed="true">Today</button>
+    <button id="nav-ai" type="button" aria-pressed="false">AI architecture</button>
+  </nav>
+  <span class="mock">Mock data</span>
+</div></header>
+<div class="wrap"><main id="view"></main></div>
+<div id="voice" hidden>
+  <div id="vsheet" class="vsheet" hidden role="dialog" aria-label="Voice command">
+    <div class="vtop"><span>Command</span><button type="button" id="vclose" aria-label="Close">&#215;</button></div>
+    <form id="vform" class="vrow"><input type="text" id="vinput" placeholder="Say or type a command" autocomplete="off"><button class="btn" type="submit" id="vsend">Send</button></form>
+    <div class="vmeta"><label for="vlang">Speech</label><select id="vlang"><option value="da-DK">Dansk</option><option value="en-US">English</option></select><span id="vstatus" class="vstatus" aria-live="polite"></span></div>
+    <div id="vlog" class="vlog"></div>
+  </div>
+  <button type="button" id="mic" class="mic" aria-label="Voice command" aria-expanded="false"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+</div>
+
+  <script src="app.js"></script>

@@ -1,0 +1,16 @@
+name: calendar
+title: Kalender
+# source: n8n - the Microsoft Graph read lives in
+# deploy/n8n/workflows/calendar.json and arrives via
+# POST /widgets/calendar/state. Same contract as `email`:
+# credentials live in n8n's encrypted store, never in Jytte, never in
+# an agent's reach. Setting this also makes the dashboard refresh button
+# a no-op so a click cannot clobber the pushed payload.
+source: n8n
+refresh_minutes: null
+client_refresh_seconds: 120
+claude_analyzer: false
+expose_mcp: false
+watcher: false
+# Real surface is its own page, so no card on /dashboard.
+page_only: true

@@ -1,0 +1,4234 @@
+{
+ "generated_at": "2026-10-17T17:15:03+00:00",
+ "generator": "scripts/scan_ai.py",
+ "categories": [
+  {
+   "id": "vault",
+   "name": "Vault og viden",
+   "order": 1
+  },
+  {
+   "id": "build",
+   "name": "Byg",
+   "order": 2
+  },
+  {
+   "id": "review",
+   "name": "Review",
+   "order": 3
+  },
+  {
+   "id": "intake",
+   "name": "Intake og triage",
+   "order": 4
+  },
+  {
+   "id": "integration",
+   "name": "Integration",
+   "order": 5
+  },
+  {
+   "id": "ops",
+   "name": "Drift",
+   "order": 6
+  },
+  {
+   "id": "other",
+   "name": "Uklassificeret",
+   "order": 99
+  }
+ ],
+ "agents": {
+  "Architect": {
+   "d": "Elite system design specialist with PhD-level distributed systems knowledge and Fortune 10 architecture experience. Creates constitutional principles, feature specs, and implementation plans using str",
+   "p": "C:/Users/NichlasMadsen/.claude/agents/Architect.md",
+   "scope": "global",
+   "origin": "~/.claude",
+   "usedBy": [],
+   "copies": 1,
+   "versions": 1,
+   "cat": "build",
+   "model": "opus",
+   "mcp": [],
+   "mem": null,
+   "skills": [],
+   "runs": 2,
+   "sessions": 2,
+   "used_in": [
+    ".claude",
+    "Obsidian"
+   ],
+   "first_run": "2026-06-01T10:49:19.366Z",
+   "last_run": "2026-08-25T12:45:01.555Z",
+   "tasks": 2,
+   "attempts": {
+    "1": 2
+   },
+   "first_pass": 1.0
+  },
+  "Debrief": {
+   "d": "Publishes a visual debrief Artifact after a session has changed files in any project (Obsidian vault, code repos, configs). It explains what was done and why, with descriptions and diagrams, and maps ",
+   "p": "C:/Users/NichlasMadsen/.claude/agents/Debrief.md",
+   "scope": "global",
+   "origin": "~/.claude",
+   "usedBy": [],
+   "copies": 1,
+   "versions": 1,
+   "cat": "vault",
+   "model": "opus",
+   "mcp": [],
+   "mem": null,
+   "skills": [],
+   "runs": 16,
+   "sessions": 5,
+   "used_in": [
+    "CDM",
+    "intro",
+    "jytte",
+    "nichlas",
+    "platform"
+   ],
+   "first_run": "2026-10-15T08:13:11.848Z",
+   "last_run": "2026-10-17T16:45:11.695Z",
+   "tasks": 16,
+   "attempts": {
+    "1": 16
+   },
+   "first_pass": 1.0
+  },
+  "Engineer": {
+   "d": "Elite principal engineer with Fortune 10 and premier Bay Area company experience. Uses TDD, strategic planning, and constitutional principles for implementation work.",
+   "p": "C:/Users/NichlasMadsen/.claude/agents/Engineer.md",
+   "scope": "global",
+   "origin": "~/.claude",
+   "usedBy": [],
+   "copies": 1,
+   "versions": 1,
+   "cat": "build",
+   "model": "opus",
+   "mcp": [],
+   "mem": null,
+   "skills": [],
+   "runs": 13,
+   "sessions": 1,
+   "used_in": [
+    "app"
+   ],
+   "first_run": "2026-07-30T11:50:37.487Z",
+   "last_run": "2026-09-10T13:15:59.849Z",
+   "tasks": 10,
+   "attempts": {
+    "1": 8,
+    "2": 1,
+    "3": 1
+   },
+   "first_pass": 0.8
+  },
+  "Integrations": {
+   "d": "Single entry point for all third-party service API access (Azure DevOps, Slack, WhatsApp, GitHub, etc.). Routes every call through a per-service skill in ~/.claude/skills/. Handles credential resoluti",
+   "p": "C:/Users/NichlasMadsen/.claude/agents/Integrations.md",
+   "scope": "global",
+   "origin": "~/.claude",
+   "usedBy": [],
+   "copies": 1,
+   "versions": 1,
+   "cat": "integration",
+   "model": "sonnet",
+   "mcp": [],
+   "mem": null,
+   "skills": [
+    "azure-devops"
+   ],
+   "runs": 10,
+   "sessions": 3,
+   "used_in": [
+    "app",
+    "backend"
+   ],
+   "first_run": "2026-07-27T10:32:55.968Z",
+   "last_run": "2026-08-24T14:07:50.875Z",
+   "tasks": 10,
+   "attempts": {
+    "1": 10
+   },
+   "first_pass": 1.0
+  },
+  "SphinxAnalyser": {
+   "d": "Cross-topic implication analyser for the sphinx-docs skill. Dispatched by the librarian after any session (business, architecture, compliance, ...) completes. Reads the state file, runs the rules engi",
+   "p": "C:/Users/NichlasMadsen/.claude/agents/SphinxAnalyser.md",
+   "scope": "global",
+   "origin": "~/.claude",
+   "usedBy": [],
+   "copies": 1,
+   "versions": 1,
+   "cat": "vault",
+   "model": "sonnet",
+   "mcp": [],
+   "mem": null,
+   "skills": [
+    "sphinx-docs-skill"
+   ],
+   "runs": 0,
+   "sessions": 0,
+   "used_in": [],
+   "first_run": null,
+   "last_run": null,
+   "tasks": 0,
+   "attempts": {},
+   "first_pass": null
+  },
+  "TaskKeeper": {
+   "d": "Daily task brief — reads open task notes from C:\\Obsidian\\Nichlas\\Tasks\\ via the task-notes skill and gives a focused start-of-day update. Fires automatically as the first interaction each morning (vi",
+   "p": "C:/Users/NichlasMadsen/.claude/agents/TaskKeeper.md",
+   "scope": "global",
+   "origin": "~/.claude",
+   "usedBy": [],
+   "copies": 1,
+   "versions": 1,
+   "cat": "vault",
+   "model": "sonnet",
+   "mcp": [],
+   "mem": null,
+   "skills": [
+    "task-notes"
+   ],
+   "runs": 56,
+   "sessions": 31,
+   "used_in": [
+    ".claude",
+    "C:",
+    "Dokumentation",
+    "Nichlas",
+    "Obsidian",
+    "app",
+    "babymonitor",
+    "backend",
+    "findudad",
+    "floorballstats",
+    "intro",
+    "jytte",
+    "markARK",
+    "mediawatch",
+    "nichlas",
+    "obsidian",
+    "wowemulator"
+   ],
+   "first_run": "2026-06-02T07:20:19.432Z",
+   "last_run": "2026-10-17T09:50:07.102Z",
+   "tasks": 44,
+   "attempts": {
+    "1": 37,
+    "2": 5,
+    "3": 1,
+    "4": 1
+   },
+   "first_pass": 0.841
+  },
+  "TextReviewer": {
+   "d": "Read-only review agent for written text. Reviews a draft or a finished text (message, email, document, solution design, handout, slide text, UI text, HTML or Markdown file) against the global Writing ",
+   "p": "C:/Users/NichlasMadsen/.claude/agents/TextReviewer.md",
+   "scope": "global",
+   "origin": "~/.claude",
+   "usedBy": [],
+   "copies": 1,
+   "versions": 1,
+   "cat": "review",
+   "model": "opus",
+   "mcp": [],
+   "mem": null,
+   "skills": [
+    "channel-writing",
+    "trustworks-design"
+   ],
+   "runs": 0,
+   "sessions": 0,
+   "used_in": [],
+   "first_run": null,
+   "last_run": null,
+   "tasks": 0,
+   "attempts": {},
+   "first_pass": null
+  },
+  "TWUIReviewer": {
+   "d": "Read-only review agent that gates Trustworks-branded artifacts against the trustworks-design brand kit. Reviews (1) the Flutter app UI at C:\\Projects\\twapp\\app, (2) PowerPoint presentations (.pptx), (",
+   "p": "C:/Users/NichlasMadsen/.claude/agents/TWUIReviewer.md",
+   "scope": "global",
+   "origin": "~/.claude",
+   "usedBy": [],
+   "copies": 1,
+   "versions": 1,
+   "cat": "review",
+   "model": "opus",
+   "mcp": [],
+   "mem": null,
+   "skills": [
+    "pr",
+    "trustworks-design",
+    "ui-design-conformance",
+    "ui-interaction-tester",
+    "ui-render-watchdog",
+    "ui-review"
+   ],
+   "runs": 1,
+   "sessions": 1,
+   "used_in": [
+    "app"
+   ],
+   "first_run": "2026-06-11T10:55:41.762Z",
+   "last_run": "2026-06-11T10:55:41.762Z",
+   "tasks": 1,
+   "attempts": {
+    "1": 1
+   },
+   "first_pass": 1.0
+  },
+  "bug-triage-agent": {
+   "d": "Bug interviewer and root-cause triager. Drills clarifying questions about a reported defect until the reproduction can be confirmed (or explicitly deferred), then produces a structured Triage Report w",
+   "p": "C:/Projects/floorballstats/.claude/agents/bug-triage-agent.md",
+   "scope": "project",
+   "origin": "C:/Projects/floorballstats",
+   "usedBy": [
+    "C:/Projects/floorballstats",
+    "C:/Projects/twapp/app",
+    "C:/Projects/twapp/app-feat020",
+    "C:/Projects/twapp/backend"
+   ],
+   "copies": 4,
+   "versions": 2,
+   "cat": "intake",
+   "model": "sonnet",
+   "mcp": [],
+   "mem": null,
+   "skills": [
+    "bug-intake",
+    "feature-intake"
+   ],
+   "runs": 2,
+   "sessions": 1,
+   "used_in": [
+    "app"
+   ],
+   "first_run": "2026-08-24T12:28:09.168Z",
+   "last_run": "2026-08-24T13:18:05.591Z",
+   "tasks": 2,
+   "attempts": {
+    "1": 2
+   },
+   "first_pass": 1.0
+  },
+  "fbs-python-reviewer": {
+   "d": "Deterministisk gennemgang af Python-bagenden i Floorballstats. Kører den faste række trin fra .claude/rubrics/python.yml mod et udsnit af koden (diff / staged / modul / app), samler typet JSON fra hve",
+   "p": "C:/Projects/floorballstats/.claude/agents/fbs-python-reviewer.md",
+   "scope": "project",
+   "origin": "C:/Projects/floorballstats",
+   "usedBy": [
+    "C:/Projects/floorballstats"
+   ],
+   "copies": 1,
+   "versions": 1,
+   "cat": "review",
+   "model": "opus",
+   "mcp": [],
+   "mem": null,
+   "skills": [
+    "python-architecture-check",
+    "python-contract-check",
+    "python-regression-diff",
+    "python-schema-drift",
+    "python-security-scan",
+    "python-tests"
+   ],
+   "runs": 0,
+   "sessions": 0,
+   "used_in": [],
+   "first_run": null,
+   "last_run": null,
+   "tasks": 0,
+   "attempts": {},
+   "first_pass": null
+  },
+  "fbs-web-reviewer": {
+   "d": "Deterministisk UI-gennemgang af Floorballstats' to flader - portalen (app/templates + app/static) og den offentlige side (web/templates + web/static). Kører den faste række trin fra .claude/rubrics/we",
+   "p": "C:/Projects/floorballstats/.claude/agents/fbs-web-reviewer.md",
+   "scope": "project",
+   "origin": "C:/Projects/floorballstats",
+   "usedBy": [
+    "C:/Projects/floorballstats"
+   ],
+   "copies": 1,
+   "versions": 1,
+   "cat": "review",
+   "model": "opus",
+   "mcp": [],
+   "mem": null,
+   "skills": [
+    "pr",
+    "python-regression-diff",
+    "web-a11y",
+    "web-design-system",
+    "web-feedback-check",
+    "web-render-check"
+   ],
+   "runs": 1,
+   "sessions": 1,
+   "used_in": [
+    "floorballstats"
+   ],
+   "first_run": "2026-09-14T09:17:43.408Z",
+   "last_run": "2026-09-14T09:17:43.408Z",
+   "tasks": 1,
+   "attempts": {
+    "1": 1
+   },
+   "first_pass": 1.0
+  },
+  "feature-doc-agent": {
+   "d": "Owns the entire feature + bug documentation lifecycle for Floorballstats. Use proactively whenever the user describes a new feature OR reports a defect. For features, runs QuestionAgent (via feature-c",
+   "p": "C:/Projects/floorballstats/.claude/agents/feature-doc-agent.md",
+   "scope": "project",
+   "origin": "C:/Projects/floorballstats",
+   "usedBy": [
+    "C:/Projects/floorballstats",
+    "C:/Projects/twapp/app",
+    "C:/Projects/twapp/app-feat020",
+    "C:/Projects/twapp/backend"
+   ],
+   "copies": 4,
+   "versions": 4,
+   "cat": "intake",
+   "model": "sonnet",
+   "mcp": [],
+   "mem": null,
+   "skills": [
+    "Drawio",
+    "bug-intake",
+    "feature-clarify",
+    "feature-intake"
+   ],
+   "runs": 40,
+   "sessions": 7,
+   "used_in": [
+    "app",
+    "backend",
+    "f025",
+    "floorballstats"
+   ],
+   "first_run": "2026-07-23T13:08:06.551Z",
+   "last_run": "2026-10-13T07:05:12.546Z",
+   "tasks": 40,
+   "attempts": {
+    "1": 40
+   },
+   "first_pass": 1.0
+  },
+  "question-agent": {
+   "d": "Business + technical interviewer. Drills clarifying questions about a proposed feature until ≥90% confidence is reached on (1) what the feature asks for, (2) what it requires to support, and (3) techn",
+   "p": "C:/Projects/floorballstats/.claude/agents/question-agent.md",
+   "scope": "project",
+   "origin": "C:/Projects/floorballstats",
+   "usedBy": [
+    "C:/Projects/floorballstats",
+    "C:/Projects/twapp/app",
+    "C:/Projects/twapp/app-feat020",
+    "C:/Projects/twapp/backend"
+   ],
+   "copies": 4,
+   "versions": 2,
+   "cat": "intake",
+   "model": "sonnet",
+   "mcp": [],
+   "mem": null,
+   "skills": [
+    "feature-clarify"
+   ],
+   "runs": 11,
+   "sessions": 2,
+   "used_in": [
+    "app",
+    "floorballstats"
+   ],
+   "first_run": "2026-07-30T07:28:21.473Z",
+   "last_run": "2026-09-07T22:43:40.984Z",
+   "tasks": 11,
+   "attempts": {
+    "1": 11
+   },
+   "first_pass": 1.0
+  },
+  "docker-compose-validator": {
+   "d": "",
+   "p": "C:/Projects/home_server/.claude/agents/docker-compose-validator.md",
+   "scope": "project",
+   "origin": "C:/Projects/home_server",
+   "usedBy": [
+    "C:/Projects/home_server"
+   ],
+   "copies": 1,
+   "versions": 1,
+   "cat": "vault",
+   "model": "haiku",
+   "mcp": [],
+   "mem": null,
+   "skills": [],
+   "runs": 0,
+   "sessions": 0,
+   "used_in": [],
+   "first_run": null,
+   "last_run": null,
+   "tasks": 0,
+   "attempts": {},
+   "first_pass": null
+  },
+  "tw-flutter-reviewer": {
+   "d": "Deterministic app-review orchestrator for the Trustworks Flutter app. Runs the fixed 8-stage pipeline declared in .claude/rubrics/flutter.yml against a scope of code (diff / staged / screen / app), ag",
+   "p": "C:/Projects/twapp/app/.claude/agents/tw-flutter-reviewer.md",
+   "scope": "project",
+   "origin": "C:/Projects/twapp/app",
+   "usedBy": [
+    "C:/Projects/twapp/app",
+    "C:/Projects/twapp/app-feat020"
+   ],
+   "copies": 2,
+   "versions": 2,
+   "cat": "review",
+   "model": "opus",
+   "mcp": [],
+   "mem": null,
+   "skills": [
+    "flutter-accessibility-audit",
+    "flutter-flow-scenarios",
+    "flutter-functional-conformance",
+    "flutter-performance-watchdog",
+    "flutter-regression-diff",
+    "ui-design-conformance",
+    "ui-interaction-tester",
+    "ui-render-watchdog"
+   ],
+   "runs": 6,
+   "sessions": 4,
+   "used_in": [
+    "app",
+    "backend",
+    "f024"
+   ],
+   "first_run": "2026-08-04T08:38:28.713Z",
+   "last_run": "2026-10-13T08:20:35.529Z",
+   "tasks": 6,
+   "attempts": {
+    "1": 6
+   },
+   "first_pass": 1.0
+  },
+  "tw-java-reviewer": {
+   "d": "Deterministic app-review orchestrator for Java Spring Boot services. Runs the fixed 8-stage pipeline declared in .claude/rubrics/java.yml against a scope of code (diff / staged / class / app), aggrega",
+   "p": "C:/Projects/twapp/app/.claude/agents/tw-java-reviewer.md",
+   "scope": "project",
+   "origin": "C:/Projects/twapp/app",
+   "usedBy": [
+    "C:/Projects/twapp/app",
+    "C:/Projects/twapp/app-feat020",
+    "C:/Projects/twapp/backend"
+   ],
+   "copies": 3,
+   "versions": 2,
+   "cat": "review",
+   "model": "opus",
+   "mcp": [],
+   "mem": null,
+   "skills": [
+    "java-architecture-check",
+    "java-contract-check",
+    "java-functional-conformance",
+    "java-integration-tests",
+    "java-migration-safety",
+    "java-regression-diff",
+    "java-security-scan",
+    "java-static-analysis"
+   ],
+   "runs": 10,
+   "sessions": 5,
+   "used_in": [
+    "app",
+    "backend",
+    "f024",
+    "jb008"
+   ],
+   "first_run": "2026-07-27T07:28:54.481Z",
+   "last_run": "2026-10-13T07:19:31.884Z",
+   "tasks": 10,
+   "attempts": {
+    "1": 10
+   },
+   "first_pass": 1.0
+  }
+ },
+ "skills": {
+  "add-learning": {
+   "d": ">",
+   "p": "C:/Users/NichlasMadsen/.claude/skills/add-learning/SKILL.md",
+   "scope": "global",
+   "origin": "~/.claude",
+   "usedBy": [],
+   "copies": 1,
+   "versions": 1
+  },
+  "azure-devops": {
+   "d": "Operating manual for Azure DevOps Services REST API access from the Integrations agent. Covers PRs (authored + awaiting review), Build/Pipeline runs (recent + currently running + default-branch failur",
+   "p": "C:/Users/NichlasMadsen/.claude/skills/azure-devops/SKILL.md",
+   "scope": "global",
+   "origin": "~/.claude",
+   "usedBy": [],
+   "copies": 1,
+   "versions": 1
+  },
+  "channel-writing": {
+   "d": "Use when drafting or reviewing text for a channel: Slack, Teams, email, documentation, solution design, presentation text, design/UI text or handout. Picks the structure per channel, BLUF for messages",
+   "p": "C:/Users/NichlasMadsen/.claude/skills/channel-writing/SKILL.md",
+   "scope": "global",
+   "origin": "~/.claude",
+   "usedBy": [],
+   "copies": 1,
+   "versions": 1
+  },
+  "cli-conversation-recap": {
+   "d": "Summarize the current conversation as a list of CLI commands grouped by tool. Produces a table-format recap (Command, Generic Form, Purpose, Key Params) ready to paste, or to feed into the cli-overvie",
+   "p": "C:/Users/NichlasMadsen/.claude/skills/cli-conversation-recap/SKILL.md",
+   "scope": "global",
+   "origin": "~/.claude",
+   "usedBy": [],
+   "copies": 1,
+   "versions": 1
+  },
+  "cli-overview-update": {
+   "d": "Add CLI commands used in the current conversation to the user's Obsidian CLI overview at C:\\Obsidian\\Nichlas\\LLM-Wiki\\raw\\Udvikling\\. Routes each command to the right per-tool file (Docker.md, Git.md,",
+   "p": "C:/Users/NichlasMadsen/.claude/skills/cli-overview-update/SKILL.md",
+   "scope": "global",
+   "origin": "~/.claude",
+   "usedBy": [],
+   "copies": 1,
+   "versions": 1
+  },
+  "Drawio": {
+   "d": "Always use when user asks to create, generate, draw, or design a diagram, flowchart, architecture diagram, ER diagram, sequence diagram, class diagram, network diagram, system landscape, system contex",
+   "p": "C:/Users/NichlasMadsen/.claude/skills/Drawio/SKILL.md",
+   "scope": "global",
+   "origin": "~/.claude",
+   "usedBy": [],
+   "copies": 1,
+   "versions": 1
+  },
+  "llm-wiki-librarian": {
+   "d": ">",
+   "p": "C:/Users/NichlasMadsen/.claude/skills/llm-wiki-librarian/SKILL.md",
+   "scope": "global",
+   "origin": "~/.claude",
+   "usedBy": [],
+   "copies": 1,
+   "versions": 1
+  },
+  "llm-wiki-starter": {
+   "d": ">-",
+   "p": "C:/Users/NichlasMadsen/.claude/skills/llm-wiki-starter/SKILL.md",
+   "scope": "global",
+   "origin": "~/.claude",
+   "usedBy": [],
+   "copies": 1,
+   "versions": 1
+  },
+  "obsidian-tasks": {
+   "d": "Sole interface to the user's task list at C:\\Obsidian\\Nichlas\\Tasks.md. Uses obsidian-tasks-plugin emoji syntax. Use to list open tasks, append new tasks, mark tasks done, or update task fields. Custo",
+   "p": "C:/Users/NichlasMadsen/.claude/skills/obsidian-tasks/SKILL.md",
+   "scope": "global",
+   "origin": "~/.claude",
+   "usedBy": [],
+   "copies": 1,
+   "versions": 1
+  },
+  "obsidian-vault-review": {
+   "d": "Vault-wide health check across the whole Obsidian vault at C:\\Obsidian\\Nichlas\\ - reviews structure compliance for tasks, wiki pages (across all projects), Trustworks customer notes, Plans, and root-l",
+   "p": "C:/Users/NichlasMadsen/.claude/skills/obsidian-vault-review/SKILL.md",
+   "scope": "global",
+   "origin": "~/.claude",
+   "usedBy": [],
+   "copies": 1,
+   "versions": 1
+  },
+  "project-meeting-summarizer": {
+   "d": "Transcribe a meeting audio file and/or summarize a transcript into the active llm-wiki project sub-wiki in Obsidian. Auto-detects the active project from `.wiki-config.yml` (walks up from cwd). Mainta",
+   "p": "C:/Users/NichlasMadsen/.claude/skills/project-meeting-summarizer/SKILL.md",
+   "scope": "global",
+   "origin": "~/.claude",
+   "usedBy": [],
+   "copies": 1,
+   "versions": 1
+  },
+  "register-deliverable": {
+   "d": ">",
+   "p": "C:/Users/NichlasMadsen/.claude/skills/register-deliverable/SKILL.md",
+   "scope": "global",
+   "origin": "~/.claude",
+   "usedBy": [],
+   "copies": 1,
+   "versions": 1
+  },
+  "sphinx-docs-skill": {
+   "d": ">",
+   "p": "C:/Users/NichlasMadsen/.claude/skills/sphinx-docs-skill/SKILL.md",
+   "scope": "global",
+   "origin": "~/.claude",
+   "usedBy": [],
+   "copies": 1,
+   "versions": 1
+  },
+  "task-notes": {
+   "d": "Sole interface to the user's task system at C:\\Obsidian\\Nichlas\\Tasks\\. Each task is a separate .md note with YAML frontmatter (title, status, priority, due, category, customer, tags) and a Danish-lan",
+   "p": "C:/Users/NichlasMadsen/.claude/skills/task-notes/SKILL.md",
+   "scope": "global",
+   "origin": "~/.claude",
+   "usedBy": [],
+   "copies": 1,
+   "versions": 1
+  },
+  "trustworks-cv": {
+   "d": "Generate and maintain Trustworks consultant CVs in PowerPoint, following the strict format and wording rules defined in LLM-Wiki/projects/trustworks/raw/Trustworks-Internt/CV/Principper_CV.pptx and LL",
+   "p": "C:/Users/NichlasMadsen/.claude/skills/trustworks-cv/SKILL.md",
+   "scope": "global",
+   "origin": "~/.claude",
+   "usedBy": [],
+   "copies": 1,
+   "versions": 1
+  },
+  "trustworks-design": {
+   "d": "Use this skill to generate well-branded interfaces and assets for Trustworks (Danish IT consultancy), either for production or throwaway prototypes/mocks/etc. Contains essential design guidelines, col",
+   "p": "C:/Users/NichlasMadsen/.claude/skills/trustworks-design/SKILL.md",
+   "scope": "global",
+   "origin": "~/.claude",
+   "usedBy": [],
+   "copies": 1,
+   "versions": 1
+  },
+  "trustworks-pptx": {
+   "d": "Generate Trustworks-branded PowerPoint presentations (.pptx) for business presentations, stakeholder decks, customer artifacts, and internal slides. Converts the canonical v4 HTML deck templates - mea",
+   "p": "C:/Users/NichlasMadsen/.claude/skills/trustworks-pptx/SKILL.md",
+   "scope": "global",
+   "origin": "~/.claude",
+   "usedBy": [],
+   "copies": 1,
+   "versions": 1
+  },
+  "trustworks-recap": {
+   "d": "Wrap up the current conversation as a Trustworks-aware status report. Surveys the Obsidian LLM-Wiki vault - Trustworks-shared content at C:\\Obsidian\\Nichlas\\LLM-Wiki\\projects\\trustworks\\raw\\ and per-c",
+   "p": "C:/Users/NichlasMadsen/.claude/skills/trustworks-recap/SKILL.md",
+   "scope": "global",
+   "origin": "~/.claude",
+   "usedBy": [],
+   "copies": 1,
+   "versions": 1
+  },
+  "ui-design-conformance": {
+   "d": "Static analysis sub-skill of a UI reviewer. Scans the UI source tree of the project under review for Trustworks brand-kit violations - hardcoded hex colors, off-brand corner radii, em-dashes in UI str",
+   "p": "C:/Users/NichlasMadsen/.claude/skills/ui-design-conformance/SKILL.md",
+   "scope": "both",
+   "origin": "~/.claude",
+   "usedBy": [
+    "C:/Projects/twapp/app"
+   ],
+   "copies": 2,
+   "versions": 2
+  },
+  "ui-interaction-tester": {
+   "d": "Interaction-testing sub-skill of TWUIReviewer. Drives the live Flutter app via Patrol MCP on Android emulator or iOS simulator. Runs exploratory click pass (taps every visible interactive widget) plus",
+   "p": "C:/Users/NichlasMadsen/.claude/skills/ui-interaction-tester/SKILL.md",
+   "scope": "both",
+   "origin": "~/.claude",
+   "usedBy": [
+    "C:/Projects/twapp/app"
+   ],
+   "copies": 2,
+   "versions": 2
+  },
+  "ui-render-watchdog": {
+   "d": "Render-health sub-skill of TWUIReviewer. Scrapes flutter logs during emulator runs for layout exceptions, RenderFlex overflow warnings, frame timing issues, image load errors, and setState-during-buil",
+   "p": "C:/Users/NichlasMadsen/.claude/skills/ui-render-watchdog/SKILL.md",
+   "scope": "both",
+   "origin": "~/.claude",
+   "usedBy": [
+    "C:/Projects/twapp/app"
+   ],
+   "copies": 2,
+   "versions": 2
+  },
+  "wiki-lint": {
+   "d": "Periodic health-check for the active llm-wiki project sub-wiki. Auto-detects the active project from `.wiki-config.yml` (walks up from cwd). Detects contradictions between pages, orphan pages, missing",
+   "p": "C:/Users/NichlasMadsen/.claude/skills/wiki-lint/SKILL.md",
+   "scope": "global",
+   "origin": "~/.claude",
+   "usedBy": [],
+   "copies": 1,
+   "versions": 1
+  },
+  "bug-intake": {
+   "d": "Run the canonical bug documentation intake whenever the user reports a defect, regression, crash, or unexpected behaviour in the Floorballstats. Also triggers on any message that pastes / attaches a s",
+   "p": "C:/Projects/floorballstats/.claude/skills/bug-intake/SKILL.md",
+   "scope": "project",
+   "origin": "C:/Projects/floorballstats",
+   "usedBy": [
+    "C:/Projects/floorballstats",
+    "C:/Projects/twapp/app",
+    "C:/Projects/twapp/app-feat020",
+    "C:/Projects/twapp/backend"
+   ],
+   "copies": 4,
+   "versions": 3
+  },
+  "docs-sync": {
+   "d": "Holder docs/ i takt med koden. Læser emnesiderne i .pipeline-config.yml, finder de påstande der ikke længere passer, og retter dem. Skriver ikke nye sider ved siden af de gamle. Kaldes af /dokumenter ",
+   "p": "C:/Projects/floorballstats/.claude/skills/docs-sync/SKILL.md",
+   "scope": "project",
+   "origin": "C:/Projects/floorballstats",
+   "usedBy": [
+    "C:/Projects/floorballstats"
+   ],
+   "copies": 1,
+   "versions": 1
+  },
+  "feature-clarify": {
+   "d": "Drive a clarifying interview about a proposed feature until ≥90% confidence is reached on (1) what the feature asks for, (2) what it requires to support, and (3) technical expectations. Used by Questi",
+   "p": "C:/Projects/floorballstats/.claude/skills/feature-clarify/SKILL.md",
+   "scope": "project",
+   "origin": "C:/Projects/floorballstats",
+   "usedBy": [
+    "C:/Projects/floorballstats",
+    "C:/Projects/twapp/app",
+    "C:/Projects/twapp/app-feat020",
+    "C:/Projects/twapp/backend"
+   ],
+   "copies": 4,
+   "versions": 2
+  },
+  "feature-intake": {
+   "d": "Run the canonical feature documentation intake whenever the user describes a new feature, change request, or anything that should ship as a discrete unit of work in the Floorballstats. Routes through ",
+   "p": "C:/Projects/floorballstats/.claude/skills/feature-intake/SKILL.md",
+   "scope": "project",
+   "origin": "C:/Projects/floorballstats",
+   "usedBy": [
+    "C:/Projects/floorballstats",
+    "C:/Projects/twapp/app",
+    "C:/Projects/twapp/app-feat020",
+    "C:/Projects/twapp/backend"
+   ],
+   "copies": 4,
+   "versions": 4
+  },
+  "python-architecture-check": {
+   "d": "Arkitekturtrin under FBSPythonReviewer. Tjekker lagdelingen som den faktisk er i Floorballstats - to containere, proxyens præfiksliste, statistik uden cache, én regel ét sted. Reglerne er skrevet ud a",
+   "p": "C:/Projects/floorballstats/.claude/skills/python-architecture-check/SKILL.md",
+   "scope": "project",
+   "origin": "C:/Projects/floorballstats",
+   "usedBy": [
+    "C:/Projects/floorballstats"
+   ],
+   "copies": 1,
+   "versions": 1
+  },
+  "python-contract-check": {
+   "d": "Kontrakttrin under FBSPythonReviewer. Sammenholder bagendens /openapi.json med den gemte baseline i docs/api-baseline/. Frontenden er sin egen container og taler kun med bagenden gennem det api. Læser",
+   "p": "C:/Projects/floorballstats/.claude/skills/python-contract-check/SKILL.md",
+   "scope": "project",
+   "origin": "C:/Projects/floorballstats",
+   "usedBy": [
+    "C:/Projects/floorballstats"
+   ],
+   "copies": 1,
+   "versions": 1
+  },
+  "python-regression-diff": {
+   "d": "Regressionstrin under FBSPythonReviewer og FBSWebReviewer. Sammenholder denne kørsels fund med den seneste rapport i docs/reviews/ og skiller nye fund fra dem der var der i forvejen. Læser kun.",
+   "p": "C:/Projects/floorballstats/.claude/skills/python-regression-diff/SKILL.md",
+   "scope": "project",
+   "origin": "C:/Projects/floorballstats",
+   "usedBy": [
+    "C:/Projects/floorballstats"
+   ],
+   "copies": 1,
+   "versions": 1
+  },
+  "python-schema-drift": {
+   "d": "Skematrin under FBSPythonReviewer. Sammenholder SQLAlchemy-modellen med den kørende SQLite-base og finder ændringer som ensure_columns() ikke kan klare - ændret kolonnetype, omdøbt kolonne, ny NOT NUL",
+   "p": "C:/Projects/floorballstats/.claude/skills/python-schema-drift/SKILL.md",
+   "scope": "project",
+   "origin": "C:/Projects/floorballstats",
+   "usedBy": [
+    "C:/Projects/floorballstats"
+   ],
+   "copies": 1,
+   "versions": 1
+  },
+  "python-security-scan": {
+   "d": "Sikkerhedstrin under FBSPythonReviewer. Tjekker de faste regler om hemmeligheder og persondata i Floorballstats - .env uden for git, ingen env_file på frontenden, /media bag login, udtræk kun for admi",
+   "p": "C:/Projects/floorballstats/.claude/skills/python-security-scan/SKILL.md",
+   "scope": "project",
+   "origin": "C:/Projects/floorballstats",
+   "usedBy": [
+    "C:/Projects/floorballstats"
+   ],
+   "copies": 1,
+   "versions": 1
+  },
+  "python-tests": {
+   "d": "Testtrin under FBSPythonReviewer. Kører hele pytest-suiten, sammenholder antallet med baseline i .pipeline-config.yml og rapporterer røde tests som P0. Læser kun; starter aldrig containerne og retter ",
+   "p": "C:/Projects/floorballstats/.claude/skills/python-tests/SKILL.md",
+   "scope": "project",
+   "origin": "C:/Projects/floorballstats",
+   "usedBy": [
+    "C:/Projects/floorballstats"
+   ],
+   "copies": 1,
+   "versions": 1
+  },
+  "ui-implementation": {
+   "d": "Byg og ret UI i Floorballstats - skabeloner, CSS og JS i begge apps. Indeholder det hardkodede designsystem - farver, skrifter, størrelser, afstande, komponenter - udtrukket af referencen i reference/",
+   "p": "C:/Projects/floorballstats/.claude/skills/ui-implementation/SKILL.md",
+   "scope": "project",
+   "origin": "C:/Projects/floorballstats",
+   "usedBy": [
+    "C:/Projects/floorballstats"
+   ],
+   "copies": 1,
+   "versions": 1
+  },
+  "ui-review": {
+   "d": "Gennemgang der ALTID køres efter en UI-implementering i Floorballstats. Måler den byggede flade mod designsystemet i ui-implementation og reglerne i docs/ui.md - tokens, skalaer, afstande, bordbredder",
+   "p": "C:/Projects/floorballstats/.claude/skills/ui-review/SKILL.md",
+   "scope": "project",
+   "origin": "C:/Projects/floorballstats",
+   "usedBy": [
+    "C:/Projects/floorballstats"
+   ],
+   "copies": 1,
+   "versions": 1
+  },
+  "web-a11y": {
+   "d": "Tilgængelighedstrin under FBSWebReviewer. Måler kontrast, fokusmarkering, knapnavne og feltmærkater i den UDSENDTE HTML - ikke i skabelonen. Begge temaer. Læser kun.",
+   "p": "C:/Projects/floorballstats/.claude/skills/web-a11y/SKILL.md",
+   "scope": "project",
+   "origin": "C:/Projects/floorballstats",
+   "usedBy": [
+    "C:/Projects/floorballstats"
+   ],
+   "copies": 1,
+   "versions": 1
+  },
+  "web-design-system": {
+   "d": "Designsystemtrin under FBSWebReviewer. Tæller på tværs af begge flader - portalen og den offentlige side - om de bruger de samme sidehoveder, tabelrammer, knapklasser og farvetokens. Det trin der fang",
+   "p": "C:/Projects/floorballstats/.claude/skills/web-design-system/SKILL.md",
+   "scope": "project",
+   "origin": "C:/Projects/floorballstats",
+   "usedBy": [
+    "C:/Projects/floorballstats"
+   ],
+   "copies": 1,
+   "versions": 1
+  },
+  "web-feedback-check": {
+   "d": "Feedbacktrin under FBSWebReviewer. Finder handlinger der fejler i tavshed - en knap der svarer 200 og bliver kasseret bagefter, en fejl der kun står i konsollen, et spærret element uden en grund, og e",
+   "p": "C:/Projects/floorballstats/.claude/skills/web-feedback-check/SKILL.md",
+   "scope": "project",
+   "origin": "C:/Projects/floorballstats",
+   "usedBy": [
+    "C:/Projects/floorballstats"
+   ],
+   "copies": 1,
+   "versions": 1
+  },
+  "web-render-check": {
+   "d": "Rendertrin under FBSWebReviewer. Henter hver rute gennem frontenden på 8010 og tjekker status, indhold og at ingen Jinja er sluppet uoversat ud. Kører også flow-scenarierne fra rubrikken. Læser kun.",
+   "p": "C:/Projects/floorballstats/.claude/skills/web-render-check/SKILL.md",
+   "scope": "project",
+   "origin": "C:/Projects/floorballstats",
+   "usedBy": [
+    "C:/Projects/floorballstats"
+   ],
+   "copies": 1,
+   "versions": 1
+  },
+  "flutter-accessibility-audit": {
+   "d": "Accessibility audit sub-skill of TWAppReviewer. Runs on the live emulator via Patrol MCP. Verifies every interactive widget has a Semantics label, tap targets meet platform floors (44pt iOS / 48dp And",
+   "p": "C:/Projects/twapp/app/.claude/skills/flutter-accessibility-audit/SKILL.md",
+   "scope": "project",
+   "origin": "C:/Projects/twapp/app",
+   "usedBy": [
+    "C:/Projects/twapp/app",
+    "C:/Projects/twapp/app-feat020"
+   ],
+   "copies": 2,
+   "versions": 1
+  },
+  "flutter-flow-scenarios": {
+   "d": "Scripted business-critical flow runner for TWAppReviewer. Executes each Patrol test flow in tool/ui_review_flows/ against a live emulator, records per-step pass / fail, and captures a screenshot + wid",
+   "p": "C:/Projects/twapp/app/.claude/skills/flutter-flow-scenarios/SKILL.md",
+   "scope": "project",
+   "origin": "C:/Projects/twapp/app",
+   "usedBy": [
+    "C:/Projects/twapp/app",
+    "C:/Projects/twapp/app-feat020"
+   ],
+   "copies": 2,
+   "versions": 1
+  },
+  "flutter-functional-conformance": {
+   "d": "Functional test-coverage and analyzer sub-skill of TWAppReviewer. Runs `flutter analyze` and `flutter test` on files in scope, computes coverage on new / changed code, and emits findings when tests fa",
+   "p": "C:/Projects/twapp/app/.claude/skills/flutter-functional-conformance/SKILL.md",
+   "scope": "project",
+   "origin": "C:/Projects/twapp/app",
+   "usedBy": [
+    "C:/Projects/twapp/app",
+    "C:/Projects/twapp/app-feat020"
+   ],
+   "copies": 2,
+   "versions": 1
+  },
+  "flutter-performance-watchdog": {
+   "d": "Performance measurement sub-skill of TWAppReviewer. During scripted flows (flow-scenarios), captures cold-start time, frame build/raster p95 timings, jank rate, and memory high-water-mark. Compares ea",
+   "p": "C:/Projects/twapp/app/.claude/skills/flutter-performance-watchdog/SKILL.md",
+   "scope": "project",
+   "origin": "C:/Projects/twapp/app",
+   "usedBy": [
+    "C:/Projects/twapp/app",
+    "C:/Projects/twapp/app-feat020"
+   ],
+   "copies": 2,
+   "versions": 1
+  },
+  "flutter-regression-diff": {
+   "d": "Regression diff sub-skill of TWAppReviewer. Compares the current run's findings + flow outcomes + coverage + perf numbers against the last committed report on a baseline ref (default origin/dev). Emit",
+   "p": "C:/Projects/twapp/app/.claude/skills/flutter-regression-diff/SKILL.md",
+   "scope": "project",
+   "origin": "C:/Projects/twapp/app",
+   "usedBy": [
+    "C:/Projects/twapp/app",
+    "C:/Projects/twapp/app-feat020"
+   ],
+   "copies": 2,
+   "versions": 1
+  },
+  "intake-to-ado": {
+   "d": "Push a completed feature/bug intake folder to the Azure DevOps taskboard as a work item. Talks to the jytte n8n `intake-to-ado` webhook by default - n8n holds AZDO_PAT and does the ADO REST call, the ",
+   "p": "C:/Projects/twapp/app/.claude/skills/intake-to-ado/SKILL.md",
+   "scope": "project",
+   "origin": "C:/Projects/twapp/app",
+   "usedBy": [
+    "C:/Projects/twapp/app",
+    "C:/Projects/twapp/app-feat020"
+   ],
+   "copies": 2,
+   "versions": 2
+  },
+  "java-architecture-check": {
+   "d": "ArchUnit layered-architecture sub-skill of TWJavaReviewer. Runs the ArchUnit ruleset (typically src/test/java/com/architecture/ArchitectureRules.java). Enforces controller -> service -> repository dep",
+   "p": "C:/Projects/twapp/app/.claude/skills/java-architecture-check/SKILL.md",
+   "scope": "project",
+   "origin": "C:/Projects/twapp/app",
+   "usedBy": [
+    "C:/Projects/twapp/app",
+    "C:/Projects/twapp/app-feat020",
+    "C:/Projects/twapp/backend"
+   ],
+   "copies": 3,
+   "versions": 1
+  },
+  "java-contract-check": {
+   "d": "OpenAPI contract-diff sub-skill of TWJavaReviewer. Generates the current OpenAPI spec via SpringDoc, diffs against the committed baseline, and emits P0 for any breaking change (removed endpoint, chang",
+   "p": "C:/Projects/twapp/app/.claude/skills/java-contract-check/SKILL.md",
+   "scope": "project",
+   "origin": "C:/Projects/twapp/app",
+   "usedBy": [
+    "C:/Projects/twapp/app",
+    "C:/Projects/twapp/app-feat020",
+    "C:/Projects/twapp/backend"
+   ],
+   "copies": 3,
+   "versions": 1
+  },
+  "java-functional-conformance": {
+   "d": "Unit + slice-test runner + JaCoCo coverage sub-skill of TWJavaReviewer. Runs `./gradlew test jacocoTestReport`, parses failing tests, computes coverage on new / changed Java files, emits findings when",
+   "p": "C:/Projects/twapp/app/.claude/skills/java-functional-conformance/SKILL.md",
+   "scope": "project",
+   "origin": "C:/Projects/twapp/app",
+   "usedBy": [
+    "C:/Projects/twapp/app",
+    "C:/Projects/twapp/app-feat020",
+    "C:/Projects/twapp/backend"
+   ],
+   "copies": 3,
+   "versions": 1
+  },
+  "java-integration-tests": {
+   "d": "Integration-tests sub-skill of TWJavaReviewer. Runs the Testcontainers `@SpringBootTest` suite via Gradle (`./gradlew integrationTest`), which boots a real MySQL 8 container, applies Flyway migrations",
+   "p": "C:/Projects/twapp/app/.claude/skills/java-integration-tests/SKILL.md",
+   "scope": "project",
+   "origin": "C:/Projects/twapp/app",
+   "usedBy": [
+    "C:/Projects/twapp/app",
+    "C:/Projects/twapp/app-feat020",
+    "C:/Projects/twapp/backend"
+   ],
+   "copies": 3,
+   "versions": 1
+  },
+  "java-migration-safety": {
+   "d": "Flyway migration-safety sub-skill of TWJavaReviewer. Enforces V<N>__<desc>.sql naming, sequential version numbers, append-only history (existing migrations never mutated), and requires the `-- reversi",
+   "p": "C:/Projects/twapp/app/.claude/skills/java-migration-safety/SKILL.md",
+   "scope": "project",
+   "origin": "C:/Projects/twapp/app",
+   "usedBy": [
+    "C:/Projects/twapp/app",
+    "C:/Projects/twapp/app-feat020",
+    "C:/Projects/twapp/backend"
+   ],
+   "copies": 3,
+   "versions": 2
+  },
+  "java-regression-diff": {
+   "d": "Regression-diff sub-skill of TWJavaReviewer. Compares current-run findings + test outcomes + coverage + contract-check + migration-safety against the last committed report on baseline_ref (default ori",
+   "p": "C:/Projects/twapp/app/.claude/skills/java-regression-diff/SKILL.md",
+   "scope": "project",
+   "origin": "C:/Projects/twapp/app",
+   "usedBy": [
+    "C:/Projects/twapp/app",
+    "C:/Projects/twapp/app-feat020",
+    "C:/Projects/twapp/backend"
+   ],
+   "copies": 3,
+   "versions": 1
+  },
+  "java-security-scan": {
+   "d": "Security scan sub-skill of TWJavaReviewer. Runs OWASP Dependency-Check (`./gradlew dependencyCheckAnalyze`) for CVEs on direct + transitive deps, plus a diff-scoped regex sweep for suspected secrets (",
+   "p": "C:/Projects/twapp/app/.claude/skills/java-security-scan/SKILL.md",
+   "scope": "project",
+   "origin": "C:/Projects/twapp/app",
+   "usedBy": [
+    "C:/Projects/twapp/app",
+    "C:/Projects/twapp/app-feat020",
+    "C:/Projects/twapp/backend"
+   ],
+   "copies": 3,
+   "versions": 1
+  },
+  "java-static-analysis": {
+   "d": "Static analysis sub-skill of TWJavaReviewer. Runs `./gradlew compileJava compileTestJava --warning-mode all` and any configured Checkstyle / SpotBugs / Error Prone tasks. Reports compilation errors as",
+   "p": "C:/Projects/twapp/app/.claude/skills/java-static-analysis/SKILL.md",
+   "scope": "project",
+   "origin": "C:/Projects/twapp/app",
+   "usedBy": [
+    "C:/Projects/twapp/app",
+    "C:/Projects/twapp/app-feat020",
+    "C:/Projects/twapp/backend"
+   ],
+   "copies": 3,
+   "versions": 1
+  },
+  "pr": {
+   "d": "Pull-Request lifecycle operations against Azure DevOps, routed through the jytte n8n container so credentials stay out of the AI's shell. Three sub-commands - create, complete, comment - each a scoped",
+   "p": "C:/Projects/twapp/app/.claude/skills/pr/SKILL.md",
+   "scope": "project",
+   "origin": "C:/Projects/twapp/app",
+   "usedBy": [
+    "C:/Projects/twapp/app",
+    "C:/Projects/twapp/app-feat020"
+   ],
+   "copies": 2,
+   "versions": 1
+  },
+  "deliver": {
+   "d": "End-to-end delivery of one Azure DevOps work item - fetch the item, scaffold its docs, branch, implement, lint, test (including an emulator run against the branch's own backend), review, push, open an",
+   "p": "C:/Projects/twapp/app/.claude/worktrees/f031/.claude/skills/deliver/SKILL.md",
+   "scope": "project",
+   "origin": "C:/Projects/twapp/app/.claude/worktrees/f031",
+   "usedBy": [],
+   "copies": 0,
+   "versions": 1
+  }
+ },
+ "usage": {
+  "agents": {
+   "Architect": {
+    "runs": 2,
+    "sessions": 2,
+    "projects": [
+     ".claude",
+     "Obsidian"
+    ],
+    "first_run": "2026-06-01T10:49:19.366Z",
+    "last_run": "2026-08-25T12:45:01.555Z",
+    "tasks": 2,
+    "attempts": {
+     "1": 2
+    },
+    "first_pass": 1.0
+   },
+   "Explore": {
+    "runs": 13,
+    "sessions": 7,
+    "projects": [
+     ".claude",
+     "Nichlas",
+     "app",
+     "backend",
+     "static"
+    ],
+    "first_run": "2026-06-01T11:14:29.165Z",
+    "last_run": "2026-10-12T07:27:29.581Z",
+    "tasks": 13,
+    "attempts": {
+     "1": 13
+    },
+    "first_pass": 1.0
+   },
+   "TestAgent": {
+    "runs": 1,
+    "sessions": 1,
+    "projects": [
+     ".claude"
+    ],
+    "first_run": "2026-06-01T11:24:34.489Z",
+    "last_run": "2026-06-01T11:24:34.489Z",
+    "tasks": 1,
+    "attempts": {
+     "1": 1
+    },
+    "first_pass": 1.0
+   },
+   "FixVerify": {
+    "runs": 1,
+    "sessions": 1,
+    "projects": [
+     ".claude"
+    ],
+    "first_run": "2026-06-01T11:26:48.475Z",
+    "last_run": "2026-06-01T11:26:48.475Z",
+    "tasks": 1,
+    "attempts": {
+     "1": 1
+    },
+    "first_pass": 1.0
+   },
+   "QATester": {
+    "runs": 1,
+    "sessions": 1,
+    "projects": [
+     "jytte"
+    ],
+    "first_run": "2026-06-01T19:27:05.314Z",
+    "last_run": "2026-06-01T19:27:05.314Z",
+    "tasks": 1,
+    "attempts": {
+     "1": 1
+    },
+    "first_pass": 1.0
+   },
+   "general-purpose": {
+    "runs": 30,
+    "sessions": 10,
+    "projects": [
+     "Obsidian",
+     "app",
+     "jytte",
+     "mediawatch",
+     "nichlas",
+     "obsidian",
+     "platform"
+    ],
+    "first_run": "2026-06-01T19:32:16.882Z",
+    "last_run": "2026-10-15T09:14:14.478Z",
+    "tasks": 30,
+    "attempts": {
+     "1": 30
+    },
+    "first_pass": 1.0
+   },
+   "TaskKeeper": {
+    "runs": 56,
+    "sessions": 31,
+    "projects": [
+     ".claude",
+     "C:",
+     "Dokumentation",
+     "Nichlas",
+     "Obsidian",
+     "app",
+     "babymonitor",
+     "backend",
+     "findudad",
+     "floorballstats",
+     "intro",
+     "jytte",
+     "markARK",
+     "mediawatch",
+     "nichlas",
+     "obsidian",
+     "wowemulator"
+    ],
+    "first_run": "2026-06-02T07:20:19.432Z",
+    "last_run": "2026-10-17T09:50:07.102Z",
+    "tasks": 44,
+    "attempts": {
+     "1": 37,
+     "2": 5,
+     "3": 1,
+     "4": 1
+    },
+    "first_pass": 0.841
+   },
+   "Plan": {
+    "runs": 3,
+    "sessions": 2,
+    "projects": [
+     "LLM-Wiki",
+     "app"
+    ],
+    "first_run": "2026-06-10T08:28:12.313Z",
+    "last_run": "2026-08-10T10:59:18.466Z",
+    "tasks": 3,
+    "attempts": {
+     "1": 3
+    },
+    "first_pass": 1.0
+   },
+   "claude-code-guide": {
+    "runs": 1,
+    "sessions": 1,
+    "projects": [
+     "app"
+    ],
+    "first_run": "2026-06-10T09:36:56.647Z",
+    "last_run": "2026-06-10T09:36:56.647Z",
+    "tasks": 1,
+    "attempts": {
+     "1": 1
+    },
+    "first_pass": 1.0
+   },
+   "TWUIReviewer": {
+    "runs": 1,
+    "sessions": 1,
+    "projects": [
+     "app"
+    ],
+    "first_run": "2026-06-11T10:55:41.762Z",
+    "last_run": "2026-06-11T10:55:41.762Z",
+    "tasks": 1,
+    "attempts": {
+     "1": 1
+    },
+    "first_pass": 1.0
+   },
+   "FeatureDocAgent": {
+    "runs": 40,
+    "sessions": 7,
+    "projects": [
+     "app",
+     "backend",
+     "f025",
+     "floorballstats"
+    ],
+    "first_run": "2026-07-23T13:08:06.551Z",
+    "last_run": "2026-10-13T07:05:12.546Z",
+    "tasks": 40,
+    "attempts": {
+     "1": 40
+    },
+    "first_pass": 1.0
+   },
+   "TWJavaReviewer": {
+    "runs": 10,
+    "sessions": 5,
+    "projects": [
+     "app",
+     "backend",
+     "f024",
+     "jb008"
+    ],
+    "first_run": "2026-07-27T07:28:54.481Z",
+    "last_run": "2026-10-13T07:19:31.884Z",
+    "tasks": 10,
+    "attempts": {
+     "1": 10
+    },
+    "first_pass": 1.0
+   },
+   "Integrations": {
+    "runs": 10,
+    "sessions": 3,
+    "projects": [
+     "app",
+     "backend"
+    ],
+    "first_run": "2026-07-27T10:32:55.968Z",
+    "last_run": "2026-08-24T14:07:50.875Z",
+    "tasks": 10,
+    "attempts": {
+     "1": 10
+    },
+    "first_pass": 1.0
+   },
+   "QuestionAgent": {
+    "runs": 11,
+    "sessions": 2,
+    "projects": [
+     "app",
+     "floorballstats"
+    ],
+    "first_run": "2026-07-30T07:28:21.473Z",
+    "last_run": "2026-09-07T22:43:40.984Z",
+    "tasks": 11,
+    "attempts": {
+     "1": 11
+    },
+    "first_pass": 1.0
+   },
+   "Engineer": {
+    "runs": 13,
+    "sessions": 1,
+    "projects": [
+     "app"
+    ],
+    "first_run": "2026-07-30T11:50:37.487Z",
+    "last_run": "2026-09-10T13:15:59.849Z",
+    "tasks": 10,
+    "attempts": {
+     "1": 8,
+     "2": 1,
+     "3": 1
+    },
+    "first_pass": 0.8
+   },
+   "TWFlutterReviewer": {
+    "runs": 6,
+    "sessions": 4,
+    "projects": [
+     "app",
+     "backend",
+     "f024"
+    ],
+    "first_run": "2026-08-04T08:38:28.713Z",
+    "last_run": "2026-10-13T08:20:35.529Z",
+    "tasks": 6,
+    "attempts": {
+     "1": 6
+    },
+    "first_pass": 1.0
+   },
+   "TWAppReviewer": {
+    "runs": 3,
+    "sessions": 1,
+    "projects": [
+     "app"
+    ],
+    "first_run": "2026-08-04T08:38:45.736Z",
+    "last_run": "2026-08-04T09:26:28.791Z",
+    "tasks": 3,
+    "attempts": {
+     "1": 3
+    },
+    "first_pass": 1.0
+   },
+   "fork": {
+    "runs": 4,
+    "sessions": 2,
+    "projects": [
+     "Obsidian",
+     "app"
+    ],
+    "first_run": "2026-08-07T09:09:31.314Z",
+    "last_run": "2026-08-11T10:50:02.092Z",
+    "tasks": 4,
+    "attempts": {
+     "1": 4
+    },
+    "first_pass": 1.0
+   },
+   "BugTriageAgent": {
+    "runs": 2,
+    "sessions": 1,
+    "projects": [
+     "app"
+    ],
+    "first_run": "2026-08-24T12:28:09.168Z",
+    "last_run": "2026-08-24T13:18:05.591Z",
+    "tasks": 2,
+    "attempts": {
+     "1": 2
+    },
+    "first_pass": 1.0
+   },
+   "FBSWebReviewer": {
+    "runs": 1,
+    "sessions": 1,
+    "projects": [
+     "floorballstats"
+    ],
+    "first_run": "2026-09-14T09:17:43.408Z",
+    "last_run": "2026-09-14T09:17:43.408Z",
+    "tasks": 1,
+    "attempts": {
+     "1": 1
+    },
+    "first_pass": 1.0
+   },
+   "Debrief": {
+    "runs": 16,
+    "sessions": 5,
+    "projects": [
+     "CDM",
+     "intro",
+     "jytte",
+     "nichlas",
+     "platform"
+    ],
+    "first_run": "2026-10-15T08:13:11.848Z",
+    "last_run": "2026-10-17T16:45:11.695Z",
+    "tasks": 16,
+    "attempts": {
+     "1": 16
+    },
+    "first_pass": 1.0
+   }
+  },
+  "ready": true,
+  "source": "C:/Users/NichlasMadsen/.claude/logs/agent-usage.jsonl",
+  "rows": 225,
+  "durations": {
+   "source": "C:/Users/NichlasMadsen/.claude/logs/agent-runs.jsonl",
+   "lines": 43
+  },
+  "caveat": "attempts = invocations per (session, description). Ikke en succesrate: ingen log indeholder et udfald. Tal for hoejt naar to opgaver deler beskrivelse, og for lavt naar et daarligt svar blev rettet i haanden uden et nyt kald.",
+  "unattributed": [
+   "Explore",
+   "FixVerify",
+   "Plan",
+   "QATester",
+   "TWAppReviewer",
+   "TestAgent",
+   "claude-code-guide",
+   "fork",
+   "general-purpose"
+  ],
+  "trend": {
+   "FixVerify": {
+    "weeks": [
+     "2026-W37",
+     "2026-W38",
+     "2026-W39",
+     "2026-W40",
+     "2026-W41",
+     "2026-W42"
+    ],
+    "series": [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "tasks": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "delta": null
+   },
+   "TWUIReviewer": {
+    "weeks": [
+     "2026-W37",
+     "2026-W38",
+     "2026-W39",
+     "2026-W40",
+     "2026-W41",
+     "2026-W42"
+    ],
+    "series": [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "tasks": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "delta": null
+   },
+   "QuestionAgent": {
+    "weeks": [
+     "2026-W37",
+     "2026-W38",
+     "2026-W39",
+     "2026-W40",
+     "2026-W41",
+     "2026-W42"
+    ],
+    "series": [
+     100,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "tasks": [
+     1,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "delta": null
+   },
+   "BugTriageAgent": {
+    "weeks": [
+     "2026-W37",
+     "2026-W38",
+     "2026-W39",
+     "2026-W40",
+     "2026-W41",
+     "2026-W42"
+    ],
+    "series": [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "tasks": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "delta": null
+   },
+   "Plan": {
+    "weeks": [
+     "2026-W37",
+     "2026-W38",
+     "2026-W39",
+     "2026-W40",
+     "2026-W41",
+     "2026-W42"
+    ],
+    "series": [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "tasks": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "delta": null
+   },
+   "FeatureDocAgent": {
+    "weeks": [
+     "2026-W37",
+     "2026-W38",
+     "2026-W39",
+     "2026-W40",
+     "2026-W41",
+     "2026-W42"
+    ],
+    "series": [
+     100,
+     null,
+     100,
+     null,
+     null,
+     100
+    ],
+    "tasks": [
+     4,
+     0,
+     3,
+     0,
+     0,
+     2
+    ],
+    "delta": 0
+   },
+   "Engineer": {
+    "weeks": [
+     "2026-W37",
+     "2026-W38",
+     "2026-W39",
+     "2026-W40",
+     "2026-W41",
+     "2026-W42"
+    ],
+    "series": [
+     100,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "tasks": [
+     1,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "delta": null
+   },
+   "TWAppReviewer": {
+    "weeks": [
+     "2026-W37",
+     "2026-W38",
+     "2026-W39",
+     "2026-W40",
+     "2026-W41",
+     "2026-W42"
+    ],
+    "series": [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "tasks": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "delta": null
+   },
+   "Architect": {
+    "weeks": [
+     "2026-W37",
+     "2026-W38",
+     "2026-W39",
+     "2026-W40",
+     "2026-W41",
+     "2026-W42"
+    ],
+    "series": [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "tasks": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "delta": null
+   },
+   "general-purpose": {
+    "weeks": [
+     "2026-W37",
+     "2026-W38",
+     "2026-W39",
+     "2026-W40",
+     "2026-W41",
+     "2026-W42"
+    ],
+    "series": [
+     null,
+     null,
+     null,
+     null,
+     100,
+     100
+    ],
+    "tasks": [
+     0,
+     0,
+     0,
+     0,
+     6,
+     7
+    ],
+    "delta": 0
+   },
+   "Debrief": {
+    "weeks": [
+     "2026-W37",
+     "2026-W38",
+     "2026-W39",
+     "2026-W40",
+     "2026-W41",
+     "2026-W42"
+    ],
+    "series": [
+     null,
+     null,
+     null,
+     null,
+     null,
+     100
+    ],
+    "tasks": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     16
+    ],
+    "delta": null
+   },
+   "Integrations": {
+    "weeks": [
+     "2026-W37",
+     "2026-W38",
+     "2026-W39",
+     "2026-W40",
+     "2026-W41",
+     "2026-W42"
+    ],
+    "series": [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "tasks": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "delta": null
+   },
+   "claude-code-guide": {
+    "weeks": [
+     "2026-W37",
+     "2026-W38",
+     "2026-W39",
+     "2026-W40",
+     "2026-W41",
+     "2026-W42"
+    ],
+    "series": [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "tasks": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "delta": null
+   },
+   "QATester": {
+    "weeks": [
+     "2026-W37",
+     "2026-W38",
+     "2026-W39",
+     "2026-W40",
+     "2026-W41",
+     "2026-W42"
+    ],
+    "series": [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "tasks": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "delta": null
+   },
+   "fork": {
+    "weeks": [
+     "2026-W37",
+     "2026-W38",
+     "2026-W39",
+     "2026-W40",
+     "2026-W41",
+     "2026-W42"
+    ],
+    "series": [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "tasks": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "delta": null
+   },
+   "FBSWebReviewer": {
+    "weeks": [
+     "2026-W37",
+     "2026-W38",
+     "2026-W39",
+     "2026-W40",
+     "2026-W41",
+     "2026-W42"
+    ],
+    "series": [
+     null,
+     100,
+     null,
+     null,
+     null,
+     null
+    ],
+    "tasks": [
+     0,
+     1,
+     0,
+     0,
+     0,
+     0
+    ],
+    "delta": null
+   },
+   "TaskKeeper": {
+    "weeks": [
+     "2026-W37",
+     "2026-W38",
+     "2026-W39",
+     "2026-W40",
+     "2026-W41",
+     "2026-W42"
+    ],
+    "series": [
+     0,
+     100,
+     100,
+     100,
+     75,
+     100
+    ],
+    "tasks": [
+     1,
+     4,
+     1,
+     1,
+     4,
+     4
+    ],
+    "delta": 100
+   },
+   "TWJavaReviewer": {
+    "weeks": [
+     "2026-W37",
+     "2026-W38",
+     "2026-W39",
+     "2026-W40",
+     "2026-W41",
+     "2026-W42"
+    ],
+    "series": [
+     null,
+     null,
+     100,
+     null,
+     100,
+     100
+    ],
+    "tasks": [
+     0,
+     0,
+     2,
+     0,
+     1,
+     1
+    ],
+    "delta": 0
+   },
+   "Explore": {
+    "weeks": [
+     "2026-W37",
+     "2026-W38",
+     "2026-W39",
+     "2026-W40",
+     "2026-W41",
+     "2026-W42"
+    ],
+    "series": [
+     null,
+     null,
+     null,
+     null,
+     null,
+     100
+    ],
+    "tasks": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     1
+    ],
+    "delta": null
+   },
+   "TWFlutterReviewer": {
+    "weeks": [
+     "2026-W37",
+     "2026-W38",
+     "2026-W39",
+     "2026-W40",
+     "2026-W41",
+     "2026-W42"
+    ],
+    "series": [
+     null,
+     null,
+     100,
+     null,
+     null,
+     100
+    ],
+    "tasks": [
+     0,
+     0,
+     2,
+     0,
+     0,
+     1
+    ],
+    "delta": 0
+   },
+   "TestAgent": {
+    "weeks": [
+     "2026-W37",
+     "2026-W38",
+     "2026-W39",
+     "2026-W40",
+     "2026-W41",
+     "2026-W42"
+    ],
+    "series": [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "tasks": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "delta": null
+   }
+  },
+  "window": {
+   "days": 30,
+   "runs": 54,
+   "tasks": 52,
+   "first_pass": 0.962,
+   "avg_attempts": 1.04
+  },
+  "layers": [
+   {
+    "k": "Modeller",
+    "v": "haiku · opus · sonnet"
+   },
+   {
+    "k": "Runtimes",
+    "v": "Claude Code · n8n (self-hosted)"
+   },
+   {
+    "k": "MCP i settings.json · 1",
+    "v": "cloudflare. Connectors paa claude.ai staar ikke i filen og taelles ikke."
+   },
+   {
+    "k": "Hukommelse",
+    "v": "54 filer i 27 projekt-mapper. Ingen kobling til den enkelte agent endnu."
+   },
+   {
+    "k": "Run-log",
+    "v": "agent-usage.jsonl: 225 raekker, metadata only. agent-runs.jsonl: 43 raekker. Intet udfald pr. koersel logges endnu."
+   }
+  ],
+  "overlap": {
+   "pairs": [
+    {
+     "a": "tw-flutter-reviewer",
+     "b": "tw-java-reviewer",
+     "ak": "agent",
+     "bk": "agent",
+     "score": 100,
+     "verdict": "Flet",
+     "note": "samme navnestamme: reviewer, tw; 64% faelles ord i beskrivelsen",
+     "shared_skills": []
+    },
+    {
+     "a": "fbs-python-reviewer",
+     "b": "fbs-web-reviewer",
+     "ak": "agent",
+     "bk": "agent",
+     "score": 77,
+     "verdict": "Flet",
+     "note": "samme navnestamme: fbs, reviewer; deler 1 skill(s); 29% faelles ord i beskrivelsen",
+     "shared_skills": [
+      "python-regression-diff"
+     ]
+    },
+    {
+     "a": "flutter-regression-diff",
+     "b": "java-regression-diff",
+     "ak": "skill",
+     "bk": "skill",
+     "score": 76,
+     "verdict": "Flet",
+     "note": "samme navnestamme: diff, regression; 40% faelles ord i beskrivelsen",
+     "shared_skills": []
+    },
+    {
+     "a": "flutter-functional-conformance",
+     "b": "java-functional-conformance",
+     "ak": "skill",
+     "bk": "skill",
+     "score": 74,
+     "verdict": "Flet",
+     "note": "samme navnestamme: conformance, functional; 38% faelles ord i beskrivelsen",
+     "shared_skills": []
+    },
+    {
+     "a": "question-agent",
+     "b": "feature-clarify",
+     "ak": "agent",
+     "bk": "skill",
+     "score": 55,
+     "verdict": "Laeg ind i agent",
+     "note": "55% faelles ord i beskrivelsen",
+     "shared_skills": []
+    },
+    {
+     "a": "web-feedback-check",
+     "b": "web-render-check",
+     "ak": "skill",
+     "bk": "skill",
+     "score": 44,
+     "verdict": "Hold adskilt",
+     "note": "samme navnestamme: check, web",
+     "shared_skills": []
+    },
+    {
+     "a": "python-architecture-check",
+     "b": "python-contract-check",
+     "ak": "skill",
+     "bk": "skill",
+     "score": 42,
+     "verdict": "Hold adskilt",
+     "note": "samme navnestamme: check, python",
+     "shared_skills": []
+    },
+    {
+     "a": "java-architecture-check",
+     "b": "java-contract-check",
+     "ak": "skill",
+     "bk": "skill",
+     "score": 42,
+     "verdict": "Hold adskilt",
+     "note": "samme navnestamme: check, java",
+     "shared_skills": []
+    }
+   ],
+   "total": 19,
+   "method": "derived: Jaccard paa beskrivelses-ord + faelles skills + navnestamme. IKKE embeddings - der findes ingen i denne stak."
+  },
+  "unattributed_runs": 57
+ },
+ "themes": [
+  {
+   "id": "automation",
+   "name": "Automation",
+   "projects": [
+    {
+     "id": "jytte",
+     "name": "jytte",
+     "wfs": [
+      "ado-event-notify",
+      "azuredevops",
+      "bank",
+      "calendar",
+      "elforbrug",
+      "email",
+      "intake-to-ado",
+      "pr-comment",
+      "pr-complete",
+      "pr-create",
+      "vault-refresh"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "review",
+   "name": "Review",
+   "projects": [
+    {
+     "id": "claude",
+     "name": "claude",
+     "wfs": [
+      "debrief-after-changes"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "tasks",
+   "name": "Tasks",
+   "projects": [
+    {
+     "id": "Obsidian",
+     "name": "Obsidian",
+     "wfs": [
+      "taskkeeper-morning-brief"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "vault",
+   "name": "Vault",
+   "projects": [
+    {
+     "id": "LLM-Wiki",
+     "name": "LLM-Wiki",
+     "wfs": [
+      "librarian-ingest-pickup",
+      "librarian-question-close",
+      "vault-daily-refresh",
+      "vault-ingestion",
+      "vault-librarian",
+      "vault-lint"
+     ]
+    }
+   ]
+  }
+ ],
+ "workflows": {
+  "ado-event-notify": {
+   "n": "ado-event-notify",
+   "eng": "n8n",
+   "run": "aktiv",
+   "c": "good",
+   "desc": "",
+   "source": "C:/Projects/jytte/deploy/n8n/workflows/ado-event-notify.json",
+   "theme": "automation",
+   "project": "jytte",
+   "nodes": [
+    {
+     "id": "Webhook - ado-event",
+     "k": "tool",
+     "w": "Webhook - ado-event",
+     "y": "ADO Service Hook payload arrives here. ADO can send Basic Auth on the webhook (configured in the ADO subscription); n8n verifies against the 'Jytte internal' cr"
+    },
+    {
+     "id": "Route by eventType",
+     "k": "if",
+     "w": "Route by eventType",
+     "y": "ADO event types we care about: git.pullrequest.merged fires on PR completion (whether to dev or main - we look at target branch to disambiguate). ms.vss-pipelin"
+    },
+    {
+     "id": "Shape PR merged card",
+     "k": "tool",
+     "w": "Shape PR merged card",
+     "y": "n8n-nodes-base.code"
+    },
+    {
+     "id": "Shape pipeline card",
+     "k": "tool",
+     "w": "Shape pipeline card",
+     "y": "n8n-nodes-base.code"
+    },
+    {
+     "id": "Skip if _skip",
+     "k": "if",
+     "w": "Skip if _skip",
+     "y": "n8n-nodes-base.if"
+    },
+    {
+     "id": "POST Teams webhook",
+     "k": "tool",
+     "w": "POST Teams webhook",
+     "y": "TEAMS_WEBHOOK_TWAPP_SHIPPING env var is the Incoming Webhook URL configured in the target Teams channel (Channel settings -> Manage channel -> Connectors -> Inc"
+    },
+    {
+     "id": "200 OK",
+     "k": "tool",
+     "w": "200 OK",
+     "y": "n8n-nodes-base.respondToWebhook"
+    },
+    {
+     "id": "200 Skipped",
+     "k": "tool",
+     "w": "200 Skipped",
+     "y": "n8n-nodes-base.respondToWebhook"
+    },
+    {
+     "id": "200 Ignored (unknown event)",
+     "k": "tool",
+     "w": "200 Ignored (unknown event)",
+     "y": "n8n-nodes-base.respondToWebhook"
+    }
+   ],
+   "e": [
+    [
+     "Webhook - ado-event",
+     "Route by eventType",
+     null
+    ],
+    [
+     "Route by eventType",
+     "Shape PR merged card",
+     "true"
+    ],
+    [
+     "Route by eventType",
+     "Shape pipeline card",
+     "false"
+    ],
+    [
+     "Route by eventType",
+     "200 Ignored (unknown event)",
+     "false"
+    ],
+    [
+     "Shape PR merged card",
+     "Skip if _skip",
+     null
+    ],
+    [
+     "Shape pipeline card",
+     "Skip if _skip",
+     null
+    ],
+    [
+     "Skip if _skip",
+     "POST Teams webhook",
+     "true"
+    ],
+    [
+     "Skip if _skip",
+     "200 Skipped",
+     "false"
+    ],
+    [
+     "POST Teams webhook",
+     "200 OK",
+     null
+    ]
+   ]
+  },
+  "azuredevops": {
+   "n": "azuredevops",
+   "eng": "n8n",
+   "run": "inaktiv",
+   "c": "warn",
+   "desc": "F5 v1 smoke-test workflow. Proves: schedule trigger fires every 5 min, ADO PAT auth works, payload is shaped, Jytte /state receives the POST, and the Error Trigger branch can POST to /error. Once the pipe is verified end-to-end, EXTEND the 'Smoke - list projec",
+   "source": "C:/Projects/jytte/deploy/n8n/workflows/azuredevops.json",
+   "theme": "automation",
+   "project": "jytte",
+   "nodes": [
+    {
+     "id": "Every 5 minutes",
+     "k": "trigger",
+     "w": "Every 5 minutes",
+     "y": "n8n-nodes-base.scheduleTrigger"
+    },
+    {
+     "id": "Config",
+     "k": "tool",
+     "w": "Config",
+     "y": "n8n-nodes-base.set"
+    },
+    {
+     "id": "Smoke - list projects",
+     "k": "tool",
+     "w": "Smoke - list projects",
+     "y": "First-boot smoke test. Returns project list - if this is non-empty, the PAT works.\nReplace this single node with the 11-call sequence documented in docs/azurede"
+    },
+    {
+     "id": "Shape payload",
+     "k": "tool",
+     "w": "Shape payload",
+     "y": "n8n-nodes-base.set"
+    },
+    {
+     "id": "POST -> Jytte /state",
+     "k": "tool",
+     "w": "POST -> Jytte /state",
+     "y": "n8n-nodes-base.httpRequest"
+    },
+    {
+     "id": "On any error",
+     "k": "trigger",
+     "w": "On any error",
+     "y": "n8n-nodes-base.errorTrigger"
+    },
+    {
+     "id": "Shape error payload",
+     "k": "tool",
+     "w": "Shape error payload",
+     "y": "n8n-nodes-base.set"
+    },
+    {
+     "id": "POST -> Jytte /error",
+     "k": "tool",
+     "w": "POST -> Jytte /error",
+     "y": "n8n-nodes-base.httpRequest"
+    }
+   ],
+   "e": [
+    [
+     "Every 5 minutes",
+     "Config",
+     null
+    ],
+    [
+     "Config",
+     "Smoke - list projects",
+     null
+    ],
+    [
+     "Smoke - list projects",
+     "Shape payload",
+     null
+    ],
+    [
+     "Shape payload",
+     "POST -> Jytte /state",
+     null
+    ],
+    [
+     "On any error",
+     "Shape error payload",
+     null
+    ],
+    [
+     "Shape error payload",
+     "POST -> Jytte /error",
+     null
+    ]
+   ]
+  },
+  "bank": {
+   "n": "bank",
+   "eng": "n8n",
+   "run": "inaktiv",
+   "c": "warn",
+   "desc": "Open-banking fetch for the `bank` widget, via GoCardless Bank Account Data (the former Nordigen free AIS tier). CREDENTIAL RULE: the secret_id/secret_key pair lives only in n8n's encrypted credential store. Jytte holds no bank credential and has no Python clie",
+   "source": "C:/Projects/jytte/deploy/n8n/workflows/bank.json",
+   "theme": "automation",
+   "project": "jytte",
+   "nodes": [
+    {
+     "id": "Every 6 hours",
+     "k": "trigger",
+     "w": "Every 6 hours",
+     "y": "Four runs a day, not every 15 minutes like mail. The free Bank Account Data tier meters calls per account per day, so polling harder gets the account throttled "
+    },
+    {
+     "id": "Config",
+     "k": "tool",
+     "w": "Config",
+     "y": "Non-secret shaping only. BANK_REQUISITION_ID identifies the consent you completed in the browser; it is not a credential and cannot be used without the secret p"
+    },
+    {
+     "id": "Get access token",
+     "k": "tool",
+     "w": "Get access token",
+     "y": "The credential injects {\"body\":{\"secret_id\":\"...\",\"secret_key\":\"...\"}} into this POST, so the pair never appears in this file. Minting a fresh 24h access token "
+    },
+    {
+     "id": "Fetch requisition",
+     "k": "tool",
+     "w": "Fetch requisition",
+     "y": "Returns the account ids the consent covers. An expired consent answers 200 with an empty accounts array, not an error - handled in 'Split accounts'."
+    },
+    {
+     "id": "Split accounts",
+     "k": "tool",
+     "w": "Split accounts",
+     "y": "n8n-nodes-base.code"
+    },
+    {
+     "id": "Fetch details",
+     "k": "tool",
+     "w": "Fetch details",
+     "y": "onError continues so one account that the bank refuses does not take the other accounts' balances down with it."
+    },
+    {
+     "id": "Fetch balances",
+     "k": "tool",
+     "w": "Fetch balances",
+     "y": "The account id comes from 'Split accounts' through pairedItem, because the previous node replaced $json with the details response."
+    },
+    {
+     "id": "Fetch transactions",
+     "k": "tool",
+     "w": "Fetch transactions",
+     "y": "n8n-nodes-base.httpRequest"
+    },
+    {
+     "id": "Normalize accounts",
+     "k": "tool",
+     "w": "Normalize accounts",
+     "y": "n8n-nodes-base.code"
+    },
+    {
+     "id": "POST -> Jytte /state",
+     "k": "tool",
+     "w": "POST -> Jytte /state",
+     "y": "n8n-nodes-base.httpRequest"
+    },
+    {
+     "id": "On any error",
+     "k": "trigger",
+     "w": "On any error",
+     "y": "n8n-nodes-base.errorTrigger"
+    },
+    {
+     "id": "Shape error payload",
+     "k": "tool",
+     "w": "Shape error payload",
+     "y": "n8n-nodes-base.set"
+    },
+    {
+     "id": "POST -> Jytte /error",
+     "k": "tool",
+     "w": "POST -> Jytte /error",
+     "y": "n8n-nodes-base.httpRequest"
+    }
+   ],
+   "e": [
+    [
+     "Every 6 hours",
+     "Config",
+     null
+    ],
+    [
+     "Config",
+     "Get access token",
+     null
+    ],
+    [
+     "Get access token",
+     "Fetch requisition",
+     null
+    ],
+    [
+     "Fetch requisition",
+     "Split accounts",
+     null
+    ],
+    [
+     "Split accounts",
+     "Fetch details",
+     null
+    ],
+    [
+     "Fetch details",
+     "Fetch balances",
+     null
+    ],
+    [
+     "Fetch balances",
+     "Fetch transactions",
+     null
+    ],
+    [
+     "Fetch transactions",
+     "Normalize accounts",
+     null
+    ],
+    [
+     "Normalize accounts",
+     "POST -> Jytte /state",
+     null
+    ],
+    [
+     "On any error",
+     "Shape error payload",
+     null
+    ],
+    [
+     "Shape error payload",
+     "POST -> Jytte /error",
+     null
+    ]
+   ]
+  },
+  "calendar": {
+   "n": "calendar",
+   "eng": "n8n",
+   "run": "inaktiv",
+   "c": "warn",
+   "desc": "Calendar fetch for the `calendar` widget. Microsoft Graph via the microsoftOutlook node (event:getAll over today's window). CREDENTIAL RULE: the OAuth token lives only in n8n. Jytte stores no calendar credential and no agent can reach one - the widget is sourc",
+   "source": "C:/Projects/jytte/deploy/n8n/workflows/calendar.json",
+   "theme": "automation",
+   "project": "jytte",
+   "nodes": [
+    {
+     "id": "Every 15 minutes",
+     "k": "trigger",
+     "w": "Every 15 minutes",
+     "y": "A calendar changes less often than an inbox but matters more when it does - a moved meeting you learn about late is worse than a mail you read late."
+    },
+    {
+     "id": "Config",
+     "k": "tool",
+     "w": "Config",
+     "y": "Non-secret shaping only. The OAuth token is in n8n's credential store - Jytte never sees it, and no agent can reach it."
+    },
+    {
+     "id": "Fetch today events",
+     "k": "tool",
+     "w": "Fetch today events",
+     "y": "Needs delegated Calendars.Read added to the SAME Entra app registration the mail flow uses. One registration, two scopes - do both at once. Repoint this node at"
+    },
+    {
+     "id": "Normalize events",
+     "k": "tool",
+     "w": "Normalize events",
+     "y": "n8n-nodes-base.code"
+    },
+    {
+     "id": "POST -> Jytte /state",
+     "k": "tool",
+     "w": "POST -> Jytte /state",
+     "y": "n8n-nodes-base.httpRequest"
+    },
+    {
+     "id": "On any error",
+     "k": "trigger",
+     "w": "On any error",
+     "y": "n8n-nodes-base.errorTrigger"
+    },
+    {
+     "id": "Shape error payload",
+     "k": "tool",
+     "w": "Shape error payload",
+     "y": "n8n-nodes-base.set"
+    },
+    {
+     "id": "POST -> Jytte /error",
+     "k": "tool",
+     "w": "POST -> Jytte /error",
+     "y": "n8n-nodes-base.httpRequest"
+    }
+   ],
+   "e": [
+    [
+     "Every 15 minutes",
+     "Config",
+     null
+    ],
+    [
+     "Config",
+     "Fetch today events",
+     null
+    ],
+    [
+     "Fetch today events",
+     "Normalize events",
+     null
+    ],
+    [
+     "Normalize events",
+     "POST -> Jytte /state",
+     null
+    ],
+    [
+     "On any error",
+     "Shape error payload",
+     null
+    ],
+    [
+     "Shape error payload",
+     "POST -> Jytte /error",
+     null
+    ]
+   ]
+  },
+  "elforbrug": {
+   "n": "elforbrug",
+   "eng": "n8n",
+   "run": "inaktiv",
+   "c": "warn",
+   "desc": "Metering data for the `elforbrug` widget, from Eloverblik (Energinet DataHub). CREDENTIAL RULE: the refresh token lives only in n8n's encrypted credential store as an HTTP Header Auth credential named `eloverblik` (header Authorization, value 'Bearer <refresh ",
+   "source": "C:/Projects/jytte/deploy/n8n/workflows/elforbrug.json",
+   "theme": "automation",
+   "project": "jytte",
+   "nodes": [
+    {
+     "id": "Dagligt 07:10",
+     "k": "trigger",
+     "w": "Dagligt 07:10",
+     "y": "En gang i doegnet. DataHub opdaterer maalerdata en gang dagligt og ligger selv ca. et doegn bagud, saa hyppigere koersler henter de samme tal igen."
+    },
+    {
+     "id": "Config",
+     "k": "tool",
+     "w": "Config",
+     "y": "Datointerval. Beregnes her, ikke i hver node, saa der kun er eet sted at aendre perioden."
+    },
+    {
+     "id": "Hent data access token",
+     "k": "tool",
+     "w": "Hent data access token",
+     "y": "n8n-nodes-base.httpRequest"
+    },
+    {
+     "id": "Udpak token",
+     "k": "tool",
+     "w": "Udpak token",
+     "y": "Byt refresh-token til et data access token, der holder 24 timer. Resten af flowet bruger KUN det korte token."
+    },
+    {
+     "id": "Hent maalepunkter",
+     "k": "tool",
+     "w": "Hent maalepunkter",
+     "y": "n8n-nodes-base.httpRequest"
+    },
+    {
+     "id": "Udpak maalepunkter",
+     "k": "tool",
+     "w": "Udpak maalepunkter",
+     "y": "Adresse og id pr. maalepunkt. Et id er ikke en hemmelighed, men adressen er personhenfoerbar og vises kun paa /el."
+    },
+    {
+     "id": "Hent forbrug",
+     "k": "tool",
+     "w": "Hent forbrug",
+     "y": "n8n-nodes-base.httpRequest"
+    },
+    {
+     "id": "Normalisér til dage",
+     "k": "tool",
+     "w": "Normalisér til dage",
+     "y": "Fladgoer CIM-strukturen til en raekke pr. dag. kwh_x1000 er heltal: ingen floats, samme regel som beloeb."
+    },
+    {
+     "id": "POST -> Jytte /state",
+     "k": "tool",
+     "w": "POST -> Jytte /state",
+     "y": "n8n-nodes-base.httpRequest"
+    },
+    {
+     "id": "On any error",
+     "k": "trigger",
+     "w": "On any error",
+     "y": "n8n-nodes-base.errorTrigger"
+    },
+    {
+     "id": "Shape error payload",
+     "k": "tool",
+     "w": "Shape error payload",
+     "y": "n8n-nodes-base.set"
+    },
+    {
+     "id": "POST -> Jytte /error",
+     "k": "tool",
+     "w": "POST -> Jytte /error",
+     "y": "n8n-nodes-base.httpRequest"
+    }
+   ],
+   "e": [
+    [
+     "Dagligt 07:10",
+     "Config",
+     null
+    ],
+    [
+     "Config",
+     "Hent data access token",
+     null
+    ],
+    [
+     "Hent data access token",
+     "Udpak token",
+     null
+    ],
+    [
+     "Udpak token",
+     "Hent maalepunkter",
+     null
+    ],
+    [
+     "Hent maalepunkter",
+     "Udpak maalepunkter",
+     null
+    ],
+    [
+     "Udpak maalepunkter",
+     "Hent forbrug",
+     null
+    ],
+    [
+     "Hent forbrug",
+     "Normalisér til dage",
+     null
+    ],
+    [
+     "Normalisér til dage",
+     "POST -> Jytte /state",
+     null
+    ],
+    [
+     "On any error",
+     "Shape error payload",
+     null
+    ],
+    [
+     "Shape error payload",
+     "POST -> Jytte /error",
+     null
+    ]
+   ]
+  },
+  "email": {
+   "n": "email",
+   "eng": "n8n",
+   "run": "inaktiv",
+   "c": "warn",
+   "desc": "Mail fetch for the `email` widget. Microsoft Graph via the microsoftOutlook node (folderMessage:getAll against /mailFolders/inbox/messages), scoped to the last EMAIL_LOOKBACK_HOURS and capped at EMAIL_FETCH_LIMIT. Senders are tagged against EMAIL_DOMAINS_TRUST",
+   "source": "C:/Projects/jytte/deploy/n8n/workflows/email.json",
+   "theme": "automation",
+   "project": "jytte",
+   "nodes": [
+    {
+     "id": "Every 10 minutes",
+     "k": "trigger",
+     "w": "Every 10 minutes",
+     "y": "Mail is lower-churn than ADO PRs, so 10 min rather than 5. The widget manifest sets source: n8n, so this is the only cadence that matters - refresh_minutes ther"
+    },
+    {
+     "id": "Config",
+     "k": "tool",
+     "w": "Config",
+     "y": "Config comes from the container env (N8N_BLOCK_ENV_ACCESS_IN_NODE=false in docker-compose.yml). No secret is read here - the OAuth2 token lives in n8n's credent"
+    },
+    {
+     "id": "Fetch inbox messages",
+     "k": "tool",
+     "w": "Fetch inbox messages",
+     "y": "Needs an Entra app registration with delegated Mail.Read + offline_access, connected in n8n as a Microsoft Outlook OAuth2 credential. See deploy/n8n/README.md. "
+    },
+    {
+     "id": "Normalize + tag",
+     "k": "tool",
+     "w": "Normalize + tag",
+     "y": "n8n-nodes-base.code"
+    },
+    {
+     "id": "POST -> Jytte /state",
+     "k": "tool",
+     "w": "POST -> Jytte /state",
+     "y": "n8n-nodes-base.httpRequest"
+    },
+    {
+     "id": "On any error",
+     "k": "trigger",
+     "w": "On any error",
+     "y": "n8n-nodes-base.errorTrigger"
+    },
+    {
+     "id": "Shape error payload",
+     "k": "tool",
+     "w": "Shape error payload",
+     "y": "Jytte stores this verbatim in widget_state.last_error and renders it in the freshness banner, so keep it to code + message. Never add the credential or token to"
+    },
+    {
+     "id": "POST -> Jytte /error",
+     "k": "tool",
+     "w": "POST -> Jytte /error",
+     "y": "n8n-nodes-base.httpRequest"
+    }
+   ],
+   "e": [
+    [
+     "Every 10 minutes",
+     "Config",
+     null
+    ],
+    [
+     "Config",
+     "Fetch inbox messages",
+     null
+    ],
+    [
+     "Fetch inbox messages",
+     "Normalize + tag",
+     null
+    ],
+    [
+     "Normalize + tag",
+     "POST -> Jytte /state",
+     null
+    ],
+    [
+     "On any error",
+     "Shape error payload",
+     null
+    ],
+    [
+     "Shape error payload",
+     "POST -> Jytte /error",
+     null
+    ]
+   ]
+  },
+  "intake-to-ado": {
+   "n": "intake-to-ado",
+   "eng": "n8n",
+   "run": "aktiv",
+   "c": "good",
+   "desc": "",
+   "source": "C:/Projects/jytte/deploy/n8n/workflows/intake-to-ado.json",
+   "theme": "automation",
+   "project": "jytte",
+   "nodes": [
+    {
+     "id": "Webhook - intake-to-ado",
+     "k": "skill",
+     "w": "Webhook - intake-to-ado",
+     "y": "Receives the portable payload from twapp's /intake-to-ado skill. Body shape: { feat_id, work_item_type, title, description, acceptance, tags, assignee, area, it",
+     "r": "intake-to-ado"
+    },
+    {
+     "id": "Verify X-Jytte-Internal-Secret",
+     "k": "if",
+     "w": "Verify X-Jytte-Internal-Secret",
+     "y": "Matches the jytte-main -> n8n auth convention documented in deploy/n8n/README.md."
+    },
+    {
+     "id": "401 - secret mismatch",
+     "k": "tool",
+     "w": "401 - secret mismatch",
+     "y": "n8n-nodes-base.respondToWebhook"
+    },
+    {
+     "id": "Compile ADO JSON Patch",
+     "k": "tool",
+     "w": "Compile ADO JSON Patch",
+     "y": "The skill sends a language-agnostic payload; this node knows the ADO field paths. If ADO field mapping changes, only this node is edited."
+    },
+    {
+     "id": "POST to ADO wit/workitems",
+     "k": "tool",
+     "w": "POST to ADO wit/workitems",
+     "y": "AZDO_PAT_TRUSTWORKS lives in the ado-pat credential (basic auth, empty username, PAT as password). Never edit this node to log the auth header or the raw respon"
+    },
+    {
+     "id": "Shape response",
+     "k": "tool",
+     "w": "Shape response",
+     "y": "n8n-nodes-base.code"
+    },
+    {
+     "id": "200 - work item created",
+     "k": "tool",
+     "w": "200 - work item created",
+     "y": "n8n-nodes-base.respondToWebhook"
+    }
+   ],
+   "e": [
+    [
+     "Webhook - intake-to-ado",
+     "Verify X-Jytte-Internal-Secret",
+     null
+    ],
+    [
+     "Verify X-Jytte-Internal-Secret",
+     "Compile ADO JSON Patch",
+     "true"
+    ],
+    [
+     "Verify X-Jytte-Internal-Secret",
+     "401 - secret mismatch",
+     "false"
+    ],
+    [
+     "Compile ADO JSON Patch",
+     "POST to ADO wit/workitems",
+     null
+    ],
+    [
+     "POST to ADO wit/workitems",
+     "Shape response",
+     null
+    ],
+    [
+     "Shape response",
+     "200 - work item created",
+     null
+    ]
+   ]
+  },
+  "pr-comment": {
+   "n": "pr-comment",
+   "eng": "n8n",
+   "run": "aktiv",
+   "c": "good",
+   "desc": "",
+   "source": "C:/Projects/jytte/deploy/n8n/workflows/pr-comment.json",
+   "theme": "automation",
+   "project": "jytte",
+   "nodes": [
+    {
+     "id": "Webhook - pr-comment",
+     "k": "tool",
+     "w": "Webhook - pr-comment",
+     "y": "n8n-nodes-base.webhook"
+    },
+    {
+     "id": "Verify X-Jytte-Internal-Secret",
+     "k": "if",
+     "w": "Verify X-Jytte-Internal-Secret",
+     "y": "n8n-nodes-base.if"
+    },
+    {
+     "id": "401 - secret mismatch",
+     "k": "tool",
+     "w": "401 - secret mismatch",
+     "y": "n8n-nodes-base.respondToWebhook"
+    },
+    {
+     "id": "GET repo GUID by name",
+     "k": "tool",
+     "w": "GET repo GUID by name",
+     "y": "n8n-nodes-base.httpRequest"
+    },
+    {
+     "id": "Compile thread body",
+     "k": "tool",
+     "w": "Compile thread body",
+     "y": "n8n-nodes-base.code"
+    },
+    {
+     "id": "POST ADO thread",
+     "k": "tool",
+     "w": "POST ADO thread",
+     "y": "n8n-nodes-base.httpRequest"
+    },
+    {
+     "id": "Shape response",
+     "k": "tool",
+     "w": "Shape response",
+     "y": "n8n-nodes-base.code"
+    },
+    {
+     "id": "Respond",
+     "k": "tool",
+     "w": "Respond",
+     "y": "n8n-nodes-base.respondToWebhook"
+    }
+   ],
+   "e": [
+    [
+     "Webhook - pr-comment",
+     "Verify X-Jytte-Internal-Secret",
+     null
+    ],
+    [
+     "Verify X-Jytte-Internal-Secret",
+     "GET repo GUID by name",
+     "true"
+    ],
+    [
+     "Verify X-Jytte-Internal-Secret",
+     "401 - secret mismatch",
+     "false"
+    ],
+    [
+     "GET repo GUID by name",
+     "Compile thread body",
+     null
+    ],
+    [
+     "Compile thread body",
+     "POST ADO thread",
+     null
+    ],
+    [
+     "POST ADO thread",
+     "Shape response",
+     null
+    ],
+    [
+     "Shape response",
+     "Respond",
+     null
+    ]
+   ]
+  },
+  "pr-complete": {
+   "n": "pr-complete",
+   "eng": "n8n",
+   "run": "aktiv",
+   "c": "good",
+   "desc": "",
+   "source": "C:/Projects/jytte/deploy/n8n/workflows/pr-complete.json",
+   "theme": "automation",
+   "project": "jytte",
+   "nodes": [
+    {
+     "id": "Webhook - pr-complete",
+     "k": "tool",
+     "w": "Webhook - pr-complete",
+     "y": "Body from twapp /pr complete: { op:'complete', repo, pr_id, strategy, delete_source, transition_work_items }. Refreshes lastMergeSourceCommit before PATCHing."
+    },
+    {
+     "id": "Verify X-Jytte-Internal-Secret",
+     "k": "if",
+     "w": "Verify X-Jytte-Internal-Secret",
+     "y": "n8n-nodes-base.if"
+    },
+    {
+     "id": "401 - secret mismatch",
+     "k": "tool",
+     "w": "401 - secret mismatch",
+     "y": "n8n-nodes-base.respondToWebhook"
+    },
+    {
+     "id": "GET repo GUID by name",
+     "k": "tool",
+     "w": "GET repo GUID by name",
+     "y": "n8n-nodes-base.httpRequest"
+    },
+    {
+     "id": "GET PR to refresh commit id",
+     "k": "tool",
+     "w": "GET PR to refresh commit id",
+     "y": "n8n-nodes-base.code"
+    },
+    {
+     "id": "GET PR (fresh commit id)",
+     "k": "tool",
+     "w": "GET PR (fresh commit id)",
+     "y": "n8n-nodes-base.httpRequest"
+    },
+    {
+     "id": "Compile complete PATCH",
+     "k": "tool",
+     "w": "Compile complete PATCH",
+     "y": "n8n-nodes-base.code"
+    },
+    {
+     "id": "PATCH ADO complete-PR",
+     "k": "tool",
+     "w": "PATCH ADO complete-PR",
+     "y": "n8n-nodes-base.httpRequest"
+    },
+    {
+     "id": "Shape response",
+     "k": "tool",
+     "w": "Shape response",
+     "y": "n8n-nodes-base.code"
+    },
+    {
+     "id": "Respond",
+     "k": "tool",
+     "w": "Respond",
+     "y": "n8n-nodes-base.respondToWebhook"
+    }
+   ],
+   "e": [
+    [
+     "Webhook - pr-complete",
+     "Verify X-Jytte-Internal-Secret",
+     null
+    ],
+    [
+     "Verify X-Jytte-Internal-Secret",
+     "GET repo GUID by name",
+     "true"
+    ],
+    [
+     "Verify X-Jytte-Internal-Secret",
+     "401 - secret mismatch",
+     "false"
+    ],
+    [
+     "GET repo GUID by name",
+     "GET PR to refresh commit id",
+     null
+    ],
+    [
+     "GET PR to refresh commit id",
+     "GET PR (fresh commit id)",
+     null
+    ],
+    [
+     "GET PR (fresh commit id)",
+     "Compile complete PATCH",
+     null
+    ],
+    [
+     "Compile complete PATCH",
+     "PATCH ADO complete-PR",
+     null
+    ],
+    [
+     "PATCH ADO complete-PR",
+     "Shape response",
+     null
+    ],
+    [
+     "Shape response",
+     "Respond",
+     null
+    ]
+   ]
+  },
+  "pr-create": {
+   "n": "pr-create",
+   "eng": "n8n",
+   "run": "aktiv",
+   "c": "good",
+   "desc": "",
+   "source": "C:/Projects/jytte/deploy/n8n/workflows/pr-create.json",
+   "theme": "automation",
+   "project": "jytte",
+   "nodes": [
+    {
+     "id": "Webhook - pr-create",
+     "k": "tool",
+     "w": "Webhook - pr-create",
+     "y": "Body from twapp /pr create skill: { op:'create', repo, source, target, title, description, reviewers[], work_item, draft }."
+    },
+    {
+     "id": "Verify X-Jytte-Internal-Secret",
+     "k": "if",
+     "w": "Verify X-Jytte-Internal-Secret",
+     "y": "n8n-nodes-base.if"
+    },
+    {
+     "id": "401 - secret mismatch",
+     "k": "tool",
+     "w": "401 - secret mismatch",
+     "y": "n8n-nodes-base.respondToWebhook"
+    },
+    {
+     "id": "GET repo GUID by name",
+     "k": "tool",
+     "w": "GET repo GUID by name",
+     "y": "n8n-nodes-base.httpRequest"
+    },
+    {
+     "id": "Compile ADO PR body",
+     "k": "tool",
+     "w": "Compile ADO PR body",
+     "y": "n8n-nodes-base.code"
+    },
+    {
+     "id": "POST ADO create-PR",
+     "k": "tool",
+     "w": "POST ADO create-PR",
+     "y": "n8n-nodes-base.httpRequest"
+    },
+    {
+     "id": "Shape response",
+     "k": "tool",
+     "w": "Shape response",
+     "y": "n8n-nodes-base.code"
+    },
+    {
+     "id": "Respond",
+     "k": "tool",
+     "w": "Respond",
+     "y": "n8n-nodes-base.respondToWebhook"
+    }
+   ],
+   "e": [
+    [
+     "Webhook - pr-create",
+     "Verify X-Jytte-Internal-Secret",
+     null
+    ],
+    [
+     "Verify X-Jytte-Internal-Secret",
+     "GET repo GUID by name",
+     "true"
+    ],
+    [
+     "Verify X-Jytte-Internal-Secret",
+     "401 - secret mismatch",
+     "false"
+    ],
+    [
+     "GET repo GUID by name",
+     "Compile ADO PR body",
+     null
+    ],
+    [
+     "Compile ADO PR body",
+     "POST ADO create-PR",
+     null
+    ],
+    [
+     "POST ADO create-PR",
+     "Shape response",
+     null
+    ],
+    [
+     "Shape response",
+     "Respond",
+     null
+    ]
+   ]
+  },
+  "vault-refresh": {
+   "n": "vault-refresh",
+   "eng": "n8n",
+   "run": "inaktiv",
+   "c": "warn",
+   "desc": "Daily status of the LLM-Wiki refresh for the `vault` widget. The refresh runs on the HOST (Task Scheduler -> refresh_views.py) and writes LLM-Wiki/.graph/refresh-status.json; this workflow reads it from the read-only /vault-status mount. No credentials. Never ",
+   "source": "C:/Projects/jytte/deploy/n8n/workflows/vault-refresh.json",
+   "theme": "automation",
+   "project": "jytte",
+   "nodes": [
+    {
+     "id": "Daily 06:30",
+     "k": "trigger",
+     "w": "Daily 06:30",
+     "y": "n8n-nodes-base.scheduleTrigger"
+    },
+    {
+     "id": "Read refresh-status.json",
+     "k": "tool",
+     "w": "Read refresh-status.json",
+     "y": "n8n-nodes-base.readWriteFile"
+    },
+    {
+     "id": "Normalize status",
+     "k": "tool",
+     "w": "Normalize status",
+     "y": "n8n-nodes-base.code"
+    },
+    {
+     "id": "POST -> Jytte /state",
+     "k": "tool",
+     "w": "POST -> Jytte /state",
+     "y": "n8n-nodes-base.httpRequest"
+    },
+    {
+     "id": "Problem?",
+     "k": "if",
+     "w": "Problem?",
+     "y": "n8n-nodes-base.if"
+    },
+    {
+     "id": "POST -> Jytte /error (problem)",
+     "k": "tool",
+     "w": "POST -> Jytte /error (problem)",
+     "y": "n8n-nodes-base.httpRequest"
+    },
+    {
+     "id": "On any error",
+     "k": "trigger",
+     "w": "On any error",
+     "y": "n8n-nodes-base.errorTrigger"
+    },
+    {
+     "id": "Shape error payload",
+     "k": "tool",
+     "w": "Shape error payload",
+     "y": "n8n-nodes-base.set"
+    },
+    {
+     "id": "POST -> Jytte /error",
+     "k": "tool",
+     "w": "POST -> Jytte /error",
+     "y": "n8n-nodes-base.httpRequest"
+    }
+   ],
+   "e": [
+    [
+     "Daily 06:30",
+     "Read refresh-status.json",
+     null
+    ],
+    [
+     "Read refresh-status.json",
+     "Normalize status",
+     null
+    ],
+    [
+     "Normalize status",
+     "POST -> Jytte /state",
+     null
+    ],
+    [
+     "POST -> Jytte /state",
+     "Problem?",
+     null
+    ],
+    [
+     "Problem?",
+     "POST -> Jytte /error (problem)",
+     "true"
+    ],
+    [
+     "On any error",
+     "Shape error payload",
+     null
+    ],
+    [
+     "Shape error payload",
+     "POST -> Jytte /error",
+     null
+    ]
+   ]
+  },
+  "vault-ingestion": {
+   "n": "ingestion",
+   "eng": "Claude",
+   "run": "manuel",
+   "c": "good",
+   "desc": "Vault-workflow: ingestion. Koerer via llm-wiki-librarian.",
+   "source": "C:/Obsidian/Nichlas/LLM-Wiki/workflows/ingestion.md",
+   "theme": "vault",
+   "project": "LLM-Wiki",
+   "nodes": [
+    {
+     "id": "step-0",
+     "k": "tool",
+     "w": "0. Locate the project, before anything is written",
+     "y": "Walk up for `.wiki-config.yml`. Read `project_name`, `project_slug`, `participants`. - **Produces:** the active project context for the session. - **Alignment:*"
+    },
+    {
+     "id": "step-1",
+     "k": "skill",
+     "w": "1. Classify the source",
+     "y": "| Source | Skill | Lands in | |---|---|---| | audio / video / transcript | `project-meeting-summarizer` | `wiki/meetings/YYYY-MM-DD-kebab.md` | | .docx / .pptx ",
+     "r": "project-meeting-summarizer"
+    },
+    {
+     "id": "step-2",
+     "k": "tool",
+     "w": "2. Write the page",
+     "y": "- **Produces:** one `.md` with complete frontmatter per `_SCHEMA.md` §2, in the folder its `type:` demands (§1). - **Confidence:** `B` by default - machine read"
+    },
+    {
+     "id": "step-3",
+     "k": "tool",
+     "w": "3. Place it in the taxonomy",
+     "y": "Set the tags that say where this work sits (`_SCHEMA.md` §3c): ``` project/<x> a project the customer contracted subproject/<x> work that must complete before i"
+    },
+    {
+     "id": "step-4",
+     "k": "tool",
+     "w": "4. Link it",
+     "y": "- **Produces:** at least one outbound `[[wikilink]]` to an existing entity, person or system, and typed frontmatter edges where a real relation exists (`referen"
+    },
+    {
+     "id": "step-5",
+     "k": "agent",
+     "w": "5. Diagrammer (to spoergsmaal, i raekkefoelge)",
+     "y": "### 5a. Kom der et diagram med kilden? *(hvis ja: flyt det, spoerg ikke)* **Dette trin manglede indtil 2026-10-08, og det kostede maalbart.** Maaling den dag: `"
+    },
+    {
+     "id": "step-6",
+     "k": "tool",
+     "w": "6. Follow-up scan (ask, never auto-create)",
+     "y": "Scan the new page for `- [ ]`, `Action:`, `TODO:`, \"udestår\", \"afventer\", and any Open questions section. - **Produces:** a list presented to the human. - **Tas"
+    },
+    {
+     "id": "step-6.5",
+     "k": "agent",
+     "w": "6.5. Rule review (agent, before close-out)",
+     "y": "Dispatch a **reviewer agent** over everything this ingest created or touched. Its only job is to confirm the vault's own rules were followed - not to judge the "
+    },
+    {
+     "id": "step-7",
+     "k": "tool",
+     "w": "7. Close out",
+     "y": "1. `python LLM-Wiki/scripts/build_graph.py` 2. `python LLM-Wiki/scripts/build_vocab.py` 3. `python LLM-Wiki/scripts/build_projects_view.py` if tasks or projects"
+    }
+   ],
+   "e": [
+    [
+     "step-0",
+     "step-1",
+     null
+    ],
+    [
+     "step-1",
+     "step-2",
+     null
+    ],
+    [
+     "step-2",
+     "step-3",
+     null
+    ],
+    [
+     "step-3",
+     "step-4",
+     null
+    ],
+    [
+     "step-4",
+     "step-5",
+     null
+    ],
+    [
+     "step-5",
+     "step-6",
+     null
+    ],
+    [
+     "step-6",
+     "step-6.5",
+     null
+    ],
+    [
+     "step-6.5",
+     "step-7",
+     null
+    ]
+   ]
+  },
+  "vault-lint": {
+   "n": "lint",
+   "eng": "Claude",
+   "run": "manuel",
+   "c": "good",
+   "desc": "Vault-workflow: lint. Koerer via llm-wiki-librarian.",
+   "source": "C:/Obsidian/Nichlas/LLM-Wiki/workflows/lint.md",
+   "theme": "vault",
+   "project": "LLM-Wiki",
+   "nodes": [
+    {
+     "id": "step-1",
+     "k": "tool",
+     "w": "1. Deterministic pass",
+     "y": "Run in this order. Each writes an artifact the later steps read. ```bash cd C:\\Obsidian\\Nichlas python LLM-Wiki/scripts/build_graph.py # .graph/nodes.csv, edges"
+    },
+    {
+     "id": "step-2",
+     "k": "tool",
+     "w": "2. Vocabulary pass (new, 2026-10-03)",
+     "y": "Read `.graph/vocab.md`. Report, in this order: 1. **Drift** - values in use that no enum declares. 2. **Schema doc vs. validator** - `_SCHEMA.md` and `validate_"
+    },
+    {
+     "id": "step-3",
+     "k": "skill",
+     "w": "3. Judgement pass",
+     "y": "Only what no script can do. Invoke the `wiki-lint` skill, or work the categories directly: | | What to look for | |---|---| | **Links** | broken wikilinks, spli",
+     "r": "wiki-lint"
+    },
+    {
+     "id": "step-4",
+     "k": "tool",
+     "w": "4. Report",
+     "y": "Write `wiki/topics/lint-YYYY-MM-DD.md`: ```yaml type: topic kind: audit-report tags: [lint, meta] status: done confidence: B # machine readable, per _SCHEMA.md "
+    },
+    {
+     "id": "step-5",
+     "k": "tool",
+     "w": "5. Fix, with permission",
+     "y": "- **Easy fixes** - offer them as a list, apply only the ones accepted. - **Hard fixes** - per-item confirmation, every time. - **Never without asking:** deletin"
+    },
+    {
+     "id": "step-6",
+     "k": "tool",
+     "w": "6. Close out",
+     "y": "Append to `wiki/log.md`: ``` ## [YYYY-MM-DD] lint | <one-line summary> Scannet <n> sider. Fund: <n> fordelt paa <kategorier>. Auto-fixed: <n>. Rapport: `wiki/to"
+    },
+    {
+     "id": "step-7",
+     "k": "tool",
+     "w": "7. Diagram clarification (ask, do not assume)",
+     "y": "A lint sometimes surfaces something a picture explains better than a list - a tangle of dependencies, a system map nobody has drawn, an ownership question. Prop"
+    }
+   ],
+   "e": [
+    [
+     "step-1",
+     "step-2",
+     null
+    ],
+    [
+     "step-2",
+     "step-3",
+     null
+    ],
+    [
+     "step-3",
+     "step-4",
+     null
+    ],
+    [
+     "step-4",
+     "step-5",
+     null
+    ],
+    [
+     "step-5",
+     "step-6",
+     null
+    ],
+    [
+     "step-6",
+     "step-7",
+     null
+    ]
+   ]
+  },
+  "vault-librarian": {
+   "n": "llm-wiki-librarian",
+   "eng": "Claude",
+   "run": "manuel",
+   "c": "good",
+   "desc": "> Coral trin stopper og spoerger dig.",
+   "source": "C:/Users/NichlasMadsen/.claude/skills/llm-wiki-librarian/SKILL.md",
+   "theme": "vault",
+   "project": "LLM-Wiki",
+   "nodes": [
+    {
+     "id": "start",
+     "k": "trigger",
+     "w": "Session starter",
+     "y": "Enhver anmodning der roerer LLM-Wiki/ starter her (global CLAUDE.md)"
+    },
+    {
+     "id": "step-0",
+     "k": "tool",
+     "w": "0. Find the active project",
+     "y": "Walk up from cwd looking for .wiki-config.yml (max 5 levels). If found: read it and extract projectname, projectslug, contactperson, participants - that is the "
+    },
+    {
+     "id": "step-0.5",
+     "k": "gate",
+     "w": "0.5. Load the workflow",
+     "y": "Two of these processes are now written down as ordered workflows with explicit alignment checks. Read the relevant one and follow it; this skill routes, the wor"
+    },
+    {
+     "id": "step-0.6",
+     "k": "gate",
+     "w": "0.6. Pick up the #ingest queue (every session)",
+     "y": "A line anywhere outside LLM-Wiki/ (daily note, Tanker.md, a task's Noter) tagged ingest is a source the human parked for you. Check the queue at the start of ev"
+    },
+    {
+     "id": "step-1",
+     "k": "tool",
+     "w": "1. Classify the request",
+     "y": "Use this routing table. If two skills match, ask the user briefly which is meant. User intent (Danish or English) Sub-skill ------ Upload audio / video, transcr"
+    },
+    {
+     "id": "step-2",
+     "k": "skill",
+     "w": "2. Pre-flight check before any wiki-writing skill",
+     "y": "Before invoking project-meeting-summarizer, add-learning, or any sub-skill that creates a .md in wiki/: 1. Confirm .wiki-config.yml exists in the active project",
+     "r": "project-meeting-summarizer"
+    },
+    {
+     "id": "step-3",
+     "k": "tool",
+     "w": "3. Invoke the sub-skill",
+     "y": "Use the Skill tool. Pass on the user's original request verbatim (with any clarifications you got in Step 1). Let the sub-skill do the work - do not duplicate i"
+    },
+    {
+     "id": "step-4",
+     "k": "skill",
+     "w": "4. Single-file schema check (every new .md)",
+     "y": "For every .md file the sub-skill created or modified under wiki/, run this lightweight schema check. Do NOT invoke the full wiki-lint skill here - that's the en",
+     "r": "wiki-lint"
+    },
+    {
+     "id": "step-5",
+     "k": "gate",
+     "w": "5. Follow-up task scan (meetings + learnings only)",
+     "y": "After project-meeting-summarizer or add-learning completes, scan the new .md file body for: 1. Markdown checkboxes: - [ ] <task 2. Action prefixes: lines starti",
+     "r": "project-meeting-summarizer"
+    },
+    {
+     "id": "step-5b",
+     "k": "gate",
+     "w": "5b. Project candidate scan (ALWAYS ask, never auto-create)",
+     "y": "Trigger: after any meeting ingest, and whenever customer or internal work is updated (a new topic, ADR, learning, or a batch of new tasks for a customer). Nichl"
+    },
+    {
+     "id": "step-5.5",
+     "k": "gate",
+     "w": "5.5. Task hygiene sweep (done -> Finish/)",
+     "y": "Every session that touches wiki OR tasks, sweep C:\\Obsidian\\Nichlas\\Tasks\\ for done-tasks that haven't been archived yet. Trivial to run, keeps the active task "
+    },
+    {
+     "id": "step-5.6",
+     "k": "gate",
+     "w": "5.6. Propose closing the questions a done task carried",
+     "y": "The human owns the questions in the vault. Nothing closes without his OK, line by line (decided 2026-10-17). When a task went to status: done in this session, o"
+    },
+    {
+     "id": "step-6",
+     "k": "tool",
+     "w": "6. End-of-session lint",
+     "y": "Trigger conditions (any of): - User signals end of work: \"done\", \"tak\", \"ses i morgen\", \"wrap up\", \"thanks\", \"godnat\", \"vi er færdige\". - Session has touched 5+"
+    },
+    {
+     "id": "step-7",
+     "k": "tool",
+     "w": "7. Update wiki log",
+     "y": "If this session created or modified any wiki files, append to wiki/log.md:"
+    }
+   ],
+   "e": [
+    [
+     "start",
+     "step-0",
+     null
+    ],
+    [
+     "step-0",
+     "step-0.5",
+     null
+    ],
+    [
+     "step-0.5",
+     "step-0.6",
+     null
+    ],
+    [
+     "step-0.6",
+     "step-1",
+     null
+    ],
+    [
+     "step-1",
+     "step-2",
+     null
+    ],
+    [
+     "step-2",
+     "step-3",
+     null
+    ],
+    [
+     "step-3",
+     "step-4",
+     null
+    ],
+    [
+     "step-4",
+     "step-5",
+     null
+    ],
+    [
+     "step-5",
+     "step-5b",
+     null
+    ],
+    [
+     "step-5b",
+     "step-5.5",
+     null
+    ],
+    [
+     "step-5.5",
+     "step-5.6",
+     null
+    ],
+    [
+     "step-5.6",
+     "step-6",
+     null
+    ],
+    [
+     "step-6",
+     "step-7",
+     null
+    ]
+   ]
+  },
+  "vault-daily-refresh": {
+   "n": "vault daily refresh",
+   "eng": "host",
+   "run": "dagligt 06:00",
+   "c": "good",
+   "desc": "Windows Task Scheduler koerer refresh_views.py paa hosten kl. 06:00. Den genbygger alle genererede views og skriver refresh-status.json. n8n laeser filen kl. 06:30 og sender den til vault-kortet. Lukker aldrig et spoergsmaal og filer aldrig en note. n8n: vault-refresh.",
+   "source": "C:/Obsidian/Nichlas/LLM-Wiki/scripts/refresh_views.py",
+   "theme": "vault",
+   "project": "LLM-Wiki",
+   "n8n": [
+    "vault-refresh"
+   ],
+   "nodes": [
+    {
+     "id": "sched",
+     "k": "trigger",
+     "w": "Task Scheduler 06:00",
+     "y": "Windows-opgave installeret med install_refresh_task.ps1. Springer over hvis git holder .git/index.lock."
+    },
+    {
+     "id": "graph",
+     "k": "tool",
+     "w": "build_graph",
+     "y": ".graph/nodes.csv, edges.csv, graph-stats.json"
+    },
+    {
+     "id": "projects",
+     "k": "tool",
+     "w": "build_projects_view",
+     "y": "Projects/ task-joins og _index.json"
+    },
+    {
+     "id": "boards",
+     "k": "tool",
+     "w": "build_workstream",
+     "y": "Et arbejdsbord pr. workstream i CONFIG"
+    },
+    {
+     "id": "questions",
+     "k": "tool",
+     "w": "build_open_questions",
+     "y": "wiki/views/open-questions.md: alle aabne spoergsmaal pr. sub-wiki, plus #ingest-koeen"
+    },
+    {
+     "id": "validate",
+     "k": "tool",
+     "w": "validate_wiki",
+     "y": "Skema-tjek, read-only. Fejler aldrig koerslen."
+    },
+    {
+     "id": "status",
+     "k": "tool",
+     "w": "refresh-status.json",
+     "y": "LLM-Wiki/.graph/refresh-status.json. Kontrakten med n8n."
+    },
+    {
+     "id": "n8n",
+     "k": "trigger",
+     "w": "n8n vault-refresh 06:30",
+     "y": "Laeser filen fra et read-only mount, markerer den stale efter 26 timer, POST til Jytte."
+    },
+    {
+     "id": "card",
+     "k": "tool",
+     "w": "Jytte vault-kort",
+     "y": "Status, validator, graf og antal aabne spoergsmaal."
+    }
+   ],
+   "e": [
+    [
+     "sched",
+     "graph",
+     null
+    ],
+    [
+     "graph",
+     "projects",
+     null
+    ],
+    [
+     "projects",
+     "boards",
+     null
+    ],
+    [
+     "boards",
+     "questions",
+     null
+    ],
+    [
+     "questions",
+     "validate",
+     null
+    ],
+    [
+     "validate",
+     "status",
+     null
+    ],
+    [
+     "status",
+     "n8n",
+     null
+    ],
+    [
+     "n8n",
+     "card",
+     null
+    ]
+   ]
+  },
+  "librarian-question-close": {
+   "n": "spoergsmaal lukkes",
+   "eng": "Claude",
+   "run": "manuel",
+   "c": "good",
+   "desc": "Librarian Step 5.6. Et spoergsmaal hvis task er done foreslaas lukket, men intet lukkes uden dit OK linje for linje (besluttet 2026-10-17).",
+   "source": "C:/Obsidian/Nichlas/LLM-Wiki/scripts/close_task_questions.py",
+   "theme": "vault",
+   "project": "LLM-Wiki",
+   "n8n": [],
+   "nodes": [
+    {
+     "id": "done",
+     "k": "trigger",
+     "w": "Task sat til done",
+     "y": "Eller flyttet til Tasks/Finish/ af Step 5.5"
+    },
+    {
+     "id": "list",
+     "k": "tool",
+     "w": "close_task_questions.py",
+     "y": "Lister checkbokse bundet til en done task. Skriver intet."
+    },
+    {
+     "id": "read",
+     "k": "tool",
+     "w": "Laes taskens Noter og Solution",
+     "y": "Librarian foreslaar Svar, Luk uden svar eller Hold aaben pr. linje"
+    },
+    {
+     "id": "ask",
+     "k": "gate",
+     "w": "Du vaelger pr. spoergsmaal",
+     "y": "Svar / Luk uden svar / Hold aaben. Spoerges samlet for hele batchen."
+    },
+    {
+     "id": "svar",
+     "k": "tool",
+     "w": "Svar skrives paa linjen",
+     "y": "- [x] <spoergsmaal> Svar: <svar> ([[task]])"
+    },
+    {
+     "id": "close",
+     "k": "tool",
+     "w": "--approve <side>:<linje>",
+     "y": "- [x] <spoergsmaal> [Automatically closed] ([[task]]). --reopen fortryder."
+    },
+    {
+     "id": "keep",
+     "k": "tool",
+     "w": "Hold aaben",
+     "y": "Linjen roeres ikke"
+    },
+    {
+     "id": "log",
+     "k": "tool",
+     "w": "log.md",
+     "y": "De lukkede linjer skrives i librarian-loggen"
+    }
+   ],
+   "e": [
+    [
+     "done",
+     "list",
+     null
+    ],
+    [
+     "list",
+     "read",
+     null
+    ],
+    [
+     "read",
+     "ask",
+     null
+    ],
+    [
+     "ask",
+     "svar",
+     "Svar"
+    ],
+    [
+     "ask",
+     "close",
+     "Luk"
+    ],
+    [
+     "ask",
+     "keep",
+     "Hold"
+    ],
+    [
+     "svar",
+     "log",
+     null
+    ],
+    [
+     "close",
+     "log",
+     null
+    ]
+   ]
+  },
+  "librarian-ingest-pickup": {
+   "n": "#ingest-noter",
+   "eng": "Claude",
+   "run": "hver librarian-session",
+   "c": "good",
+   "desc": "Librarian Step 0.6. En linje i en note eller daglig note med #ingest er en kilde du har parkeret. Librarian foreslaar, du vaelger, og linjen faar et block-id naar den er filet.",
+   "source": "C:/Obsidian/Nichlas/LLM-Wiki/scripts/ingest_queue.py",
+   "theme": "vault",
+   "project": "LLM-Wiki",
+   "n8n": [],
+   "nodes": [
+    {
+     "id": "tag",
+     "k": "trigger",
+     "w": "Du skriver #ingest paa en linje",
+     "y": "Valgfrit #project/x eller #subproject/x for at styre hvor den ender"
+    },
+    {
+     "id": "list",
+     "k": "tool",
+     "w": "ingest_queue.py list",
+     "y": "Linjer med foreslaaet sub-wiki og work unit"
+    },
+    {
+     "id": "ask",
+     "k": "gate",
+     "w": "Du vaelger",
+     "y": "alle / numre / ingen / senere"
+    },
+    {
+     "id": "file",
+     "k": "tool",
+     "w": "Filet paa siden",
+     "y": "Fakta som dateret saetning med citat, spoergsmaal under Aabne spoergsmaal, arbejde som foreslaaet task"
+    },
+    {
+     "id": "mark",
+     "k": "tool",
+     "w": "ingest_queue.py mark",
+     "y": "#ingest bliver til #ingested [[side]] plus ^ing-YYYYMMDD-N. Afviser hvis linjen er aendret."
+    },
+    {
+     "id": "later",
+     "k": "tool",
+     "w": "Bliver i koeen",
+     "y": "Vises i Ingest-koe paa open-questions.md og som tag paa vault-kortet"
+    }
+   ],
+   "e": [
+    [
+     "tag",
+     "list",
+     null
+    ],
+    [
+     "list",
+     "ask",
+     null
+    ],
+    [
+     "ask",
+     "file",
+     "valgt"
+    ],
+    [
+     "ask",
+     "later",
+     "senere"
+    ],
+    [
+     "file",
+     "mark",
+     null
+    ]
+   ]
+  },
+  "taskkeeper-morning-brief": {
+   "n": "morgen-brief",
+   "eng": "hook",
+   "run": "foerste session hver dag",
+   "c": "good",
+   "desc": "SessionStart-hook i Claude Code. Foerste session paa dagen flytter done-tasks til Tasks/Finish/ og starter TaskKeeper, som giver dagens brief foer svaret paa det du skrev.",
+   "source": "C:/Users/NichlasMadsen/.claude/settings.json",
+   "theme": "tasks",
+   "project": "Obsidian",
+   "n8n": [],
+   "nodes": [
+    {
+     "id": "start",
+     "k": "trigger",
+     "w": "Foerste session i dag",
+     "y": "SessionStart-hook DailyTaskBrief"
+    },
+    {
+     "id": "sweep",
+     "k": "tool",
+     "w": "done-tasks til Finish/",
+     "y": "Hooken flytter tasks med status: done"
+    },
+    {
+     "id": "keeper",
+     "k": "agent",
+     "w": "TaskKeeper",
+     "y": "Laeser aabne tasks via task-notes list-open",
+     "r": "TaskKeeper"
+    },
+    {
+     "id": "brief",
+     "k": "tool",
+     "w": "Brief i chatten",
+     "y": "Fokus, overskredne, denne uge, P1, dataproblemer"
+    }
+   ],
+   "e": [
+    [
+     "start",
+     "sweep",
+     null
+    ],
+    [
+     "sweep",
+     "keeper",
+     null
+    ],
+    [
+     "keeper",
+     "brief",
+     null
+    ]
+   ]
+  },
+  "debrief-after-changes": {
+   "n": "debrief efter aendringer",
+   "eng": "Claude",
+   "run": "efter hver tur der aendrer filer",
+   "c": "good",
+   "desc": "Regel i den globale CLAUDE.md (FERC-test fra 2026-10-15). En tur der aendrede filer slutter med en Debrief-side, saa du reviewer bagefter i stedet for at godkende hvert trin.",
+   "source": "C:/Users/NichlasMadsen/.claude/agents/Debrief.md",
+   "theme": "review",
+   "project": "claude",
+   "n8n": [],
+   "nodes": [
+    {
+     "id": "change",
+     "k": "trigger",
+     "w": "Tur der aendrede filer",
+     "y": "Springes over for read-only ture og dikterede en-fils-rettelser"
+    },
+    {
+     "id": "brief",
+     "k": "agent",
+     "w": "Brief til Debrief",
+     "y": "Anmodningen citeret, projektrødder, beslutninger, verifikation, aabne punkter",
+     "r": "Debrief"
+    },
+    {
+     "id": "agent",
+     "k": "agent",
+     "w": "Debrief",
+     "y": "Publicerer en artifact med FERC-kort",
+     "r": "Debrief"
+    },
+    {
+     "id": "review",
+     "k": "gate",
+     "w": "Du laeser Waiting for you",
+     "y": "Agentens beslutninger er adskilt fra dem der venter paa dig"
+    }
+   ],
+   "e": [
+    [
+     "change",
+     "brief",
+     null
+    ],
+    [
+     "brief",
+     "agent",
+     null
+    ],
+    [
+     "agent",
+     "review",
+     null
+    ]
+   ]
+  }
+ },
+ "stats": {
+  "claude_dirs": 48,
+  "worktree_dirs": 36,
+  "agent_files": 180,
+  "skill_files": 594,
+  "distinct": 70,
+  "drifted": 13,
+  "total_runs": 225,
+  "agents_global": 8,
+  "agents_project": 8,
+  "agents_dup": 5,
+  "agents_drift": 5,
+  "agents_cold": 4,
+  "skills_global": 19,
+  "skills_project": 35,
+  "skills_dup": 21,
+  "skills_drift": 8,
+  "workflows": 19,
+  "wf_agent_nodes": 5
+ }
+}

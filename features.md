@@ -1379,4 +1379,691 @@ budget_entries
 
 ## Parking lot
 
-(empty - add features here as they come up)
+### F8 (candidate) - Mail widget
+
+Built ahead of its spec on 2026-10-02, deliberately as a **sink stub**
+so the n8n fetch job had somewhere to push. What exists today:
+
+- `deploy/n8n/workflows/email.json` - Schedule Trigger (*/10) ->
+  Microsoft Graph `folderMessage:getAll` on `/mailFolders/inbox/messages`
+  -> normalize + tag by sender domain -> `POST /widgets/email/state`,
+  with a working Error Trigger branch.
+- `app/widgets/email/` - `source: n8n` manifest, placeholder `fetch.py`,
+  dashboard card. No routes, no MCP, no tab.
+
+Open questions for the real spec:
+
+1. Is the dashboard card the whole product, or does mail get its own
+   `/mail` tab with threads and search?
+2. `COMPUTERWORLD_SCAN_LIMIT` / `COMPUTERWORLD_MAX_ARTICLES` are
+   already in `.env` - was the intent to pull article links out of the
+   Computerworld newsletter into the news widget? That is a different
+   feature wearing a mail costume.
+3. Does mail need write-back (mark read, archive, reply-draft)? Writes
+   would be Jytte's job, not n8n's, per convention 5 - and the
+   credential would need `Mail.ReadWrite`, which is a bigger ask than
+   the current read-only `Mail.Read`.
+4. Should sender buckets stay env-driven, or move into the DB next to
+   the ADO multi-org config so they are editable from the UI?
+5. Claude analyzer over cached mail - triage, "what needs a reply
+   today" - is the obvious F8+ move, and is allowed because it runs on
+   already-fetched state.
+
+Write the spec before growing the widget past the stub.
+
+### F9 (candidate) - Prioritised front page
+
+Built as a skeleton on 2026-10-03, explicitly ahead of its
+categorization spec at the user's request ("lets get the skelet now").
+
+`/` stopped being a generic widget grid and became a fixed reading
+order: hero "Now / today" -> Mail -> Medium | Low | Internal -> full
+Azure DevOps widget -> "More" strip for everything else. Composition is
+`app/frontpage.py`; each box re-renders itself whole from
+`GET /frontpage/box/<slug>` on its widget's SSE event.
+
+**The two files the spec has to fill in:**
+
+- `app/widgets/tasks/buckets.py` - provisional rules are: internal
+  always wins; P1 or due-today-or-earlier is "now"; P2 is medium;
+  everything else is low; paused/blocked demotes one level.
+- `app/widgets/email/highlight.py` - provisional rules are: unread, or
+  carrying any Outlook category, or flagged for follow-up, or
+  high-importance.
+
+Open questions, carried from those two docstrings:
+
+1. Does `internal` really outrank urgency? Today an overdue P1 internal
+   task sits in the Internal box and never reaches the hero, which
+   contradicts how the morning brief ranks it.
+2. Is "now/today" due-date driven, priority driven, or a blend?
+3. Should `paused` / `blocked` be hidden rather than demoted?
+4. Is "special annotation" on mail the Outlook category list, the
+   follow-up flag, or one specific named category you set by hand?
+5. Should read-but-annotated mail ever age out of the box?
+6. Does the hero box need a cap? With 16 open tasks it is fine; at 60
+   it would dominate the page.
+7. Effort/size is not in the task frontmatter at all. If "what can I
+   actually finish today" matters, that field has to exist first.
+
+### F10 (candidate) - Projects, and task framing by customer + project
+
+Built 2026-10-03, still ahead of a categorization spec.
+
+**Vault schema changes** (via the `llm-wiki-librarian` entry point):
+
+- `LLM-Wiki/projects/_SCHEMA.md` gained `kind: project` in the topic
+  `kind:` enum, plus project extras `project_kind: ai | normal` and
+  `project_slug:`. This is a shared-schema change: it applies to all
+  ten sub-wikis at once, which §10 of that file explicitly allows.
+- `LLM-Wiki/scripts/validate_wiki.py` updated to match. The enum and
+  `DECLARED_KEYS` live there, separate from `_SCHEMA.md`, and drift
+  silently if only one is edited.
+- `Tasks/_Template.md` and the Obsidian Templater script gained
+  `project:`. Seven Dagrofa tasks backfilled.
+- Five project pages seeded, all `confidence: C` stubs derived from
+  existing tasks rather than from sources: four under `dagrofa`, one
+  (`jytte`) under `ai`.
+
+**Jytte changes:**
+
+- `LLM-Wiki/projects` bind-mounted **read-only**; `projects` widget
+  scans `<sub>/wiki/topics/*.md` for `kind: project`.
+- `/projects` page with AI and Normal sections, plus two warning
+  sections: pages missing `project_kind`, and task slugs that match no
+  project page.
+- Front-page task boxes now group by owner > project, where owner is
+  the customer name or Internal / Private / Unassigned.
+
+Open questions for the spec:
+
+1. Should internal and private work get project pages too? Today only
+   `trustworks` / `ai` / `learning` / `private` sub-wikis could host
+   them, and six internal tasks have no project at all.
+2. `project:` is free text typed into Obsidian. The orphan warning
+   catches typos after the fact - is a picker worth building instead?
+   The Templater customer picker reads `Trustworks/Kunder`, which does
+   not exist, so that pattern is already broken once.
+3. Does a project need its own status rollup from its tasks, or does
+   the hand-written `status:` on the page stay authoritative?
+4. Should `/projects` show closed projects at all, or archive them?
+
+**Corrected 2026-10-03, same day.** The first cut of F10 defined a
+project as a customer work-breakdown. That was wrong. A project is
+**something Nichlas builds and learns from** - a middleware solution
+with Kubernetes, an SDD framework, Sphinx, app development and
+automation, hybrid intelligence. Customer work like Handling Unit is
+not a project even though the customer calls it one.
+
+What that changed:
+
+- The four Dagrofa `kind: project` pages were deleted and the
+  `_SCHEMA.md` + `validate_wiki.py` extension reverted. Customer work
+  has no page; it only groups tasks via a task's `project:` field.
+- `Nichlas/Projects/` is a **generated view**, flat, slug-named, with
+  `_index.json` as the cheap whole-set read. Built by
+  `LLM-Wiki/scripts/build_projects_view.py`.
+- A project note is created **only** when the librarian asks and the
+  human says yes - its new Step 5b project-candidate scan, modelled on
+  the existing follow-up-task scan.
+- Tasks gained `relates_to_project:` alongside `project:`. Two fields,
+  two different things.
+- Jytte mounts `Projects/` read-only and reads `_index.json` only.
+
+---
+
+## Skoleferier (`vacation`) - unspecced, 2026-10-07
+
+Asked for directly: a page copying
+<https://danmarkshelligdage.dk/da/skoleferier/> so Danish school
+holidays are visible next to everything else.
+
+**Computed, never scraped.** The site publishes a table; a scraper
+against it would be one markup change from breaking, would put a
+network call in the fetch path, and would only ever know the two
+school years that page happens to show. Five arithmetic rules
+reproduce it exactly and keep working for years nobody has published
+yet:
+
+| Ferie          | Rule                                                   |
+|----------------|--------------------------------------------------------|
+| Efteraarsferie | Mon-Fri of ISO week 42                                 |
+| Juleferie      | Monday of the week holding 24 Dec (Saturday of that    |
+|                | weekend when 24 Dec is one), to the Sunday of the week |
+|                | holding 1 Jan, floored at 14 days                      |
+| Vinterferie    | Mon-Fri of ISO week 7 (oest) or 8 (vest)               |
+| Paaskeferie    | Easter Sunday minus 8 days, to Easter Monday           |
+| Sommerferie    | Last Saturday in June, plus 43 days                    |
+
+Verified before the widget was written: all five 2025/2026 spans match
+the published table, and the computed total of 78 fridage matches the
+site's own stated figure. The Christmas floor exists because the two
+date rules collide in 2033/2034, where 24 Dec is a Saturday and 1 Jan
+a Sunday, producing a nine-day break no kommune would publish.
+
+**The honest caveat is on the page, not buried.** The school year is
+set per kommune, so these are the common pattern and can differ
+locally by a day or two. The east/west winter split is the only
+variation big enough to model, and both weeks are always computed so
+the page shows the other half of the country rather than silently
+choosing one.
+
+Region comes from `JYTTE_VACATION_REGION` (`oest` default) and is
+overridden per request by `/vacation?r=`. Because the dates are
+arithmetic, the builder re-runs the rules for a region the cached
+payload was not built with rather than caching one payload per region.
+
+Two read-only MCP tools, `school_holidays_next` and
+`school_holidays_year`, because "hvornaar er der vinterferie"
+otherwise costs a web search.
+
+## Penge udefra: `bank` og `stocks` - unspecced, 2026-10-15
+
+Three sources were asked for in one go: Outlook, the bank over open
+banking, and Nordnet, all "through n8n". Two of the three ended up
+there. The third could not, and the interesting part of this entry is
+why.
+
+### What each one actually needed
+
+| Source | State before | What was missing | Where it runs now |
+|---|---|---|---|
+| Outlook mail + calendar | `email.json` and `calendar.json` written, complete, never activated | An Entra app registration, which only the operator may create | n8n, unchanged |
+| Bank | nothing | An AIS aggregator account plus a browser consent | n8n, `bank.json` |
+| Nordnet | `stocks` widget stubbed, no provider | An API that does not exist | Jytte, from a CSV on disk |
+
+### Nordnet: three dead ends, probed not assumed
+
+| Path | Result on 2026-10-14 |
+|---|---|
+| Official API `public.nordnet.dk/api/2`, Ed25519 keys | Documented, closed: "not onboarding new customers" |
+| Anonymous NEXT session for public market data | `POST /api/2/login/anonymous` -> 405 on both hosts |
+| `www.nordnet.dk/api/2/*` with a session | 401 `NEXT_INVALID_SESSION`; logging in means MitID |
+
+The third would have meant handing a bot the credentials to a
+brokerage account, which is not a trade worth making for a number on a
+dashboard.
+
+So `stocks` reads a CSV export off a mounted folder. The export already
+carries market value and return per position, so the decision also
+removed the market-data key the widget had been waiting on since it was
+scaffolded - the whole provider question dissolved rather than being
+answered. Newest `*.csv` wins; the strip shows the file's age and turns
+warn past 14 days, because a four-month-old portfolio presented as
+today's is worse than no portfolio at all.
+
+Parsing is forgiving by design: Nordnet has shipped UTF-16-with-tabs
+and ISO-8859-1-with-semicolons, Danish and English. Encoding and
+delimiter are sniffed, columns matched by header name. When a required
+column cannot be matched the widget says which headers it *did* see.
+The failure being engineered against is a changed export silently
+yielding a portfolio worth zero.
+
+### Bank: the contract is the payload, not the vendor
+
+`bank.json` targets GoCardless Bank Account Data, the former Nordigen
+free tier, chosen because its auth is a plain secret pair that stock
+n8n nodes can post, where Enable Banking needs an RS256 JWT signed per
+request. Whether GoCardless still accepts new signups could not be
+confirmed, so `app/widgets/bank/CLAUDE.md` tabulates the four nodes
+that change for the Enable Banking swap. `Normalize accounts` keys off
+Berlin Group field names (`balances[].balanceType`,
+`transactions.booked[]`), which both providers return, so it survives
+the swap untouched.
+
+Two decisions inside the normalize step that are easy to get wrong and
+expensive to notice:
+
+- **`interimAvailable` beats `closingBooked`.** The first is what the
+  bank app shows; the second is yesterday's end of day. Picking the
+  wrong one is how the page ends up quietly disagreeing with the phone.
+- **Last four IBAN digits only.** The cached payload lives in the same
+  SQLite file as everything else and is read by the process that
+  renders HTML. Same reasoning that made `calendar.json` send attendee
+  names and not their addresses.
+
+Money follows rule 1 end to end: `Math.round(parseFloat(x) * 100)`,
+because `249.50 * 100` is `24949.999999999996` in float and without the
+round every other amount lands an oere low. `tests/bank_normalize.js`
+pins that, the balance preference, the expired-consent payload and the
+IBAN omission.
+
+### The failure mode this had to be built against
+
+An open-banking consent expires after 90 days. When it does, the bank
+refuses from its own side and GoCardless answers `200` with an empty
+`accounts` array. n8n stays green, the error branch never fires, and
+the dashboard shows a correct-looking balance forever.
+
+Two guards: `Split accounts` emits a marker item on an empty
+requisition so the payload returns `ready: false` carrying the consent
+status, and `stale_days` tracks the age of the newest balance so the
+card can say "saldo er N dage gammel" without anything having errored.
+
+The free tier also meters calls per account per day, so the schedule is
+`7 */6 * * *` - four runs - and not the `*/10` the mail flow uses.
+Polling harder gets the account throttled, not the balance fresher.
+
+### Still open
+
+Reconciling transactions against `budget_entries`: matching
+"NETTO -249,50" to the Dagligvarer line and showing planned against
+actual. That is the reason the bank widget exists, and it needs a
+matching rule the user agrees with rather than a guess.
+
+## POC'S som sektion, og Systemmonitor som den første - 2026-10-15
+
+Two things arrived in one request: a design reference to build from, and
+a place to put things that are not finished.
+
+### The section exists because of a specific failure
+
+A POC in this app renders in the same shell, with the same tokens, as a
+page that has been running for months. There is nothing in the pixels
+that says "these numbers may be wrong". Three weeks later nobody
+remembers which page was which, and somebody acts on a half-built
+figure.
+
+So `POC'S` is the bottom group in the sidebar, below Legacy, and
+everything in it lives under `/poc`. Three mechanisms, in increasing
+order of how much they actually help:
+
+| Mechanism | What it does |
+|---|---|
+| Sidebar group at the bottom | Position says "outside the app" without a word of copy |
+| Dashed WIP band on every POC page | Says it in words, above the first number |
+| `blocking` list in `app/poc/catalog.py` | The only one that matters |
+
+`blocking` is the list of things that are **not true yet**. A POC is
+promotable when that list is empty, and the index page prints it. The
+stage is a human edit to the file, never computed: a stage derived from
+whether the code runs only tells you the code runs, not that anyone
+looked at the numbers and believed them.
+
+### Systemmonitor
+
+The design reference was a patient-monitoring dashboard
+(dribbble.com/shots/27228685). The image could not be fetched - Dribbble
+answers `202` with an empty body to anything that is not a browser - so
+the layout is built from the genre's fixed parts: a ward strip, an alert
+feed sorted worst-first, and one card per bed with vitals and a pulse.
+Jytte's own tokens already carry the semantics (`aqua` healthy, `gul`
+attention, `coral` failed), so nothing new was added to the palette.
+
+The mapping is the interesting part. Every widget and every mount is a
+bed; its vitals are the age of the last good reading, the expected
+cadence, and the failures in a row. Nothing is fetched to draw the page:
+it reports on the fetchers rather than joining them.
+
+Severity thresholds, all in `app/poc/systems.py` and pinned by
+`tests/test_poc_triage.py`:
+
+| Signal | Observation | Kritisk |
+|---|---|---|
+| Age vs expected cadence | past 1.5x | past 3x |
+| Failures in a row | 1 or 2 | 3 or more |
+| Never delivered at all | - | reported as `ukendt`, never `stabil` |
+
+### The rule that makes it worth having
+
+Where Jytte cannot know something, the page prints `ukendt` and says
+why. It never fills the gap with a plausible number.
+
+The case that forced the rule: a widget with `source: n8n` has its
+schedule in the workflow JSON inside the n8n container. Nothing in this
+process can read it. Picking a default interval would have made a
+stalled push look healthy right up until someone noticed the balance had
+not moved in a week, which is the exact failure the page exists to
+catch.
+
+### Three things it found immediately
+
+1. **n8n was down.** The page opened red on first render. `nav.status()`
+   only checks whether `N8N_BASE_URL` is set, which stays true while the
+   container is stopped; the POC does a real `healthz` request. The
+   alert cleared when n8n was restarted, which is the part that proves
+   it reads live state.
+2. **Azure DevOps reports stabil while throwing 401 in the log.** Its
+   fetch catches errors per section and returns a payload anyway, so
+   `upsert_state` clears the failure counter. A widget that swallows its
+   own errors is invisible to any monitor reading
+   `consecutive_failures`. Now first on the blocking list.
+3. **A bug in the monitor itself.** The file watcher was told its
+   cadence was "owned by n8n", which it is not: a watcher has no
+   interval at all and fires on a file change. The reason for an unknown
+   cadence belongs to the caller, not to a hardcoded string, and a test
+   now pins that two different causes cannot print the same sentence.
+
+### From POC to PROD
+
+The blocking list is the roadmap, in order:
+
+1. Azure DevOps stops swallowing its own errors.
+2. n8n cadence becomes visible, either by the workflow sending its cron
+   in the payload or by asking n8n's API.
+3. `widget_runs` starts being written, so the pulse bar becomes real
+   history instead of missed beats since the last reading.
+4. Alerting, so the page does not have to be opened to be useful.
+5. The privat/forretning split moves from a dict in code to config.
+
+Only then does it leave `/poc`.
+
+## Projekt: AI-Friendly Code (Tornhill) - 2026-10-15
+
+Source: `Adam_Tornhill_GOTO_AI_Friendly_Code_2026.pdf`, 42 slides, GOTO
+2026. Text extracted from the deck; the figures below are his.
+
+### The claim
+
+Code health is not a vanity metric, it is the variable that decides how
+well an agent performs on a codebase. Machines get confused by the same
+patterns as humans.
+
+The evidence he presents: 25,000 solutions from CodeContests, 6 LLMs
+including frontier models, controlled for size, asked to refactor, with
+tests run to measure break rate. Result: **60% higher defect risk when
+applying AI to problematic code.** Lower code health, worse AI
+performance, consistently.
+
+The numbers worth keeping:
+
+| Figure | Value |
+|---|---|
+| Optimal code health | 10.0 |
+| AI-friendly starts at | 9.5 |
+| Defect risk climbs below | 9.0 |
+| Average codebase | 5.15 |
+| Extra defects with AI, no throughput gain | up to 41% |
+| Initial AI velocity gain | fully cancelled after ~2 months |
+
+That last one is the uncomfortable part. The speedup is real, roughly
+2-3x, and it is erased within two months by the complexity the speedup
+produced. He calls it AI operating in self-harm mode: writing code it
+cannot reliably maintain later.
+
+### The three things worth stealing
+
+**1. An objective signal in the agent loop.** His demo puts a Code
+Health MCP server in front of the agent: every generated or modified
+file is reviewed automatically, and the agent is asked to self-correct
+anything unhealthy. Without it, 4.2. With it, 10.0. Separately,
+benchmarked: Claude Code alone fixes ~20% of code smells; Claude Code
+with the MCP feedback fixes 90-100%, a 2-5x increase in impactful
+structural refactorings.
+
+The generalisable part is not CodeScene. It is that **agents are good at
+working toward well-defined goals**, and most agent setups give them
+direction without a scoreboard. Anything deterministic that scores the
+output and feeds it back closes that loop.
+
+**2. A refactoring playbook built iteratively.** On the Street Fighter
+III case study the agent accumulated codebase-specific recipes rather
+than reapplying generic patterns: Shared Index Range, Action Parameter,
+Uniform Step Table. Each one is a local observation promoted to a rule,
+and each makes the next task more effective. Generic patterns are the
+floor; the codebase-specific ones are where the leverage is.
+
+**3. Correctness held by an oracle, not by review.** The refactor was
+verified with a replay-trace harness comparing rollback state hashes
+frame by frame. The game still played identically. That is the same
+move as using the real payslip to pin the salary engine: a
+characterization oracle lets you refactor aggressively because
+correctness is checked rather than argued.
+
+The outcome: 5.6 to 10.0 code health, ~70% reduction in AI-induced
+defects, ~45% less token waste on future features, for $4,000 in tokens.
+
+### The socio-technical half
+
+Merge conflicts at agentic speed are a symptom, not a nuisance. His
+behavioral code analysis visualises author density per file; a God Class
+with 58 authors is a coordination bottleneck, and agents make it worse
+because they arrive in parallel. He calls God Classes the traffic jams
+of the software world. The open question he ends on is scaling
+AI-friendliness from code to design and architecture.
+
+### Why this belongs in the orchestration platform
+
+It answers a question that was left open in the SDD platform notes: what
+the central hub merges feedback *against*. Tornhill's answer is a
+deterministic quality signal that both the human and the agent can see,
+measured before and after every change.
+
+Implementation order, cheapest first:
+
+1. **A health signal in the loop.** Not necessarily CodeScene. Any
+   deterministic scorer the agent can call and be measured by. The
+   principle is the scoreboard, not the vendor.
+2. **Promote the playbook.** The project already accumulates rules in
+   `.claude/rules/` and per-widget CLAUDE.md files. The missing step is
+   promoting a recurring local fix into a named recipe rather than
+   re-deriving it. The Jinja `items` trap, hit three times, is exactly
+   the kind of thing that should have become a rule on the second hit.
+3. **Characterization oracles before refactoring.** Already proven here
+   twice: the payslip for `salary/calc.py` and the published 2025/2026
+   table for `vacation/fetch.py`. Make it the default for any uplift
+   instead of a thing done when someone remembers.
+4. **Author density and coordination.** Last, and only if the work
+   becomes more than one person.
+
+### Links
+
+- AI-Ready Code, how code health determines AI performance:
+  https://codescene.com/hubfs/whitepapers/AI-Ready-Code-How-Code-Health-Determines-AI-Performance.pdf
+- Research pre-print: https://arxiv.org/abs/2601.02200
+- Code Red, the business impact of code quality: https://arxiv.org/abs/2203.04374
+- Case study, refactoring at scale with agents:
+  https://codescene.com/blog/case-study-refactoring-at-scale-with-agents
+- Practices I abandoned with agents:
+  https://adamtornhill.substack.com/p/practices-i-abandoned-with-agents
+- Clear software design principles:
+  https://adamtornhill.substack.com/p/clear-software-design-principles
+
+---
+
+## Jobs table + expense rose (2026-10-16)
+
+Two unrelated asks in one turn, recorded together because they shipped
+together.
+
+### `/jobs` - every n8n workflow as a table row
+
+**Ask:** "all the jobs, like on workflows, but just in tabel format,
+with job name, description, active/deactive, button to redirect to my
+n8n".
+
+`/workflows` already draws n8n flows, but one at a time: it answers
+"how does this work", never "which of my jobs are switched on". The
+second question is about all of them at once, and that is a table.
+
+| Column | Source |
+|---|---|
+| Status | `active` in the workflow JSON |
+| Navn | `name`, with the filename under it |
+| Beskrivelse | `meta.description`, else `meta.notes` - the workflow's own words |
+| Udløser | the trigger node, with the cron read into Danish |
+| Trin | node count |
+| System | the stable id prefix (`jytte*` / `twapp*`) |
+| n8n | `N8N_BASE_URL/workflow/<id>` |
+
+Three decisions worth keeping:
+
+1. **The status column is second-hand and says so.** `active` in the
+   file is the committed state. Toggling a job inside n8n's UI does not
+   write back, so the column can be wrong until the workflow is
+   exported again. Live state was rejected twice: the n8n API needs a
+   key this project may not mint, and n8n's SQLite runs in WAL mode so
+   a read-only mount either fails or silently serves a pre-WAL
+   snapshot - and that file holds the encrypted credential store,
+   which does not belong inside a process that renders HTML.
+2. **`human_cron` never guesses.** An expression it does not recognise
+   prints as itself and reports no cadence. The same rule the
+   Systemmonitor already runs on: a plausible default is what makes a
+   dead job look alive.
+3. **Only credential *types* are rendered**, never names or values. A
+   type is schema. It is also the thing that explains why `email`,
+   `calendar` and `bank` are still switched off.
+
+Opens a door that was previously shut: the Systemmonitor's first
+blocking item says Jytte cannot read the cadence of an n8n-driven
+widget. It can now, from the same files. Not wired up - that is a
+separate decision about which half owns the number.
+
+### The expense rose on `/budget`
+
+**Ask:** an overview of expenses that "seperates everything into
+categories, and makke them color distinct".
+
+A spider grid - concentric rings, a spoke per category - with one
+filled wedge per category rather than a single joined polygon. One
+polygon would have given every category the same colour and the same
+shape, which is the opposite of what was asked.
+
+Two properties, both pinned by `tests/test_budget_viz.py`:
+
+- **Radius scales with the square root of the amount**, so *area* is
+  proportional to kroner. Scale the radius linearly and a category
+  twice as big draws four times the ink; the chart would then overstate
+  the biggest line item every single time.
+- **Colour is keyed to the category's own ordering, never to its
+  amount.** A colour that moved when a number moved would make two
+  months impossible to compare, and that comparison is the only reason
+  to draw the thing.
+
+Expenses only, and derived transfer rows are excluded: a transfer to
+the joint account nets to zero against its matching income row, so
+counting it as spend would inflate the total.
+
+No chart library and no JavaScript. The geometry is computed in
+`app/budget_viz.py` and the template prints path strings, the same
+arrangement the flow canvas uses.
+
+**Not yet exercised against real data.** `budget_entries` is empty, so
+the page currently shows its own empty state. The figure was verified
+against synthetic numbers in a host-rendered screenshot.
+
+---
+
+## Bankoverblik og El (2026-10-16)
+
+Fortsaettelse af samme tur. Bruger praeciserede at "SPIR" var **Spiir**,
+den danske budget-app, ikke et edderkoppediagram - og at oensket er et
+eget bankoverblik med Spiir og Bliss Budget som inspiration, plus et
+tilsvarende for el, leveret af Andel.
+
+### Hvad de to apps faktisk goer
+
+| | Spiir | Bliss Budget |
+|---|---|---|
+| Datakilde | licenseret AISP, danske banker | open banking, 100+ banker |
+| Kategorisering | 80+ kategorier, automatisk | AI-baseret |
+| Signatur | kategorioverblik, ugedigest, #tags | forbrugskurve mod plan, kategoriringe, elpriser i samme app |
+| Status | **lukker 8. juni 2026** (Mastercard) | aktiv |
+
+Bliss har elpriser inde i budget-appen. Det er grunden til at `/el` og
+`/bank` er bygget i samme tur og ligger ved siden af hinanden.
+
+### `/bank` - forbrug pr. kategori
+
+`app/kategori.py` er motoren, `app/bankview.py` er siden, og
+`docs/bank-kategorisering.md` er guiden. 52 kategorier i 11 grupper,
+52 regler.
+
+Fire ting der baerer:
+
+1. **Regler, ikke en model** (projektets regel 4). Hver kategorisering
+   bringer sit `why` med: hvilket ord der ramte, og hvilken **linje** i
+   `config/kategoriregler.yml` der vandt. Siden printer det i en egen
+   kolonne, fordi det er hele reparationsloekken. Claude maa foreslaa
+   en linje, ikke skrive den, og kaldes aldrig pr. postering.
+2. **Ukategoriseret-andelen staar i striben.** Den er det eneste
+   aerlige maal for hvor god motoren er.
+3. **Farven kommer fra gruppen og fra positionen i filen.** Tilfoej
+   nederst i gruppen, indsaet aldrig i midten.
+4. **Ingen budgetramme pr. kategori**, saa ingen kategori farves "over
+   budget". Planlinjen er husstandens samlede maanedsudgift. Er
+   budgettet tomt, tegnes ingen planlinje - en plan paa nul ville goere
+   hver maaned til en katastrofe.
+
+To falske positiver fundet ved at rendere siden mod realistisk dansk
+tekst, ikke ved at laese koden. Begge loeste med en `ord:`-matcher der
+kun rammer hele ord:
+
+- `bar` som understreng ramte "Restaurant Koedbyens Fiske**bar**".
+- `su` rammer *Su*permarked, *Su*shi og *SU*NSET - og det er en
+  **indtaegtsregel**, saa et indkoeb ville vaere bogfoert som penge ind.
+
+Og en tredje i normaliseringen: `aa` skal substitueres **foer**
+NFKD-foldningen, ellers bliver "Aaben" til "aben" og en regel skrevet
+paa dansk rammer aldrig.
+
+### `/el` - spotpris, hvad den koster, og forbrug
+
+To widgets, fordi de ligger paa hver sin side af credential-graensen:
+
+| | `elpris` | `elforbrug` |
+|---|---|---|
+| Kilde | Energi Data Service | Eloverblik (DataHub) |
+| Credential | ingen | refresh token, kun kontohaveren kan lave det |
+| Hentes af | Python, direkte | n8n (`elforbrug.json`) |
+| Status | **koerer med rigtige tal i dag** | tom indtil token findes |
+
+n8n-hoppet findes for at holde hemmeligheder ude af Jytte. Er der
+ingen hemmelighed, er der ingen grund til hoppet - derfor henter
+`elpris` selv.
+
+Fem ting der er nemme at faa galt:
+
+1. `Elspotprices` stoppede 2025-09-30 og svarer nu **200 med en tom
+   liste**. `DayAheadPrices` er den rigtige. Navnet er pinnet i test.
+2. Danmark afregner i **kvarter**. Et doegn er 96 punkter, ikke 24.
+3. Eloverbliks tidsstempler er UTC, og et dansk doegn begynder 22:00Z.
+   Tager man UTC-datoen, bliver **hver eneste maaling daterbar en dag
+   for tidligt**, og det ser man aldrig paa et soejlediagram.
+4. Doegn kan ikke laegges til i millisekunder: sidste soendag i oktober
+   er 25 timer lang.
+5. Er `config/el.yml` tom, vises **raa spotpris uden moms** - ikke
+   spot gange 1,25 under et banner der siger at moms ikke er lagt paa.
+   Foerste version viste 136,39 over en forklaring der sagde 109,11.
+
+Tariffer kan vaere flade eller tidsbaandede (lav/hoej/spidslast).
+Billigst-paa-dagen rangeres paa **den viste pris**, ikke paa spot: med
+tidsbaand er det sjaeldent samme kvarter, og det er hele pointen med
+baandene.
+
+### Aabent
+
+- Bankdata mangler stadig samtykke i browseren. Motoren er faerdig og
+  testet mod syntetisk dansk posteringstekst.
+- Eloverblik-token mangler. `/el` siger de fire trin.
+- Rigtig gentagelsesgenkendelse kraever flere maaneders historik.
+  "Faste udgifter" er indtil da et flag paa kategorien.
+- Eloverbliks `getcharges` har de rigtige tariffer pr. maalepunkt og
+  ville fjerne den manuelle udfyldning af `config/el.yml`.
+- Spiir lukker 8. juni 2026. Deres eksport af egne data ville vaere det
+  bedste grundlag for reglerne, fordi deres kategorisering af brugerens
+  egne posteringer er facit.
+
+## WoW Forever: POC og opdateringsjob (2026-10-17)
+
+**Hvorfor.** En claude.ai-artifact med Blizzards beta-noter fra 15.
+oktober, i spillets eget UI med ikoner, blev flyttet ind som POC på
+`/poc/wow`. Spørgsmålet POC'en stiller: læser en patch note bedre som
+tematiseret gennemgang end som Blizzards punktliste?
+
+**Opdatering, valgt blandt tre:**
+
+| | A: n8n push + analyzer | B: Python fetch + analyzer (valgt) | Intet job |
+|---|---|---|---|
+| Henter | n8n | `wowforever`-widget, hver time | ingen |
+| Claude | ny hook i push-ruten | eksisterende `claude_analyzer` | ingen |
+| Kerneændring | ja, fælles push-rute | nej | nej |
+| Regel 4 | holdt | holdt: Claude læser kun cachet tekst | - |
+
+B blev valgt fordi forummet er offentligt (samme undtagelse som
+`elpris`) og fordi push-ruten springer analyzeren over.
+
+**Hvad der ikke er sandt endnu:** `ANTHROPIC_API_KEY` er tom, så
+analyzeren har aldrig kørt; prompten er uprøvet. Efter launch 4.
+november skal tråd- og kategori-id'er sættes i env. Ikonerne er
+Blizzards og gitignoret; `scripts/fetch_wow_icons.py` henter dem.

@@ -57,6 +57,22 @@ class Widget:
         return int(self.manifest.get("client_refresh_seconds", 60))
 
     @property
+    def page_only(self) -> bool:
+        """True when this widget's real surface is a page of its own and
+        it should not also get a card on /dashboard.
+
+        Without this the only way to keep a widget off the dashboard was
+        a hardcoded name in app/frontpage.py, which is why `calendar`
+        and `projects` were still on Boxes after they got their pages.
+        A page-only widget with no card.html also used to 500 the
+        /widgets/<n>?partial=1 poll forever."""
+        return bool(self.manifest.get("page_only", False))
+
+    @property
+    def has_card(self) -> bool:
+        return self.template_path is not None
+
+    @property
     def source(self) -> str:
         """Where data for this widget comes from. Options:
           - 'python' (default) - widget's fetch.py runs on APScheduler

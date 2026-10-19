@@ -45,10 +45,19 @@ def _normalise_due(recurrence: str, due_day: str | None, due_date: str | None):
     return None, None
 
 
-async def _render_list(request: Request) -> HTMLResponse:
-    """The HTMX partial that the /budget page (and post-mutation swap)
-    targets. Renders the full categories+entries tree + totals."""
-    entries = await db_budget.list_entries(include_inactive=False)
+# Which list partial a response renders. The legacy page and the new
+# /budget page both target the same endpoints; only the markup differs,
+# so the view travels with the request instead of duplicating routes.
+LIST_TEMPLATES = {
+    "legacy": "budget/list.html",
+    "jy": "budget/list_jy.html",
+}
+
+
+async def _render_list(request: Request, view: str = "legacy") -> HTMLResponse:
+    """The HTMX partial that both budget pages target. Renders the full
+    categories+entries tree; `view` picks which markup."""
+    entries = await db_budget.list_entries_with_derived(include_inactive=False)
     categories = await db_budget.list_categories()
     summary = db_budget.summarise(entries)
 
@@ -57,14 +66,17 @@ async def _render_list(request: Request) -> HTMLResponse:
     for e in entries:
         by_cat.setdefault(e.category_slug, []).append(e)
 
+    people = await db_budget.list_people()
     templates = request.app.state.templates
     return templates.TemplateResponse(
-        "budget/list.html",
+        LIST_TEMPLATES.get(view, LIST_TEMPLATES["legacy"]),
         {
             "request": request,
             "categories": categories,
             "entries_by_category": by_cat,
             "summary": summary,
+            "people": people,
+            "view": view,
             "fmt": db_budget.format_amount,
         },
     )
@@ -82,33 +94,34 @@ async def _publish_change(action: str, entry_id: int | None = None):
 
 
 @router.get("/list", response_class=HTMLResponse)
-async def list_partial(request: Request):
-    return await _render_list(request)
+async def list_partial(request: Request, view: str = "legacy"):
+    return await _render_list(request, view)
 
 
-@router.get("/entries/{entry_id}/form", response_class=HTMLResponse)
-async def entry_form(request: Request, entry_id: int):
-    """Inline edit form for a single entry. Replaces that row when swapped."""
-    entry = await db_budget.get_entry(entry_id)
-    if entry is None:
-        raise HTTPException(status_code=404, detail="entry not found")
-    categories = await db_budget.list_categories()
+# NOTE: this static route MUST stay above /entries/{entry_id}/form.
+# FastAPI matches in declaration order, so with the parameterised
+# route first, "new" was parsed as entry_id and every click on
+# "+ Add entry" returned 422. Found 2026-10-08.
+@router.post("/people/{slug}/transfer", response_class=HTMLResponse)
+async def set_transfer(slug: str, request: Request, amount: str = Form("")):
+    """How much this person moves to the joint account each month.
+    Swaps the per-person block only, so the viewport never moves."""
+    oere = db_budget.parse_amount(amount) if amount.strip() else 0
+    await db_budget.set_transfer(slug, oere)
+    await _publish_change("transfer")
+    from app import jyviews
+    ctx = await jyviews.budget(request.app.state.registry
+                               if hasattr(request.app.state, "registry") else None)
     templates = request.app.state.templates
-    return templates.TemplateResponse(
-        "budget/entry_form.html",
-        {
-            "request": request,
-            "entry": entry,
-            "categories": categories,
-            "mode": "edit",
-        },
-    )
+    return templates.TemplateResponse("_bud_people.html", {"request": request, **ctx})
 
 
 @router.get("/entries/new/form", response_class=HTMLResponse)
-async def new_form(request: Request, category_slug: str | None = None):
+async def new_form(request: Request, category_slug: str | None = None,
+                   view: str = "legacy"):
     """Inline create form."""
     categories = await db_budget.list_categories()
+    people = await db_budget.list_people()
     templates = request.app.state.templates
     return templates.TemplateResponse(
         "budget/entry_form.html",
@@ -117,7 +130,31 @@ async def new_form(request: Request, category_slug: str | None = None):
             "entry": None,
             "preselect_category": category_slug,
             "categories": categories,
+            "people": people,
+            "view": view,
             "mode": "new",
+        },
+    )
+
+
+@router.get("/entries/{entry_id}/form", response_class=HTMLResponse)
+async def entry_form(request: Request, entry_id: int, view: str = "legacy"):
+    """Inline edit form for a single entry. Replaces that row when swapped."""
+    entry = await db_budget.get_entry(entry_id)
+    if entry is None:
+        raise HTTPException(status_code=404, detail="entry not found")
+    categories = await db_budget.list_categories()
+    people = await db_budget.list_people()
+    templates = request.app.state.templates
+    return templates.TemplateResponse(
+        "budget/entry_form.html",
+        {
+            "request": request,
+            "entry": entry,
+            "categories": categories,
+            "people": people,
+            "view": view,
+            "mode": "edit",
         },
     )
 
@@ -132,6 +169,8 @@ async def create_entry(
     due_day: str | None = Form(None),
     due_date: str | None = Form(None),
     notes: str | None = Form(None),
+    owner: str | None = Form(None),
+    view: str = Form("legacy"),
 ):
     try:
         amount_cents = db_budget.parse_amount(amount)
@@ -147,6 +186,7 @@ async def create_entry(
             due_day=day,
             due_date=date,
             notes=(notes or None),
+            owner=owner,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -163,7 +203,7 @@ async def create_entry(
         source="dashboard",
     )
     await _publish_change("create", entry_id)
-    return await _render_list(request)
+    return await _render_list(request, view)
 
 
 @router.post("/entries/{entry_id}/edit", response_class=HTMLResponse)
@@ -177,6 +217,8 @@ async def edit_entry(
     due_day: str | None = Form(None),
     due_date: str | None = Form(None),
     notes: str | None = Form(None),
+    owner: str | None = Form(None),
+    view: str = Form("legacy"),
 ):
     try:
         amount_cents = db_budget.parse_amount(amount)
@@ -193,6 +235,11 @@ async def edit_entry(
             due_day=day,
             due_date=date,
             notes=(notes or None),
+            # set_owner is always True from the form: the select posts
+            # on every edit, so an empty value is a deliberate "move
+            # this back to shared", not an untouched field.
+            owner=owner,
+            set_owner=True,
         )
     except LookupError:
         raise HTTPException(status_code=404, detail="entry not found")
@@ -205,11 +252,12 @@ async def edit_entry(
             old_value=old, new_value=new, source="dashboard",
         )
     await _publish_change("edit", entry_id)
-    return await _render_list(request)
+    return await _render_list(request, view)
 
 
 @router.post("/entries/{entry_id}/delete")
-async def delete_entry(entry_id: int, request: Request):
+async def delete_entry(entry_id: int, request: Request,
+                       view: str = Form("legacy")):
     existing = await db_budget.get_entry(entry_id)
     if existing is None:
         raise HTTPException(status_code=404, detail="entry not found")
@@ -222,4 +270,4 @@ async def delete_entry(entry_id: int, request: Request):
         old_value=1, new_value=0, source="dashboard",
     )
     await _publish_change("delete", entry_id)
-    return await _render_list(request)
+    return await _render_list(request, view)

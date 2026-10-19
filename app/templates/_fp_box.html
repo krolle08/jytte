@@ -1,0 +1,28 @@
+{# One self-refreshing front-page box.
+
+   Rendered inline by frontpage.html on first paint, and standalone by
+   GET /frontpage/box/<slug>. The whole <article> is the swap target
+   (hx-swap="outerHTML"), so the header count and the body always come
+   from the same read and cannot drift apart.
+
+   Expects:
+     box    - an entry from app.frontpage.TASK_BOXES or MAIL_BOX
+     count  - the number shown in the header
+     state  - the feeding widget's state envelope
+     plus whatever box.body needs: `rows` for tasks, `mail` for mail. #}
+<article class="card fp-box fp-box-{{ box.slug }}{% if box.hero %} fp-box-hero{% endif %}"
+         id="fp-box-{{ box.slug }}"
+         hx-get="/frontpage/box/{{ box.slug }}"
+         hx-trigger="sse:widget:{{ box.feed }}, every {{ box.refresh }}s"
+         hx-swap="outerHTML">
+  <header class="card-head fp-box-head">
+    <div class="fp-box-titles">
+      <h2>{{ box.title }}</h2>
+      <span class="fp-box-blurb muted small">{{ box.blurb }}</span>
+    </div>
+    <span class="fp-box-count{% if box.hero %} fp-box-count-hero{% endif %}">{{ count }}</span>
+  </header>
+  <div class="card-body fp-box-body">
+    {% include box.body %}
+  </div>
+</article>

@@ -1,0 +1,211 @@
+{% extends "shell.html" %}
+{% block title %}AI stack :: Jytte{% endblock %}
+
+{% block content %}
+{# Mock 1b. Stack health + layers, overlap analysis, then the full
+   skills-and-agents table.
+
+   Three columns the mock shows have no source in this stack and are
+   marked so rather than filled in: tokens per run, memory entries per
+   capability, and a verdict per run. The attempts bar is invocations
+   per task, not a success rate - said in the footnote. #}
+
+<div class="hd">
+  <div class="hd-id">
+    <span class="eyebrow">AI &middot; seneste {{ (d.usage.window.days if ready else 30) }} dage</span>
+    <h1 class="pg">AI stack</h1>
+  </div>
+  <div class="hd-right">
+    <div class="seg" role="group" aria-label="Periode">
+      <button aria-pressed="false" disabled title="Kun 30d er beregnet">7d</button>
+      <button aria-pressed="true">30d</button>
+      <button aria-pressed="false" disabled title="Kun 30d er beregnet">90d</button>
+    </div>
+    <span class="pn-src">kilde: agent-usage.jsonl + filscanning</span>
+  </div>
+</div>
+
+{% if not ready %}
+<div class="lg-note">
+  <h2>Ingen scanning indlæst</h2>
+  <p>Kør <code class="mono">python scripts/scan_ai.py</code> på hosten og genindlæs.</p>
+</div>
+{% else %}
+
+<div class="board" data-board="ai">
+  {# ---- stack health + layers ---------------------------------- #}
+  <section class="pn" data-card="health" style="padding:18px 20px">
+    <div class="pn-h" style="padding:0 0 12px"><span class="pn-t">Stack health</span>
+      <span class="pn-src">{{ d.usage.window.days }} dage</span></div>
+    <div class="ai2-hwrap">
+    <div class="col" style="gap:14px">
+      <div class="ai2-health">
+        {% for s in health %}
+        <div class="col" style="gap:3px">
+          <span class="ai2-h-v">{{ s.v }}</span>
+          <span style="font-size:11px; color:var(--muted)">{{ s.k }}</span>
+          <span style="font-size:11px; color:var(--{{ s.tone or 'muted' }})">{{ s.d }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="col ai2-layers">
+      {% for l in layers %}
+      <div class="col" style="gap:3px; padding:8px 0; border-bottom:1px solid var(--line-soft)">
+        <span class="eyebrow">{{ l.k }}</span>
+        <span style="font-size:12.5px; color:var(--text-2); line-height:1.4">{{ l.v }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    </div>
+  </section>
+
+  {# ---- overlap ------------------------------------------------ #}
+  <section class="pn" data-card="overlap" style="padding:18px 20px; gap:12px">
+    <div class="pn-h" style="padding:0">
+      <span class="pn-t">Overlap</span>
+      <span class="pn-src">udledt &middot; ikke embeddings</span>
+      <span style="margin-left:auto; font-size:12px; color:var(--gul)">
+        {{ overlap.pairs | selectattr('verdict', 'equalto', 'Flet') | list | length }} flet-forslag
+      </span>
+    </div>
+    <div class="pn-body" style="display:flex; flex-direction:column">
+      {% for o in overlap.pairs %}
+      <div class="ai2-ov">
+        <div class="col" style="gap:5px">
+          <span class="mono" style="font-size:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+            <button class="ai2-link" data-{{ o.ak }}="{{ o.a }}">{{ o.a }}</button>
+            <span class="f-faint">&harr;</span>
+            <button class="ai2-link" data-{{ o.bk }}="{{ o.b }}">{{ o.b }}</button>
+          </span>
+          <span style="font-size:12px; color:var(--muted); line-height:1.45">{{ o.note }}</span>
+        </div>
+        <div class="col" style="gap:6px; align-items:flex-end">
+          {% set tone = 'gul' if o.score >= 50 else 'aqua' %}
+          <span class="ai2-ov-v" style="color:var(--{{ tone }})">{{ o.score }}%</span>
+          <div class="ai2-ov-bar"><i style="width:{{ o.score }}%; background:var(--{{ tone }})"></i></div>
+          <span class="pill line" style="border-color:var(--{{ tone }}); color:var(--{{ tone }})">{{ o.verdict }}</span>
+        </div>
+      </div>
+      {% endfor %}
+      {% if not overlap.pairs %}
+      <p class="empty">
+        {% if overlap.n_decided %}Alle {{ overlap.n_decided }} par er afgjort.
+        {% else %}Ingen par over 35 %.{% endif %}
+      </p>
+      {% endif %}
+
+      {# Pairs already ruled on in config/ai_visibility.yml. Collapsed,
+         because the point of the panel is what you have NOT looked at.
+         <details> keeps it one click away without a round trip. #}
+      {% if overlap.decided %}
+      <details class="ai2-decided">
+        <summary>{{ overlap.n_decided }} afgjort</summary>
+        {% for o in overlap.decided %}
+        <div class="ai2-ov is-decided">
+          <div class="col" style="gap:5px">
+            <span class="mono" style="font-size:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+              <button class="ai2-link" data-{{ o.ak }}="{{ o.a }}">{{ o.a }}</button>
+              <span class="f-faint">&harr;</span>
+              <button class="ai2-link" data-{{ o.bk }}="{{ o.b }}">{{ o.b }}</button>
+            </span>
+            {% if o.note %}<span style="font-size:12px; color:var(--muted); line-height:1.45">{{ o.note }}</span>{% endif %}
+          </div>
+          <div class="col" style="gap:6px; align-items:flex-end">
+            <span class="pill line">{{ o.label }}</span>
+            {% if o.decided %}<span style="font-size:11px; color:var(--fainter)">{{ o.decided }}</span>{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </details>
+      {% endif %}
+    </div>
+
+    {% for p in overlap.problems %}
+    <p class="ai2-foot" style="margin:0; color:var(--coral)">{{ p }}</p>
+    {% endfor %}
+    <p class="ai2-foot" style="margin:0">{{ overlap.method }}</p>
+  </section>
+
+  {# ---- the table ------------------------------------------- #}
+  <section class="pn" data-card="table" data-span="2" style="flex:1; min-height:0">
+  <div class="pn-h">
+    <span class="pn-t">Skills &amp; agents</span>
+    <div class="seg" id="ai2-filters" role="group" aria-label="Filter">
+      <button data-f="all" aria-pressed="true">Alle <i>{{ counts.all }}</i></button>
+      <button data-f="agent" aria-pressed="false">Agents <i>{{ counts.agent }}</i></button>
+      <button data-f="skill" aria-pressed="false">Skills <i>{{ counts.skill }}</i></button>
+      <button data-f="global" aria-pressed="false">Global <i>{{ counts.global }}</i></button>
+      <button data-f="project" aria-pressed="false">Projekt <i>{{ counts.project }}</i></button>
+      {% if counts.both %}<button data-f="both" aria-pressed="false">Begge <i>{{ counts.both }}</i></button>{% endif %}
+      <button data-f="merge" aria-pressed="false">Flet <i>{{ counts.merge }}</i></button>
+    </div>
+    <div class="ai2-legend">
+      <span><i style="background:var(--aqua)"></i>1. forsøg</span>
+      <span><i style="background:var(--aqua-2)"></i>2.</span>
+      <span><i style="background:var(--aqua-3)"></i>3.</span>
+      <span><i style="background:var(--coral)"></i>4+</span>
+    </div>
+  </div>
+
+  <div class="ai2-tw">
+    <div class="ai2-th">
+      <span>Navn</span><span>Type</span><span>Kontekst</span>
+      <span style="text-align:right">Kørsler</span>
+      <span>Forsøg pr. opgave</span><span>1.-forsøg trend</span>
+      <span style="text-align:right">Hukom.</span><span>Overlap</span>
+    </div>
+    <div class="pn-body" id="ai2-rows">
+      {% for r in rows %}
+      <div class="ai2-tr" data-kind="{{ r.kind }}" data-scope="{{ r.scope }}"
+           data-merge="{{ 1 if r.merge else 0 }}">
+        <span class="mono clip" style="font-size:12px">
+          <button class="ai2-link" data-{{ r.kind }}="{{ r.name }}">{{ r.name }}</button>
+        </span>
+        <span><span class="pill {{ 'lilac' if r.kind == 'agent' else 'aqua' }}">{{ r.kind }}</span></span>
+        <span class="clip f-muted">{{ r.context }}</span>
+        <span class="mono tnum" style="text-align:right">{{ r.runs if r.runs is not none else "&ndash;"|safe }}</span>
+        <span>
+          {% if r.bars %}
+          <span class="ai2-att" title="{% for b in r.bars %}{{ b.label }}: {{ b.n }} {% endfor %}">
+            {% for b in r.bars %}{% if b.n %}<i class="t-{{ b.tone }}" style="width:{{ b.pct }}%"></i>{% endif %}{% endfor %}
+          </span>
+          <span class="mono ai2-att-n">{{ (r.first_pass * 100)|round|int ~ '%' if r.first_pass is not none else '' }}</span>
+          {% elif r.kind == 'skill' %}<span class="ai2-na">ingen skill-log</span>
+          {% else %}<span class="ai2-na">ingen kørsler</span>{% endif %}
+        </span>
+        <span>
+          {% if r.spark %}
+          <svg width="72" height="22" aria-hidden="true"><polyline points="{{ r.spark }}"
+            fill="none" stroke="var(--aqua)" stroke-width="1.5" /></svg>
+          {% if r.delta is not none %}<span class="mono ai2-delta
+            {{ 'f-aqua' if r.delta > 0 else ('f-coral' if r.delta < 0 else 'f-faint') }}">{{ '+' if r.delta > 0 }}{{ r.delta }}</span>{% endif %}
+          {% else %}<span class="ai2-na">for få uger</span>{% endif %}
+        </span>
+        <span class="mono f-muted" style="text-align:right">&ndash;</span>
+        <span class="mono" style="font-size:11px">
+          {% if r.overlap %}<span class="f-gul">{{ r.overlap.name }} &middot; {{ r.overlap.score }}%</span>
+          {% else %}<span class="f-faint">&ndash;</span>{% endif %}
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="ai2-foots">
+    <p><b>Forsøg pr. opgave er ikke en succesrate.</b> {{ d.usage.caveat }}</p>
+    <p>Hukommelse pr. agent og tokens pr. kørsel har ingen kilde: det kræver
+      run-log-tabellen fra designets 1b-note. Skills har ingen kørsler, fordi
+      intet logger skill-kald.</p>
+  </div>
+  </section>
+</div>
+{% endif %}
+
+{# Without this the slide-in never existed on /ai: clicking an agent
+   or a skill did nothing, and the hover highlight on the overlap names
+   led nowhere. Same panel as the constellation and the workflows. #}
+{% include "_jy_panel.html" %}
+<script type="application/json" id="ai-data">{{ (payload or {})|tojson }}</script>
+<script src="/static/jy_ai.js" defer></script>
+{% endblock %}

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="height:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:28px;padding:24px 14px 20px;background:#0A0A0C;border-right:1px solid rgba(250,248,244,.08);font-family:'Neue Haas Grotesk Display Pro',Inter,Helvetica,Arial,sans-serif;color:#F2F0EB">
+  <div style="display:flex;align-items:center;gap:10px;padding:0 10px">
+    <div style="width:20px;height:20px;border-radius:50%;background:#F3D4A1"></div>
+    <span style="font-size:18px;font-weight:500;letter-spacing:-.02em">Jytte</span>
+    <span style="margin-left:auto;font-family:ui-monospace,Menlo,monospace;font-size:10px;color:#6E6E78;border:1px solid rgba(250,248,244,.14);border-radius:999px;padding:2px 7px">localhost</span>
+  </div>
+  <nav style="display:flex;flex-direction:column;gap:18px">
+    <sc-for list="{{ groups }}" as="g" hint-placeholder-count="4">
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#6E6E78;padding:0 10px 6px">{{ g.label }}</div>
+        <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="2">
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;font-size:14px;background:{{ it.bg }};color:{{ it.fg }}">
+            <span style="width:6px;height:6px;border-radius:50%;background:{{ it.dot }}"></span>
+            <span>{{ it.label }}</span>
+            <span style="margin-left:auto;font-family:ui-monospace,Menlo,monospace;font-size:10px;color:#5A5A64">{{ it.key }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </sc-for>
+  </nav>
+  <div style="margin-top:auto;display:flex;flex-direction:column;gap:8px;padding:14px 10px 0;border-top:1px solid rgba(250,248,244,.08);font-size:12px;color:#9C9CA6">
+    <div style="display:flex;align-items:center;gap:8px"><span style="width:6px;height:6px;border-radius:50%;background:#96B7B9"></span>n8n running<span style="margin-left:auto;font-family:ui-monospace,Menlo,monospace;color:#6E6E78">:5678</span></div>
+    <div style="display:flex;align-items:center;gap:8px"><span style="width:6px;height:6px;border-radius:50%;background:#96B7B9"></span>MCP servers<span style="margin-left:auto;font-family:ui-monospace,Menlo,monospace;color:#6E6E78">7/7</span></div>
+    <div style="display:flex;align-items:center;gap:8px"><span style="width:6px;height:6px;border-radius:50%;background:#F3D4A1"></span>Graph token expires<span style="margin-left:auto;font-family:ui-monospace,Menlo,monospace;color:#F3D4A1">3d</span></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:232,&quot;height&quot;:960},&quot;active&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;home&quot;,&quot;ai&quot;,&quot;constellation&quot;,&quot;workflows&quot;,&quot;projects&quot;,&quot;devops&quot;,&quot;news&quot;,&quot;budget&quot;,&quot;stocks&quot;],&quot;default&quot;:&quot;home&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const active = this.props.active ?? 'home';
+    const G = [
+      ['Overview', [['home', 'Home']]],
+      ['AI', [['ai', 'AI stack'], ['constellation', 'Constellation'], ['workflows', 'Workflows']]],
+      ['Work', [['projects', 'Projects'], ['devops', 'Azure DevOps']]],
+      ['Personal', [['news', 'News'], ['budget', 'Budget'], ['stocks', 'Stocks']]]
+    ];
+    let n = 0;
+    const groups = G.map(([label, items]) => ({
+      label,
+      items: items.map(([k, l]) => {
+        n++;
+        const on = k === active;
+        return { label: l, key: String(n), bg: on ? 'rgba(150,183,185,.14)' : 'transparent', fg: on ? '#F2F0EB' : '#A3A3AD', dot: on ? '#96B7B9' : 'rgba(250,248,244,.14)' };
+      })
+    }));
+    return { groups };
+  }
+}
+</script>
+</body>
+</html>

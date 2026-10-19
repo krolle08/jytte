@@ -1,0 +1,177 @@
+{# One person's salary card: the figures, or the form that produces them.
+
+   Both states are THIS partial, and the page swaps it outerHTML on
+   #sal-<slug>. Nothing else on the page repaints, so opening the form
+   on one person cannot move the other person's card under the cursor
+   or scroll the viewport. That is the hard UI rule, not a preference.
+
+   Inputs use wrapping <label> rather than for/id, because two cards
+   render side by side on /salary and a shared id would be invalid on
+   the second one. #}
+
+{% set pr = p.profile %}
+
+{% macro fld(key, label, value, ph, hint='', req=False) %}
+  <label class="salf-f">
+    <span class="salf-l">{{ label }}{% if req %}<i class="salf-req">skal udfyldes</i>{% endif %}</span>
+    <input type="text" name="{{ key }}" inputmode="decimal" autocomplete="off"
+           value="{{ value }}" placeholder="{{ ph }}" />
+    {% if hint %}<span class="salf-h">{{ hint }}</span>{% endif %}
+  </label>
+{% endmacro %}
+
+<section class="pn sal-card" id="sal-{{ p.slug }}" style="padding:18px 20px; gap:14px">
+
+  <div class="pn-h" style="padding:0 0 4px">
+    <span class="pn-t">{{ p.name }}</span>
+    {% if edit %}
+    <button type="button" class="btn ghost"
+            hx-get="/widgets/salary/{{ p.slug }}/card"
+            hx-target="#sal-{{ p.slug }}" hx-swap="outerHTML">Annullér</button>
+    {% else %}
+    <span class="pn-src" style="display:flex; align-items:center; gap:10px">
+      {% if p.configured %}{{ fmt_bp(pr.traek_bp) }} træk{% endif %}
+      <button type="button" class="btn ghost"
+              hx-get="/widgets/salary/{{ p.slug }}/form"
+              hx-target="#sal-{{ p.slug }}" hx-swap="outerHTML">
+        {{ 'Redigér' if p.configured else 'Udfyld' }}</button>
+    </span>
+    {% endif %}
+  </div>
+
+  {% if edit %}
+  {# ---------------------------------------------------------------- form #}
+  <form class="salf"
+        hx-post="/widgets/salary/{{ p.slug }}/save"
+        hx-target="#sal-{{ p.slug }}" hx-swap="outerHTML">
+
+    {% if error %}
+    <p class="salf-err">{{ error }}</p>
+    {% endif %}
+
+    <p class="salf-sec">Fra forskudsopgørelsen</p>
+    <p class="salf-note">Disse to indeholder allerede kommuneskat, kirkeskat,
+      bundskat, beskæftigelsesfradrag og personfradrag. Derfor står de ikke
+      hver for sig nogen steder på siden.</p>
+    <div class="salf-grid">
+      {{ fld('traek_bp', 'Trækprocent',
+             raw.get('traek_bp', v_bp(pr.traek_bp)) if raw else v_bp(pr.traek_bp),
+             '38', 'I procent, fx 38 eller 37,9', req=True) }}
+      {{ fld('fradrag_oere', 'Månedsfradrag',
+             raw.get('fradrag_oere', v_amt(pr.fradrag_oere)) if raw else v_amt(pr.fradrag_oere),
+             '9.500,00', 'Kroner pr. måned') }}
+    </div>
+
+    <p class="salf-sec">Fra lønsedlen</p>
+    <div class="salf-grid">
+      {{ fld('gross_oere', 'Grundløn',
+             raw.get('gross_oere', v_amt(pr.gross_oere)) if raw else v_amt(pr.gross_oere),
+             '60.000,00', 'Pr. måned, før alt', req=True) }}
+      {{ fld('pension_bp', 'Pension, eget bidrag',
+             raw.get('pension_bp', v_bp(pr.pension_bp)) if raw else v_bp(pr.pension_bp),
+             '10,18', 'Din egen andel, i procent') }}
+      {{ fld('atp_oere', 'ATP, egen andel',
+             raw.get('atp_oere', v_amt(pr.atp_oere)) if raw else v_amt(pr.atp_oere),
+             '99,00') }}
+      {{ fld('holiday_oere', 'Ferietillæg',
+             raw.get('holiday_oere', v_amt(pr.holiday_oere)) if raw else v_amt(pr.holiday_oere),
+             '0,00', 'Kun i den måned det udbetales') }}
+      {{ fld('supplement_oere', 'Tillæg',
+             raw.get('supplement_oere', v_amt(pr.supplement_oere)) if raw else v_amt(pr.supplement_oere),
+             '0,00', 'Fast tillæg oven i grundlønnen') }}
+      {{ fld('benefit_oere', 'Skattepligtigt gode',
+             raw.get('benefit_oere', v_amt(pr.benefit_oere)) if raw else v_amt(pr.benefit_oere),
+             '0,00', 'Fx sundhedsforsikring. Koster skat, ingen kontanter') }}
+      {{ fld('reimbursement_oere', 'Refusion af udlæg',
+             raw.get('reimbursement_oere', v_amt(pr.reimbursement_oere)) if raw else v_amt(pr.reimbursement_oere),
+             '0,00', 'Udbetales, beskattes aldrig') }}
+      {{ fld('post_tax_deduction_oere', 'Øvrige træk',
+             raw.get('post_tax_deduction_oere', v_amt(pr.post_tax_deduction_oere)) if raw else v_amt(pr.post_tax_deduction_oere),
+             '0,00', 'Efter skat, fx frokostordning') }}
+    </div>
+
+    <label class="salf-chk">
+      <input type="checkbox" name="pension_on_supplement" value="1"
+             {% if pr.pension_on_supplement %}checked{% endif %} />
+      <span>Pension beregnes også af tillægget</span>
+    </label>
+
+    <div class="salf-act">
+      <button type="submit" class="btn">Gem</button>
+      <span class="salf-h">Tomt felt betyder nul.</span>
+    </div>
+  </form>
+
+  {% elif not p.configured %}
+  {# ------------------------------------------------------- not filled in #}
+  <p class="empty">Mangler {{ p.missing | join(' og ') }}.</p>
+  {% if pr.gross_oere %}
+  <div class="sal-rows">
+    <span>Grundløn</span><b class="mono tnum">{{ fmt(pr.gross_oere) }}</b>
+  </div>
+  {% endif %}
+  <p style="font-size:12.5px; color:var(--muted); line-height:1.5; margin:0">
+    Trækprocent og månedsfradrag står på din forskudsopgørelse på skat.dk.
+    Uden trækprocenten kan nettolønnen ikke beregnes, og siden gætter
+    hellere ikke på den: et forkert nettotal er værre end ingen.
+  </p>
+
+  {% else %}
+  {# ------------------------------------------------------------- the figures #}
+  <div class="col" style="gap:2px">
+    <span class="eyebrow">Til udbetaling</span>
+    <span class="mono tnum" style="font-size:30px; font-weight:500; color:var(--aqua); line-height:1.1">
+      {{ fmt(p.calc.net_oere) }}
+    </span>
+    <span style="font-size:12px; color:var(--faint)">
+      {{ fmt(p.calc.annual_net_oere) }} pr. år
+    </span>
+  </div>
+
+  <div class="sal-rows">
+    <span>Grundløn</span><b class="mono tnum">{{ fmt(pr.gross_oere) }}</b>
+    {% if pr.holiday_oere %}
+    <span>Ferietillæg</span><b class="mono tnum">{{ fmt(pr.holiday_oere) }}</b>
+    {% endif %}
+    {% if pr.supplement_oere %}
+    <span>Tillæg</span><b class="mono tnum">{{ fmt(pr.supplement_oere) }}</b>
+    {% endif %}
+    {% if pr.benefit_oere %}
+    <span class="f-faint">Skattepligtigt gode</span>
+    <b class="mono tnum f-faint">{{ fmt(pr.benefit_oere) }}</b>
+    {% endif %}
+
+    <span class="sal-sep">ATP</span><b class="mono tnum sal-neg">-{{ fmt(pr.atp_oere) }}</b>
+    <span>Pension {{ fmt_bp(pr.pension_bp) }}</span>
+    <b class="mono tnum sal-neg">-{{ fmt(p.calc.pension_oere) }}</b>
+
+    <span class="sal-sep">AM-indkomst</span>
+    <b class="mono tnum">{{ fmt(p.calc.am_income_oere) }}</b>
+    <span>AM-bidrag 8 %</span><b class="mono tnum sal-neg">-{{ fmt(p.calc.am_bidrag_oere) }}</b>
+    <span>Fradrag</span><b class="mono tnum">-{{ fmt(pr.fradrag_oere) }}</b>
+    <span>Trækgrundlag</span><b class="mono tnum">{{ fmt(p.calc.tax_base_oere) }}</b>
+    <span>A-skat {{ fmt_bp(pr.traek_bp) }}</span>
+    <b class="mono tnum sal-neg">-{{ fmt(p.calc.a_skat_oere) }}</b>
+
+    {% if pr.post_tax_deduction_oere %}
+    <span class="sal-sep">Øvrige træk</span>
+    <b class="mono tnum sal-neg">-{{ fmt(pr.post_tax_deduction_oere) }}</b>
+    {% endif %}
+    {% if pr.reimbursement_oere %}
+    <span>Refusion</span><b class="mono tnum">{{ fmt(pr.reimbursement_oere) }}</b>
+    {% endif %}
+  </div>
+
+  <div class="sal-foot">
+    <span>Skat i alt</span>
+    <b class="mono tnum">{{ fmt(p.calc.total_tax_oere) }}</b>
+    <span class="f-faint">{{ p.calc.effective_pct }} % af AM-indkomst</span>
+  </div>
+
+  {% if not pr.fradrag_oere %}
+  <p class="salf-warn">Månedsfradrag står som nul, så skatten her er
+    sat for højt. Tjek forskudsopgørelsen hvis det ikke er med vilje.</p>
+  {% endif %}
+  {% endif %}
+
+</section>

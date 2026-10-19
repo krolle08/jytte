@@ -1,0 +1,44 @@
+{% extends "shell.html" %}
+{% block title %}{{ nav.groups and "" }}Jytte{% endblock %}
+
+{% block content %}
+{# A screen the new design specifies but that is not rebuilt yet.
+   Deliberately not a fake panel: it says what the mock asks for, and
+   links to the working legacy page so nothing is unreachable while
+   screens are migrated one at a time. #}
+{% set me = nav.here %}
+
+<div class="hd">
+  <div class="hd-id">
+    <span class="eyebrow">Nyt design &middot; ikke bygget endnu</span>
+    <h1 class="pg">{{ me.label if me else nav.active }}</h1>
+  </div>
+</div>
+
+<div class="lg-note">
+  <h2>Skærmen er specificeret, ikke bygget</h2>
+  <p>{{ me.blurb if me else "" }}</p>
+  <p>
+    Designet ligger i
+    <code class="mono">docs/Home monitoring dashboard UI mockups</code>.
+    Farver og struktur er allerede hentet 1:1 ind i
+    <code class="mono">app/static/jytte.css</code> og sidebaren, så denne
+    skaerm mangler kun sit indhold.
+  </p>
+  {% if me and me.legacy_href %}
+  <p>Den gamle version virker fortsat og er uaendret.</p>
+  <div class="row-act">
+    <a class="btn" href="{{ me.legacy_href }}">Aabn den gamle side</a>
+    <a class="btn ghost" href="/legacy">Se alle gamle sider</a>
+  </div>
+  {% else %}
+  <p>
+    Der er ingen gammel side bag denne: widget&apos;et findes ikke endnu,
+    så der er intet at migrere fra.
+  </p>
+  <div class="row-act">
+    <a class="btn ghost" href="/legacy">Se alle gamle sider</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,338 @@
+{
+  "id": "jytteEmailFetch01",
+  "name": "email",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "errorWorkflow": "jytteEmailFetch01"
+  },
+  "pinData": {},
+  "nodes": [
+    {
+      "id": "trigger-schedule",
+      "name": "Every 10 minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -420,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "*/10 * * * *"
+            }
+          ]
+        }
+      },
+      "notes": "Mail is lower-churn than ADO PRs, so 10 min rather than 5. The widget manifest sets source: n8n, so this is the only cadence that matters - refresh_minutes there is null."
+    },
+    {
+      "id": "config",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -210,
+        0
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "fetch_limit",
+              "value": "={{ Number($env.EMAIL_FETCH_LIMIT || 30) }}",
+              "type": "number"
+            },
+            {
+              "id": "2",
+              "name": "lookback_hours",
+              "value": "={{ Number($env.EMAIL_LOOKBACK_HOURS || 72) }}",
+              "type": "number"
+            },
+            {
+              "id": "3",
+              "name": "domains_trustworks",
+              "value": "={{ $env.EMAIL_DOMAINS_TRUSTWORKS || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "4",
+              "name": "domains_dagrofa",
+              "value": "={{ $env.EMAIL_DOMAINS_DAGROFA || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "5",
+              "name": "computerworld_sender",
+              "value": "={{ $env.EMAIL_COMPUTERWORLD_SENDER || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "notes": "Config comes from the container env (N8N_BLOCK_ENV_ACCESS_IN_NODE=false in docker-compose.yml). No secret is read here - the OAuth2 token lives in n8n's credential store and never in workflow JSON."
+    },
+    {
+      "id": "fetch-messages",
+      "name": "Fetch inbox messages",
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        10,
+        0
+      ],
+      "alwaysOutputData": true,
+      "parameters": {
+        "resource": "folderMessage",
+        "operation": "getAll",
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "inbox"
+        },
+        "returnAll": false,
+        "limit": "={{ $json.fetch_limit }}",
+        "output": "fields",
+        "fields": [
+          "id",
+          "conversationId",
+          "subject",
+          "bodyPreview",
+          "from",
+          "isRead",
+          "receivedDateTime",
+          "hasAttachments",
+          "importance",
+          "webLink",
+          "categories",
+          "flag"
+        ],
+        "filtersUI": {
+          "values": {
+            "filterBy": "filters",
+            "filters": {
+              "readStatus": "both",
+              "receivedAfter": "={{ $now.minus({ hours: $json.lookback_hours }).toISO() }}"
+            }
+          }
+        },
+        "options": {}
+      },
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "outlook-oauth2",
+          "name": "Microsoft Outlook (Graph, Mail.Read)"
+        }
+      },
+      "notes": "Needs an Entra app registration with delegated Mail.Read + offline_access, connected in n8n as a Microsoft Outlook OAuth2 credential. See deploy/n8n/README.md. The credential id here is a placeholder - repoint this node at the real credential after creating it. Never paste a token into this node."
+    },
+    {
+      "id": "normalize",
+      "name": "Normalize + tag",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        230,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Normalize Microsoft Graph messages into the Jytte `email` widget\n// payload, tagging each sender by domain.\n//\n// Input : raw Graph message objects from 'Fetch inbox messages' (only\n//         the selected fields are present). That node has\n//         alwaysOutputData enabled so an empty inbox still triggers\n//         this branch - it arrives as a single {} item, dropped by the\n//         `id` check below. Without that, an empty inbox would push\n//         nothing at all and Jytte's freshness banner would go stale\n//         on a perfectly healthy mailbox.\n// Output: exactly one item - the body POSTed to /widgets/email/state.\n\nconst cfg = $('Config').first().json;\n\nconst splitDomains = (raw) =>\n  String(raw || '')\n    .split(',')\n    .map((d) => d.trim().toLowerCase())\n    .filter(Boolean);\n\n// tag -> [domains]. Order matters, first match wins, so the\n// Computerworld newsletter is classified before the broader buckets.\nconst tagRules = [\n  ['computerworld', splitDomains(cfg.computerworld_sender)],\n  ['trustworks', splitDomains(cfg.domains_trustworks)],\n  ['dagrofa', splitDomains(cfg.domains_dagrofa)],\n];\n\nconst tagFor = (domain) => {\n  if (!domain) return 'other';\n  for (const [tag, domains] of tagRules) {\n    // endsWith so a subdomain (nyhedsbrev.computerworld.dk) still\n    // matches the parent domain listed in EMAIL_DOMAINS_*.\n    if (domains.some((d) => domain === d || domain.endsWith('.' + d))) return tag;\n  }\n  return 'other';\n};\n\nconst messages = [];\nfor (const item of $input.all()) {\n  const m = item.json || {};\n  if (!m.id) continue; // alwaysOutputData placeholder, not a message\n\n  const addr = String(\n    (m.from && m.from.emailAddress && m.from.emailAddress.address) || ''\n  ).toLowerCase();\n  const domain = addr.includes('@') ? addr.split('@').pop() : '';\n\n  messages.push({\n    id: m.id,\n    conversation_id: m.conversationId || null,\n    subject: m.subject || '',\n    from_name: (m.from && m.from.emailAddress && m.from.emailAddress.name) || '',\n    from_address: addr,\n    domain: domain,\n    tag: tagFor(domain),\n    received: m.receivedDateTime || null,\n    is_read: m.isRead === true,\n    has_attachments: m.hasAttachments === true,\n    importance: m.importance || 'normal',\n    preview: String(m.bodyPreview || '').replace(/\\s+/g, ' ').trim().slice(0, 240),\n    web_link: m.webLink || null,\n    // Annotation signals, passed through raw. Which of them counts as\n    // \"special\" is decided in app/widgets/email/highlight.py, not here.\n    categories: Array.isArray(m.categories) ? m.categories : [],\n    flag: (m.flag && m.flag.flagStatus) || 'notFlagged',\n  });\n}\n\n// Graph guarantees no order without $orderby and the node exposes no\n// $orderby control, so sort here. Newest first.\nmessages.sort((a, b) =>\n  String(b.received || '').localeCompare(String(a.received || ''))\n);\n\nconst byTag = { trustworks: 0, dagrofa: 0, computerworld: 0, other: 0 };\nlet unread = 0;\nlet annotated = 0;\nfor (const m of messages) {\n  byTag[m.tag] = (byTag[m.tag] || 0) + 1;\n  if (!m.is_read) unread += 1;\n  if (m.categories.length > 0 || m.flag !== 'notFlagged') annotated += 1;\n}\n\nconst named = Object.entries(byTag)\n  .filter(([tag, n]) => tag !== 'other' && n > 0)\n  .map(([tag, n]) => n + ' ' + tag);\n\nconst summary =\n  messages.length === 0\n    ? 'mail: inbox quiet in the lookback window'\n    : [\n        'mail: ' + messages.length + ' message' + (messages.length === 1 ? '' : 's'),\n        unread ? unread + ' unread' : null,\n        named.length ? named.join(', ') : null,\n      ]\n        .filter(Boolean)\n        .join(' :: ');\n\n// Top-level `summary` is what POST /widgets/email/state lifts into the\n// summary column (app/main.py:230). Timestamps stay ISO 8601 UTC per\n// the project convention; the card converts to local in JS.\nreturn [\n  {\n    json: {\n      ready: true,\n      source: 'n8n',\n      summary: summary,\n      fetched_at: new Date().toISOString(),\n      lookback_hours: Number(cfg.lookback_hours) || null,\n      mailbox: 'inbox',\n      counts: { total: messages.length, unread: unread, annotated: annotated, by_tag: byTag },\n      messages: messages,\n    },\n  },\n];\n"
+      }
+    },
+    {
+      "id": "post-state",
+      "name": "POST -> Jytte /state",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        450,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.JYTTE_BASE_URL}}/widgets/email/state",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Jytte-Internal-Secret",
+              "value": "={{$env.JYTTE_INTERNAL_SECRET}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "error-trigger",
+      "name": "On any error",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -210,
+        220
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "shape-error",
+      "name": "Shape error payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        10,
+        220
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "code",
+              "value": "={{$json.execution && $json.execution.error && ($json.execution.error.httpCode || $json.execution.error.name) || 'unknown'}}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "message",
+              "value": "={{$json.execution && $json.execution.error && ($json.execution.error.message || JSON.stringify($json.execution.error)) || 'unknown'}}",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "execution_id",
+              "value": "={{$json.execution && $json.execution.id}}",
+              "type": "string"
+            },
+            {
+              "id": "4",
+              "name": "workflow_id",
+              "value": "={{$json.workflow && $json.workflow.id}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "notes": "Jytte stores this verbatim in widget_state.last_error and renders it in the freshness banner, so keep it to code + message. Never add the credential or token to this payload."
+    },
+    {
+      "id": "post-error",
+      "name": "POST -> Jytte /error",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        230,
+        220
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.JYTTE_BASE_URL}}/widgets/email/error",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Jytte-Internal-Secret",
+              "value": "={{$env.JYTTE_INTERNAL_SECRET}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Every 10 minutes": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Fetch inbox messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch inbox messages": {
+      "main": [
+        [
+          {
+            "node": "Normalize + tag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize + tag": {
+      "main": [
+        [
+          {
+            "node": "POST -> Jytte /state",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On any error": {
+      "main": [
+        [
+          {
+            "node": "Shape error payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shape error payload": {
+      "main": [
+        [
+          {
+            "node": "POST -> Jytte /error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "notes": "Mail fetch for the `email` widget. Microsoft Graph via the microsoftOutlook node (folderMessage:getAll against /mailFolders/inbox/messages), scoped to the last EMAIL_LOOKBACK_HOURS and capped at EMAIL_FETCH_LIMIT. Senders are tagged against EMAIL_DOMAINS_TRUSTWORKS / EMAIL_DOMAINS_DAGROFA / EMAIL_COMPUTERWORLD_SENDER. The payload shape is documented at the top of app/widgets/email/card.html. BEFORE ACTIVATING: create the Entra app registration (delegated Mail.Read + offline_access), connect it in n8n as a Microsoft Outlook OAuth2 credential, and repoint the 'Fetch inbox messages' node at it. The IMAP route was rejected: n8n's IMAP node is trigger-only so it cannot sit behind a Schedule Trigger, and M365 is retiring IMAP basic auth. The EMAIL_IMAP_* vars in .env are unused by this workflow."
+  }
+}

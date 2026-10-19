@@ -1,0 +1,41 @@
+{# Inner body of the front-page mail box: unread or annotated mail.
+
+   Rendered inside frontpage.html on first paint and standalone by
+   GET /frontpage/box/mail when the email widget fires SSE.
+
+   Expects:
+     mail  - the dict from app.widgets.email.highlight.highlights()
+     state - the email widget state envelope
+
+   Which mail qualifies is NOT decided here. See
+   app/widgets/email/highlight.py. #}
+{% if state.get('missing') %}
+<p class="muted">email widget not loaded</p>
+{% elif not mail.ready %}
+<p class="muted">{{ mail.reason or 'waiting for the first n8n push' }}</p>
+{% elif not mail.messages %}
+<p class="muted fp-empty">Nothing unread or flagged in the last {{ mail.lookback_hours or '?' }}h.</p>
+{% else %}
+<ul class="fp-mail-list">
+  {% for m in mail.messages %}
+  <li class="fp-mail{% if 'unread' in m.reasons %} fp-mail-unread{% endif %}">
+    <span class="fp-mail-top">
+      <span class="fp-mail-from">{{ m.from_name or m.from_address or 'unknown sender' }}</span>
+      {% if m.web_link %}
+      <a class="fp-mail-subject" href="{{ m.web_link }}" target="_blank" rel="noopener noreferrer">{{ m.subject or '(no subject)' }}</a>
+      {% else %}
+      <span class="fp-mail-subject">{{ m.subject or '(no subject)' }}</span>
+      {% endif %}
+      {% if m.received %}<span class="fp-mail-when muted small" data-ts="{{ m.received }}" data-ts-label="">{{ m.received[:16] }}</span>{% endif %}
+    </span>
+    <span class="fp-mail-tags">
+      {% for r in m.reasons %}<span class="tag fp-reason-{{ r }}">{{ r }}</span>{% endfor %}
+      {% for c in m.categories_list %}<span class="tag fp-mail-cat">{{ c }}</span>{% endfor %}
+      {% if m.tag and m.tag != 'other' %}<span class="tag mail-tag-{{ m.tag }}">{{ m.tag }}</span>{% endif %}
+      {% if m.has_attachments %}<span class="mail-clip" title="has attachments">&#128206;</span>{% endif %}
+    </span>
+    {% if m.preview %}<span class="fp-mail-preview muted small">{{ m.preview[:160] }}</span>{% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}

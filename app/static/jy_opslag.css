@@ -1,0 +1,112 @@
+/* ======================================================================
+   Opslagsværk. Loaded only by /opslag.
+
+   A reading page, not a dashboard: one column at a comfortable measure,
+   because the point of an entry is the paragraph explaining why it was
+   saved. The filter bar is sticky so it stays reachable while reading
+   down a long list.
+   ====================================================================== */
+
+.op-bar {
+  position: sticky; top: 0; z-index: 4;
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 14px 0 12px; margin-top: 18px;
+  background: var(--bg); border-bottom: 1px solid var(--line);
+}
+.op-q {
+  flex: 1 1 260px; min-width: 0;
+  padding: 9px 16px; border-radius: 999px;
+  border: 1px solid var(--line-strong); background: var(--inset);
+  color: var(--text); font-family: inherit; font-size: 13px;
+}
+.op-q::placeholder { color: var(--fainter); }
+.op-q:focus { outline: none; border-color: var(--aqua-2); }
+
+.op-chips { display: flex; gap: 4px; flex-wrap: wrap; }
+.op-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: 999px;
+  border: 1px solid var(--line-pill); background: none;
+  color: var(--muted); font-family: inherit; font-size: 12.5px; cursor: pointer;
+  transition: background .14s ease, color .14s ease;
+}
+.op-chip i {
+  font-style: normal; font-family: var(--mono); font-size: 10.5px; color: var(--fainter);
+}
+.op-chip:hover { background: var(--hover); color: var(--text-2); }
+.op-chip.is-on { background: var(--fill-active); color: var(--text); border-color: transparent; }
+.op-chip.is-on i { color: var(--muted); }
+
+.op-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 14px; }
+.op-tag {
+  padding: 3px 10px; border-radius: 999px; border: 1px solid transparent;
+  background: var(--grey-t); color: var(--faint);
+  font-family: var(--mono); font-size: 11px; cursor: pointer;
+  transition: background .14s ease, color .14s ease;
+}
+.op-tag:hover { color: var(--text-2); }
+.op-tag.is-on { background: var(--gul-t); color: var(--gul); }
+
+.op-count { font-size: 12px; color: var(--fainter); margin: 14px 0 0; }
+.op-empty { color: var(--muted); font-size: 13.5px; margin-top: 18px; }
+
+.op-list { display: flex; flex-direction: column; gap: 14px; margin-top: 14px; }
+
+.op-card {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+  padding: 20px 22px 18px;
+  display: flex; flex-direction: column; gap: 12px; min-width: 0;
+}
+.op-h { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.op-t {
+  margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -.012em;
+  color: var(--text); min-width: 0;
+}
+.op-added {
+  margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--fainter);
+}
+
+/* One sentence, set a tier up: it is the thing you scan for. */
+.op-sum { margin: 0; font-size: 14.5px; color: var(--text-2); line-height: 1.55; max-width: 74ch; }
+/* The paragraph that earns the entry its place. */
+.op-why {
+  margin: 0; font-size: 13px; color: var(--muted); line-height: 1.68; max-width: 74ch;
+  border-left: 2px solid var(--line-strong); padding-left: 14px;
+}
+
+.op-links { display: flex; flex-direction: column; gap: 1px; }
+.op-link {
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  padding: 8px 10px; margin: 0 -10px; border-radius: 8px;
+  text-decoration: none; min-width: 0;
+  transition: background .14s ease;
+}
+.op-link:hover { background: var(--hover); }
+.op-link-l { font-size: 13.5px; color: var(--aqua); min-width: 0; }
+.op-link:hover .op-link-l { text-decoration: underline; text-underline-offset: 2px; }
+.op-link-h { font-size: 11px; color: var(--fainter); }
+.op-link-n { font-size: 12px; color: var(--muted); min-width: 0; }
+
+.op-notes {
+  display: flex; flex-direction: column; gap: 10px;
+  border-top: 1px solid var(--line-soft); padding-top: 13px;
+}
+.op-notes-h {
+  font-size: 10.5px; font-weight: 500; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--fainter);
+}
+.op-note { display: grid; grid-template-columns: 82px minmax(0, 1fr); gap: 12px; }
+.op-note-d { font-size: 11px; color: var(--fainter); padding-top: 2px; }
+.op-note p { margin: 0; font-size: 13px; color: var(--text-2); line-height: 1.65; max-width: 70ch; }
+
+.op-cardtags { display: flex; gap: 5px; flex-wrap: wrap; }
+.op-ct {
+  font-family: var(--mono); font-size: 10.5px; color: var(--fainter);
+  background: var(--grey-t); border-radius: 999px; padding: 2px 8px;
+}
+
+@media (max-width: 720px) {
+  .op-bar { position: static; }
+  .op-note { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .op-card { padding: 16px 16px 14px; }
+}

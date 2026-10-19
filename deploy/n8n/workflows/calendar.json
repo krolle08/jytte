@@ -1,0 +1,316 @@
+{
+  "id": "jytteCalendarFetch01",
+  "name": "calendar",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "errorWorkflow": "jytteCalendarFetch01"
+  },
+  "pinData": {},
+  "nodes": [
+    {
+      "id": "trigger-schedule",
+      "name": "Every 15 minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -420,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "*/15 * * * *"
+            }
+          ]
+        }
+      },
+      "notes": "A calendar changes less often than an inbox but matters more when it does - a moved meeting you learn about late is worse than a mail you read late."
+    },
+    {
+      "id": "config",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -210,
+        0
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "window_days",
+              "value": "={{ Number($env.CALENDAR_WINDOW_DAYS || 1) }}",
+              "type": "number"
+            },
+            {
+              "id": "2",
+              "name": "fetch_limit",
+              "value": "={{ Number($env.CALENDAR_FETCH_LIMIT || 50) }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "notes": "Non-secret shaping only. The OAuth token is in n8n's credential store - Jytte never sees it, and no agent can reach it."
+    },
+    {
+      "id": "fetch-events",
+      "name": "Fetch today events",
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        10,
+        0
+      ],
+      "alwaysOutputData": true,
+      "parameters": {
+        "resource": "event",
+        "operation": "getAll",
+        "returnAll": false,
+        "limit": "={{ $json.fetch_limit }}",
+        "output": "fields",
+        "fields": [
+          "id",
+          "subject",
+          "start",
+          "end",
+          "isAllDay",
+          "isCancelled",
+          "organizer",
+          "location",
+          "isOnlineMeeting",
+          "onlineMeeting",
+          "attendees",
+          "responseStatus",
+          "webLink",
+          "body"
+        ],
+        "filtersUI": {
+          "values": {
+            "filterBy": "filters",
+            "filters": {
+              "startDateTime": "={{ $now.startOf('day').toISO() }}",
+              "endDateTime": "={{ $now.startOf('day').plus({ days: $json.window_days }).toISO() }}"
+            }
+          }
+        },
+        "options": {}
+      },
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "outlook-oauth2",
+          "name": "Microsoft Outlook (Graph, Mail.Read + Calendars.Read)"
+        }
+      },
+      "notes": "Needs delegated Calendars.Read added to the SAME Entra app registration the mail flow uses. One registration, two scopes - do both at once. Repoint this node at the real credential; the id here is a placeholder."
+    },
+    {
+      "id": "normalize",
+      "name": "Normalize events",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        230,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Normalize Microsoft Graph calendar events into the Jytte `calendar`\n// widget payload.\n//\n// Input : raw Graph event objects from 'Fetch today events'. That node\n//         has alwaysOutputData on, so a day with no meetings still\n//         reaches the push - it arrives as a single {} item, dropped by\n//         the `id` check. Without it, a free day would look identical\n//         to a broken fetch.\n// Output: exactly one item - the body POSTed to /widgets/calendar/state.\n\nconst cfg = $('Config').first().json;\n\nconst joinUrl = (m) => {\n  // Teams join link lives in onlineMeeting.joinUrl, but older items only\n  // carry it in the body HTML. Check both before giving up.\n  if (m.onlineMeeting && m.onlineMeeting.joinUrl) return m.onlineMeeting.joinUrl;\n  const body = (m.body && m.body.content) || '';\n  const hit = body.match(/https:\\/\\/teams\\.microsoft\\.com\\/l\\/meetup-join\\/[^\"'\\s<>]+/);\n  return hit ? hit[0] : null;\n};\n\nconst events = [];\nfor (const item of $input.all()) {\n  const m = item.json || {};\n  if (!m.id) continue;\n\n  const attendees = Array.isArray(m.attendees) ? m.attendees : [];\n  events.push({\n    id: m.id,\n    subject: m.subject || '(uden emne)',\n    start: (m.start && m.start.dateTime) || null,\n    end: (m.end && m.end.dateTime) || null,\n    all_day: m.isAllDay === true,\n    cancelled: m.isCancelled === true,\n    organizer: (m.organizer && m.organizer.emailAddress && m.organizer.emailAddress.name) || '',\n    location: (m.location && m.location.displayName) || '',\n    online: m.isOnlineMeeting === true,\n    join_url: joinUrl(m),\n    web_link: m.webLink || null,\n    // Names only. Addresses are not needed to render and would put a\n    // list of colleagues' email addresses into a cached payload.\n    attendees: attendees\n      .map((a) => (a.emailAddress && a.emailAddress.name) || '')\n      .filter(Boolean)\n      .slice(0, 8),\n    attendee_count: attendees.length,\n    response: (m.responseStatus && m.responseStatus.response) || 'none',\n  });\n}\n\n// Graph honours $orderby here, but sort anyway so the payload is\n// ordered even if the query changes.\nevents.sort((a, b) => String(a.start || '').localeCompare(String(b.start || '')));\n\nconst timed = events.filter((e) => !e.all_day && !e.cancelled);\nconst first = timed.length ? timed[0] : null;\n\n// Gaps between consecutive meetings, so the UI can show \"2 t 15 m fri\"\n// without recomputing it per render.\nconst gaps = [];\nfor (let i = 0; i < timed.length - 1; i++) {\n  const endA = Date.parse(timed[i].end || '');\n  const startB = Date.parse(timed[i + 1].start || '');\n  if (!isNaN(endA) && !isNaN(startB) && startB > endA) {\n    gaps.push({ after: timed[i].id, minutes: Math.round((startB - endA) / 60000) });\n  }\n}\n\nconst summary =\n  events.length === 0\n    ? 'kalender: ingen moeder i dag'\n    : 'kalender: ' + events.length + ' moede' + (events.length === 1 ? '' : 'r') +\n      (first ? ', foerste ' + String(first.start).slice(11, 16) : '');\n\nreturn [\n  {\n    json: {\n      ready: true,\n      source: 'n8n',\n      summary: summary,\n      fetched_at: new Date().toISOString(),\n      window_days: Number(cfg.window_days) || 1,\n      counts: {\n        total: events.length,\n        timed: timed.length,\n        all_day: events.filter((e) => e.all_day).length,\n        cancelled: events.filter((e) => e.cancelled).length,\n        online: events.filter((e) => e.online).length,\n      },\n      gaps: gaps,\n      events: events,\n    },\n  },\n];\n"
+      }
+    },
+    {
+      "id": "post-state",
+      "name": "POST -> Jytte /state",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        450,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.JYTTE_BASE_URL}}/widgets/calendar/state",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Jytte-Internal-Secret",
+              "value": "={{$env.JYTTE_INTERNAL_SECRET}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "error-trigger",
+      "name": "On any error",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -210,
+        220
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "shape-error",
+      "name": "Shape error payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        10,
+        220
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "code",
+              "value": "={{$json.execution && $json.execution.error && ($json.execution.error.httpCode || $json.execution.error.name) || 'unknown'}}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "message",
+              "value": "={{$json.execution && $json.execution.error && ($json.execution.error.message || JSON.stringify($json.execution.error)) || 'unknown'}}",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "execution_id",
+              "value": "={{$json.execution && $json.execution.id}}",
+              "type": "string"
+            },
+            {
+              "id": "4",
+              "name": "workflow_id",
+              "value": "={{$json.workflow && $json.workflow.id}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "post-error",
+      "name": "POST -> Jytte /error",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        230,
+        220
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.JYTTE_BASE_URL}}/widgets/calendar/error",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Jytte-Internal-Secret",
+              "value": "={{$env.JYTTE_INTERNAL_SECRET}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Every 15 minutes": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Fetch today events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch today events": {
+      "main": [
+        [
+          {
+            "node": "Normalize events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize events": {
+      "main": [
+        [
+          {
+            "node": "POST -> Jytte /state",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On any error": {
+      "main": [
+        [
+          {
+            "node": "Shape error payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shape error payload": {
+      "main": [
+        [
+          {
+            "node": "POST -> Jytte /error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "notes": "Calendar fetch for the `calendar` widget. Microsoft Graph via the microsoftOutlook node (event:getAll over today's window). CREDENTIAL RULE: the OAuth token lives only in n8n. Jytte stores no calendar credential and no agent can reach one - the widget is source: n8n and has no Python client. Needs delegated Calendars.Read on the same Entra registration as the mail flow. Activate only after the credential is connected and this node is repointed at it."
+  }
+}

@@ -1,0 +1,51 @@
+{# Dashboard card for the mail widget. Payload is pushed by the n8n
+   workflow `email` (deploy/n8n/workflows/email.json), shape:
+
+     ready, fetched_at, lookback_hours, counts{total,unread,by_tag{}},
+     messages[{id, subject, from_name, from_address, domain, tag,
+               received, is_read, has_attachments, importance, preview,
+               web_link}]
+
+   Stale/error chrome is NOT this template's job - freshness_banner.html
+   already renders it from state.consecutive_failures / state.last_error. #}
+{% set data = state.data or {} %}
+{% if not data.get('ready') %}
+<p class="muted">{{ data.get('reason') or 'mail not ready yet' }}</p>
+{% else %}
+{% set counts = data.get('counts') or {} %}
+{% set messages = data.get('messages') or [] %}
+<div class="mail-head">
+  <span class="mail-count">{{ counts.get('total') or 0 }}</span>
+  <span class="muted small">
+    in last {{ data.get('lookback_hours') or '?' }}h
+    {%- if counts.get('unread') %} :: <strong>{{ counts.get('unread') }}</strong> unread{% endif %}
+  </span>
+</div>
+{% if messages %}
+<ul class="mail-list">
+  {% for m in messages[:8] %}
+  <li class="mail-item{% if not m.get('is_read') %} mail-unread{% endif %}">
+    {% if m.get('tag') and m.get('tag') != 'other' %}<span class="tag mail-tag-{{ m.get('tag') }}">{{ m.get('tag') }}</span>{% endif %}
+    <span class="mail-from">{{ m.get('from_name') or m.get('from_address') or 'unknown sender' }}</span>
+    {% if m.get('web_link') %}
+    <a class="mail-subject" href="{{ m.get('web_link') }}" target="_blank" rel="noopener noreferrer">{{ m.get('subject') or '(no subject)' }}</a>
+    {% else %}
+    <span class="mail-subject">{{ m.get('subject') or '(no subject)' }}</span>
+    {% endif %}
+    {% if m.get('has_attachments') %}<span class="mail-clip" title="has attachments">&#128206;</span>{% endif %}
+    {% if m.get('received') %}<span class="mail-when muted small" data-ts="{{ m.get('received') }}" data-ts-label="">{{ m.get('received')[:16] }}</span>{% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% if messages|length > 8 %}<p class="muted small">showing 8 of {{ messages|length }}</p>{% endif %}
+{% else %}
+<p class="muted">inbox quiet in the lookback window</p>
+{% endif %}
+{% set by_tag = counts.get('by_tag') or {} %}
+{% if by_tag %}
+<p class="mail-foot muted small">
+  {% for t, n in by_tag.items() | sort %}{% if n %}{{ n }} {{ t }}{% if not loop.last %} :: {% endif %}{% endif %}{% endfor %}
+</p>
+{% endif %}
+{% endif %}
+{% if state.updated_at %}<p class="ts">updated <span data-ts="{{ state.updated_at }}">{{ state.updated_at[:16] }}</span></p>{% endif %}

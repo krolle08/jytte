@@ -1,0 +1,127 @@
+/* Bank - where the money went, by category.
+
+   The transaction table reuses .jb / .jb-wrap / .jb-q / .jb-count from
+   jy_jobs.css, so this page loads that file too. The shared bits are
+   genuinely the same thing - a wide scrollable table with a sticky
+   header and a search box above it - and forking them would mean
+   fixing every table bug twice. */
+
+@import url("/static/jy_jobs.css");
+
+/* ---- config problems -------------------------------------------- */
+.bk-warn {
+  margin: 18px 0 0; padding: 11px 16px; border-radius: 10px;
+  background: var(--coral-t); border-left: 2px solid var(--coral);
+  font-size: 13px; line-height: 1.6; color: var(--text-2);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.bk-warn b { color: var(--coral); }
+.bk-warn .mono { font-size: 11.5px; color: var(--muted); }
+
+/* ---- tabs -------------------------------------------------------- */
+.bk-tabs { margin: 18px 0 16px; }
+
+/* ---- the lede ----------------------------------------------------- */
+.bk-lede { margin: 0; font-size: 19px; line-height: 1.45; color: var(--text); }
+.bk-lede b { font-weight: 600; }
+.bk-lede span {
+  display: block; margin-top: 3px;
+  font-size: 12.5px; color: var(--muted); font-weight: 400;
+}
+
+/* ---- the curve ----------------------------------------------------- */
+.bk-curve { display: flex; flex-direction: column; gap: 6px; }
+.bk-curve-svg { width: 100%; height: 140px; display: block; overflow: visible; }
+
+.bk-fill { fill: var(--aqua-t); stroke: none; }
+.bk-line {
+  fill: none; stroke: var(--aqua); stroke-width: 1.6;
+  stroke-linejoin: round; vector-effect: non-scaling-stroke;
+}
+/* The plan is scaffolding, so it is dashed and quiet. The curve is
+   the subject; if both were solid you would have to read a legend to
+   know which one you were looking at. */
+.bk-plan {
+  stroke: var(--fainter); stroke-width: 1; stroke-dasharray: 4 4;
+  vector-effect: non-scaling-stroke;
+}
+.bk-head { fill: var(--aqua); stroke: var(--bg); stroke-width: 1.5; }
+
+.bk-curve-x {
+  display: flex; justify-content: space-between;
+  font-size: 10px; color: var(--fainter);
+}
+.bk-curve-k {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  font-size: 11.5px; color: var(--faint);
+  padding-top: 5px; border-top: 1px solid var(--line-soft);
+}
+.bk-curve-k span { display: flex; align-items: center; gap: 6px; }
+.bk-curve-k i { width: 14px; height: 0; display: block; }
+.bk-curve-k i.k-line { border-top: 2px solid var(--aqua); }
+.bk-curve-k i.k-plan { border-top: 1px dashed var(--fainter); }
+.bk-curve-k .bk-curve-r { margin-left: auto; color: var(--muted); }
+
+/* ---- category rings -------------------------------------------------- */
+.bk-rings {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 14px;
+}
+.bk-ring {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  text-align: center; min-width: 0; width: 100%;
+}
+.bk-ring svg { width: 54px; height: 54px; transform: rotate(-90deg); }
+.bk-ring-bg { fill: none; stroke: var(--line-soft); stroke-width: 5; }
+.bk-ring-fg { fill: none; stroke-width: 5; stroke-linecap: round; }
+.bk-ring-n { font-size: 11.5px; color: var(--text-2); max-width: 100%; }
+.bk-ring-v { font-size: 13px; color: var(--text); font-weight: 600; }
+.bk-ring-p { font-size: 10.5px; color: var(--faint); }
+
+/* ---- category rows ---------------------------------------------------- */
+.bk-cat {
+  display: grid;
+  grid-template-columns: 9px minmax(0, 1fr) auto minmax(60px, 2fr) auto 26px;
+  align-items: center; gap: 10px;
+  font-size: 12.5px; color: var(--text-2);
+}
+.bk-dot { width: 9px; height: 9px; border-radius: 2px; display: block; }
+.bk-bar { height: 5px; border-radius: 3px; background: var(--line-soft); overflow: hidden; }
+.bk-bar i { display: block; height: 100%; border-radius: 3px; opacity: .85; }
+.bk-amt { font-size: 12.5px; text-align: right; color: var(--text); }
+.bk-n { font-size: 10.5px; color: var(--fainter); text-align: right; }
+
+/* ---- transactions ------------------------------------------------------ */
+.bk-bar2 { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+.bk-bar2 .pill { cursor: pointer; }
+.bk-bar2 .pill[aria-pressed="true"] { background: var(--gul-t); color: var(--gul); border-color: transparent; }
+
+.bk-tx td { padding: 9px 12px; }
+.bk-d { font-size: 11px; color: var(--faint); white-space: nowrap; }
+.bk-t { max-width: 340px; }
+.bk-t .clip { display: block; font-size: 12.5px; color: var(--text); }
+.bk-cp { display: block; font-size: 10.5px; color: var(--fainter); }
+.bk-why { font-size: 10.5px; color: var(--fainter); max-width: 190px; }
+
+.bk-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11.5px; white-space: nowrap;
+  padding: 3px 9px 3px 7px; border-radius: 999px;
+  border: 1px solid var(--line-pill); color: var(--text-2);
+}
+.bk-chip i {
+  width: 8px; height: 8px; border-radius: 2px;
+  background: var(--c); flex: 0 0 auto;
+}
+
+/* ---- the swatch wall, shown while there is no data --------------------- */
+.bk-swatches { display: flex; flex-direction: column; gap: 12px; }
+.bk-sw-g { display: flex; flex-direction: column; gap: 5px; }
+.bk-sw-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.bk-sw {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11.5px; color: var(--text-2);
+  padding: 3px 10px 3px 7px; border-radius: 999px;
+  border: 1px solid var(--line-soft);
+}
+.bk-sw i { width: 9px; height: 9px; border-radius: 2px; display: block; }

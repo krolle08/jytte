@@ -19,3 +19,24 @@ jarvis-core.zip
 docs/.venv/
 docs/build/
 docs/.plantuml/plantuml.jar
+
+# Nordnet CSV exports. A portfolio is personal data; the folder is
+# tracked (via .gitkeep) so the compose bind mount always has a target,
+# the files in it never are. See app/widgets/stocks/CLAUDE.md.
+data/nordnet/*
+!data/nordnet/.gitkeep
+
+# Course certificates. Personal documents with a full name on them, and
+# this repo is PUBLIC (github.com/krolle08/jytte), so the files stay out
+# while the folder stays tracked - the compose bind mount needs a target
+# in a fresh clone. See app/poc/certificates.py.
+assets/certificates/*
+!assets/certificates/.gitkeep
+
+# WoW icons. Blizzard's artwork, and this repo is PUBLIC, so the files
+# stay out while the folder stays tracked. Recreate them on a fresh
+# clone with `python scripts/fetch_wow_icons.py` BEFORE the image build,
+# because the Dockerfile bakes app/ in. See app/poc/wowforever.py.
+app/static/wow/icons/*
+!app/static/wow/icons/.gitkeep
+deploy/cloudflared/credentials.json

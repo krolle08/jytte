@@ -1,0 +1,13 @@
+{# Elforbrug has page_only: true, so this card is only reached if the
+   manifest flag is ever flipped. Kept minimal and honest rather than
+   absent, because a missing card.html used to 500 the registry. #}
+{% set d = data %}
+{% if not d.ready %}
+<p class="empty">{{ d.reason or "Ingen målerdata." }}</p>
+{% else %}
+<div class="col" style="gap:6px">
+  <span class="mono tnum" style="font-size:22px">{{ d.total_kwh }} kWh</span>
+  <span style="font-size:12px; color:var(--muted)">{{ d.days|length }} dage</span>
+  <a class="pill line" href="/el" style="align-self:flex-start">Hele siden</a>
+</div>
+{% endif %}

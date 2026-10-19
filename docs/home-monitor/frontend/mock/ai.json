@@ -1,0 +1,670 @@
+{
+  "agents": {
+    "requirements-analyst": {
+      "cat": "Analysis",
+      "model": "Sonnet",
+      "mcp": [
+        "Notion"
+      ],
+      "mem": null,
+      "d": "Turns raw requirement rows into normalised, traceable requirements.",
+      "p": ".claude/agents/requirements-analyst.md",
+      "skills": [
+        "krav-tracker-parse",
+        "lucid-diagram"
+      ]
+    },
+    "solution-architect": {
+      "cat": "Design",
+      "model": "Opus",
+      "mcp": [
+        "Lucid"
+      ],
+      "mem": "Vault notes",
+      "d": "Drafts solution options and ADRs against stated constraints.",
+      "p": ".claude/agents/solution-architect.md",
+      "skills": [
+        "adr-writer",
+        "lucid-diagram"
+      ]
+    },
+    "critic": {
+      "cat": "Review",
+      "model": "Sonnet",
+      "mcp": [],
+      "mem": null,
+      "d": "Challenges a draft for gaps, vague claims and policy violations.",
+      "p": ".claude/agents/critic.md",
+      "skills": [
+        "opa-policy-check"
+      ]
+    },
+    "release-notes-writer": {
+      "cat": "Communication",
+      "model": "Haiku",
+      "mcp": [
+        "Azure DevOps"
+      ],
+      "mem": null,
+      "d": "Writes user-facing release notes from merged PRs.",
+      "p": ".claude/agents/release-notes-writer.md",
+      "skills": [
+        "changelog"
+      ]
+    },
+    "briefing-writer": {
+      "cat": "Communication",
+      "model": "Sonnet",
+      "mcp": [
+        "MS Graph",
+        "Obsidian"
+      ],
+      "mem": "Daily context",
+      "d": "Condenses mail, calendar and tasks into a morning brief.",
+      "p": ".claude/agents/briefing-writer.md",
+      "skills": [
+        "email-triage",
+        "calendar-digest",
+        "obsidian-tasks"
+      ]
+    },
+    "flutter-developer": {
+      "cat": "Development",
+      "model": "Sonnet",
+      "mcp": [
+        "Azure DevOps"
+      ],
+      "mem": null,
+      "d": "Proposes Flutter and Dart fixes and runs the tests on them.",
+      "p": ".claude/agents/flutter-developer.md",
+      "skills": [
+        "flutter-test-runner",
+        "dart-analyze"
+      ]
+    },
+    "code-reviewer": {
+      "cat": "Review",
+      "model": "Sonnet",
+      "mcp": [
+        "Azure DevOps"
+      ],
+      "mem": null,
+      "d": "Reviews pull request diffs for bugs, style and missing tests.",
+      "p": ".claude/agents/code-reviewer.md",
+      "skills": [
+        "pr-review"
+      ]
+    },
+    "ops-watcher": {
+      "cat": "Operations",
+      "model": "Haiku",
+      "mcp": [],
+      "mem": null,
+      "d": "Reads server health output and flags anomalies.",
+      "p": ".claude/agents/ops-watcher.md",
+      "skills": []
+    }
+  },
+  "skills": {
+    "krav-tracker-parse": {
+      "d": "Parses the Krav_tracker table into structured requirements.",
+      "p": "skills/krav-tracker-parse/SKILL.md"
+    },
+    "lucid-diagram": {
+      "d": "Creates and updates LucidChart diagrams from a specification.",
+      "p": "skills/lucid-diagram/SKILL.md"
+    },
+    "adr-writer": {
+      "d": "Writes Architecture Decision Records in the team template.",
+      "p": "skills/adr-writer/SKILL.md"
+    },
+    "opa-policy-check": {
+      "d": "Evaluates an artefact against OPA policies and returns violations.",
+      "p": "skills/opa-policy-check/SKILL.md"
+    },
+    "docx-export": {
+      "d": "Exports a finished markdown deliverable to a branded Word file.",
+      "p": "skills/docx-export/SKILL.md"
+    },
+    "changelog": {
+      "d": "Groups merged PR titles into a changelog by type.",
+      "p": "skills/changelog/SKILL.md"
+    },
+    "email-triage": {
+      "d": "Classifies unread mail by urgency and project.",
+      "p": "skills/email-triage/SKILL.md"
+    },
+    "calendar-digest": {
+      "d": "Lists today's meetings with prep notes.",
+      "p": "skills/calendar-digest/SKILL.md"
+    },
+    "flutter-test-runner": {
+      "d": "Runs flutter test and summarises failures.",
+      "p": "skills/flutter-test-runner/SKILL.md"
+    },
+    "dart-analyze": {
+      "d": "Runs dart analyze and groups findings by severity.",
+      "p": "skills/dart-analyze/SKILL.md"
+    },
+    "pr-review": {
+      "d": "Pulls a PR diff from Azure DevOps and applies the review checklist.",
+      "p": "skills/pr-review/SKILL.md"
+    },
+    "obsidian-tasks": {
+      "d": "Reads open tasks from the vault by project and due date.",
+      "p": "skills/obsidian-tasks/SKILL.md"
+    }
+  },
+  "themes": [
+    {
+      "id": "delivery",
+      "name": "Architecture delivery",
+      "projects": [
+        {
+          "id": "dagrofa",
+          "name": "Dagrofa",
+          "wfs": [
+            "dag-req-sync",
+            "dag-adr"
+          ]
+        },
+        {
+          "id": "factory",
+          "name": "AI Application Factory",
+          "wfs": [
+            "archforge"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mobile",
+      "name": "Mobile product",
+      "projects": [
+        {
+          "id": "mobapp",
+          "name": "Mobil App",
+          "wfs": [
+            "flutter-release",
+            "pr-assist"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "growth",
+      "name": "Growth and daily rhythm",
+      "projects": [
+        {
+          "id": "personal",
+          "name": "Personal operations",
+          "wfs": [
+            "morning-brief"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "home",
+      "name": "Home lab",
+      "projects": [
+        {
+          "id": "server",
+          "name": "Home Server",
+          "wfs": [
+            "server-health"
+          ]
+        }
+      ]
+    }
+  ],
+  "workflows": {
+    "dag-req-sync": {
+      "n": "Requirements sync",
+      "eng": "n8n",
+      "run": "Passed, 08:00",
+      "c": "good",
+      "desc": "Keeps the Krav_tracker and the requirement diagram in sync when a row changes.",
+      "nodes": [
+        {
+          "id": "t",
+          "k": "trigger",
+          "w": "Notion webhook",
+          "y": "Fires when a Krav_tracker row is created or edited."
+        },
+        {
+          "id": "a",
+          "k": "agent",
+          "r": "requirements-analyst",
+          "w": "Analyse changes",
+          "y": "Normalises the row, flags conflicts and missing acceptance criteria, and updates the diagram."
+        },
+        {
+          "id": "u",
+          "k": "tool",
+          "w": "Update Notion row",
+          "y": "Writes the analysis status back to the row."
+        },
+        {
+          "id": "i",
+          "k": "if",
+          "w": "Conflicts found?",
+          "y": "Only conflicts trigger a message."
+        },
+        {
+          "id": "n",
+          "k": "tool",
+          "w": "Notify in Teams",
+          "y": "Posts a summary of the conflicts."
+        }
+      ],
+      "e": [
+        [
+          "t",
+          "a"
+        ],
+        [
+          "a",
+          "u"
+        ],
+        [
+          "u",
+          "i"
+        ],
+        [
+          "i",
+          "n",
+          "true"
+        ]
+      ]
+    },
+    "dag-adr": {
+      "n": "ADR draft and review",
+      "eng": "Claude",
+      "run": "Passed, Fri",
+      "c": "good",
+      "desc": "Drafts an Architecture Decision Record and has it challenged before a human decides.",
+      "nodes": [
+        {
+          "id": "t",
+          "k": "trigger",
+          "w": "Decision request",
+          "y": "Short problem statement from the vault."
+        },
+        {
+          "id": "d",
+          "k": "agent",
+          "r": "solution-architect",
+          "w": "Draft options and ADR",
+          "y": "Writes at least two options with trade-offs."
+        },
+        {
+          "id": "c",
+          "k": "agent",
+          "r": "critic",
+          "w": "Challenge the draft",
+          "y": "Returns gaps and unsupported claims."
+        },
+        {
+          "id": "g",
+          "k": "gate",
+          "w": "Human decision",
+          "y": "You accept or reject. Reject sends it back to the draft."
+        },
+        {
+          "id": "f",
+          "k": "tool",
+          "w": "Save ADR to vault",
+          "y": "Writes the accepted ADR as a markdown note."
+        }
+      ],
+      "e": [
+        [
+          "t",
+          "d"
+        ],
+        [
+          "d",
+          "c"
+        ],
+        [
+          "c",
+          "g"
+        ],
+        [
+          "g",
+          "f",
+          "accept"
+        ],
+        [
+          "g",
+          "d",
+          "reject: redraft"
+        ]
+      ]
+    },
+    "archforge": {
+      "n": "ArchForge pipeline",
+      "eng": "Claude",
+      "run": "Running, 3 min",
+      "c": "warn",
+      "desc": "End-to-end generation of an architecture deliverable with a critique loop and a policy gate.",
+      "nodes": [
+        {
+          "id": "t",
+          "k": "trigger",
+          "w": "Intake brief",
+          "y": "Scope, constraints and audience."
+        },
+        {
+          "id": "d",
+          "k": "agent",
+          "r": "solution-architect",
+          "w": "Design the solution",
+          "y": "First full draft, or a revision after critique."
+        },
+        {
+          "id": "c",
+          "k": "agent",
+          "r": "critic",
+          "w": "Critique",
+          "y": "Scores the draft against the brief."
+        },
+        {
+          "id": "i",
+          "k": "if",
+          "w": "Approved?",
+          "y": "Loops back to the design step, at most 2 times."
+        },
+        {
+          "id": "p",
+          "k": "skill",
+          "r": "opa-policy-check",
+          "w": "Policy gate",
+          "y": "Blocks export on any violation."
+        },
+        {
+          "id": "g",
+          "k": "gate",
+          "w": "Final review",
+          "y": "Human approval."
+        },
+        {
+          "id": "x",
+          "k": "skill",
+          "r": "docx-export",
+          "w": "Export document",
+          "y": "Branded Word file."
+        }
+      ],
+      "e": [
+        [
+          "t",
+          "d"
+        ],
+        [
+          "d",
+          "c"
+        ],
+        [
+          "c",
+          "i"
+        ],
+        [
+          "i",
+          "p",
+          "true"
+        ],
+        [
+          "p",
+          "g"
+        ],
+        [
+          "g",
+          "x"
+        ],
+        [
+          "i",
+          "d",
+          "false: revise (max 2)"
+        ]
+      ]
+    },
+    "flutter-release": {
+      "n": "Mobile release",
+      "eng": "Azure + n8n",
+      "run": "Failed, 07:38",
+      "c": "crit",
+      "desc": "A tag on main builds both apps and publishes release notes when the build passes.",
+      "nodes": [
+        {
+          "id": "t",
+          "k": "trigger",
+          "w": "Git tag on main",
+          "y": "Starts the Azure DevOps pipelines."
+        },
+        {
+          "id": "b",
+          "k": "tool",
+          "w": "Build and sign iOS and Android",
+          "y": "Azure DevOps pipelines."
+        },
+        {
+          "id": "i",
+          "k": "if",
+          "w": "Build passed?",
+          "y": "On failure the build is retried once."
+        },
+        {
+          "id": "a",
+          "k": "agent",
+          "r": "release-notes-writer",
+          "w": "Write release notes",
+          "y": "Reads merged PRs since the last tag."
+        },
+        {
+          "id": "p",
+          "k": "tool",
+          "w": "Publish and notify",
+          "y": "Posts notes to the team channel."
+        }
+      ],
+      "e": [
+        [
+          "t",
+          "b"
+        ],
+        [
+          "b",
+          "i"
+        ],
+        [
+          "i",
+          "a",
+          "true"
+        ],
+        [
+          "a",
+          "p"
+        ],
+        [
+          "i",
+          "b",
+          "false: retry (max 1)"
+        ]
+      ]
+    },
+    "pr-assist": {
+      "n": "PR assist",
+      "eng": "Azure + Claude",
+      "run": "Passed, 08:12",
+      "c": "good",
+      "desc": "Reviews every new pull request and proposes tested fixes before a human looks at it.",
+      "nodes": [
+        {
+          "id": "t",
+          "k": "trigger",
+          "w": "PR opened",
+          "y": "Azure DevOps service hook."
+        },
+        {
+          "id": "r",
+          "k": "agent",
+          "r": "code-reviewer",
+          "w": "Review the diff",
+          "y": "Applies the checklist and lists findings."
+        },
+        {
+          "id": "d",
+          "k": "agent",
+          "r": "flutter-developer",
+          "w": "Fix and test",
+          "y": "Patches on a scratch branch, then runs the tests."
+        },
+        {
+          "id": "i",
+          "k": "if",
+          "w": "Tests pass?",
+          "y": "Loops back to the fix step, at most 3 times."
+        },
+        {
+          "id": "g",
+          "k": "gate",
+          "w": "Author decides",
+          "y": "Accept, edit or ignore the suggestions."
+        },
+        {
+          "id": "c",
+          "k": "tool",
+          "w": "Comment on the PR",
+          "y": "Posts findings and test results."
+        }
+      ],
+      "e": [
+        [
+          "t",
+          "r"
+        ],
+        [
+          "r",
+          "d"
+        ],
+        [
+          "d",
+          "i"
+        ],
+        [
+          "i",
+          "g",
+          "true"
+        ],
+        [
+          "g",
+          "c"
+        ],
+        [
+          "i",
+          "d",
+          "false: retry (max 3)"
+        ]
+      ]
+    },
+    "morning-brief": {
+      "n": "Morning brief",
+      "eng": "n8n",
+      "run": "Passed, 06:30",
+      "c": "good",
+      "desc": "Weekday brief that combines mail, calendar and vault tasks through one agent.",
+      "nodes": [
+        {
+          "id": "t",
+          "k": "trigger",
+          "w": "Schedule, weekdays 06:30",
+          "y": "n8n schedule trigger."
+        },
+        {
+          "id": "a",
+          "k": "agent",
+          "r": "briefing-writer",
+          "w": "Write the brief",
+          "y": "Calls its skills and MCP tools, then writes one screen ordered by what needs you."
+        },
+        {
+          "id": "p",
+          "k": "tool",
+          "w": "Push to phone",
+          "y": "Notification with a link to this monitor."
+        }
+      ],
+      "e": [
+        [
+          "t",
+          "a"
+        ],
+        [
+          "a",
+          "p"
+        ]
+      ]
+    },
+    "server-health": {
+      "n": "Server health check",
+      "eng": "n8n",
+      "run": "Passed, 02:00",
+      "c": "good",
+      "desc": "Nightly health and backup check on the home server.",
+      "nodes": [
+        {
+          "id": "t",
+          "k": "trigger",
+          "w": "Schedule, 02:00",
+          "y": "n8n schedule trigger."
+        },
+        {
+          "id": "s",
+          "k": "tool",
+          "w": "SSH over Tailscale",
+          "y": "Runs disk, service and backup checks."
+        },
+        {
+          "id": "a",
+          "k": "agent",
+          "r": "ops-watcher",
+          "w": "Assess output",
+          "y": "Separates noise from real problems."
+        },
+        {
+          "id": "i",
+          "k": "if",
+          "w": "Warnings?",
+          "y": "Only warnings send a push."
+        },
+        {
+          "id": "n",
+          "k": "tool",
+          "w": "Push alert",
+          "y": "Notification to the phone."
+        }
+      ],
+      "e": [
+        [
+          "t",
+          "s"
+        ],
+        [
+          "s",
+          "a"
+        ],
+        [
+          "a",
+          "i"
+        ],
+        [
+          "i",
+          "n",
+          "true"
+        ]
+      ]
+    }
+  }
+}

@@ -1,0 +1,981 @@
+/* ======================================================================
+   Jytte dark UI - the design system from
+   docs/Home monitoring dashboard UI mockups/design_handoff_jytte_dark
+
+   Tokens are 1:1 with that handoff's "Design tokens" section. The
+   inline styles in the mock are converted to classes here; nothing is
+   reinterpreted. Where the mock repeats a value (panel, pill, stat
+   strip, list row) it becomes one class rather than being restated.
+
+   SEPARATE FILE ON PURPOSE
+   The legacy pages under /legacy/* still load styles.css, which has its
+   own palette and its own :root. Putting this in a second file means
+   adopting the new design cannot break a page that has not been
+   migrated yet. Only pages extending shell.html load this one.
+
+   Dark only. No prefers-color-scheme branch, nothing light, every
+   surface painted from a token.
+   ====================================================================== */
+:root {
+  /* surfaces */
+  --bg:        #111114;
+  --sidebar:   #0A0A0C;
+  --panel:     #17171B;
+  --canvas:    #141418;
+  --inset:     #0E0E11;
+  --node:      #1A1A1F;
+  --node-sel:  #22211F;
+
+  /* text. Five tiers, measured: every one clears WCAG AA 4.5:1 on both
+     grounds, and adjacent tiers sit ~1.35x apart so the hierarchy is
+     visible instead of three shades of the same grey.
+
+     The handoff's own values were --faint #6E6E78 at 3.74:1 and
+     --fainter #5A5A64 at 2.77:1, both under AA, and those two carried
+     the eyebrows, column headers, sources and dates. Surfaces and
+     accents stay exactly as the handoff specifies; only these move. */
+  --text:      #F2F0EB;   /* 16.6:1  titles, big values            */
+  --text-2:    #CFCDC6;   /* 11.9:1  body copy                     */
+  --muted:     #AAAAB4;   /*  8.2:1  meta, descriptions            */
+  --faint:     #90909B;   /*  6.0:1  eyebrows, column headers      */
+  --fainter:   #86868F;   /*  5.2:1  smallest meta, the floor      */
+  --nav-idle:  #B4B4BE;   /*  9.0:1  inactive nav                  */
+
+  /* hairlines - shadows are not used anywhere in this design */
+  --line:        rgba(250, 248, 244, .08);
+  --line-soft:   rgba(250, 248, 244, .06);
+  --line-strong: rgba(250, 248, 244, .12);
+  --line-pill:   rgba(250, 248, 244, .14);
+  --hover:       rgba(250, 248, 244, .04);
+  --fill-active: rgba(250, 248, 244, .10);
+  --fill-chip:   rgba(250, 248, 244, .08);
+
+  /* accents. aqua = healthy, gul = needs attention or selected,
+     coral = failed, lilac = agents. */
+  --aqua:   #96B7B9;
+  --aqua-2: #5F7C7E;
+  --aqua-3: #3B4C4E;
+  --gul:    #F3D4A1;
+  --coral:  #E3A08F;
+  --lilac:  #B4B1D4;
+  --grey:   #8A8A94;
+
+  --aqua-t:  rgba(150, 183, 185, .14);
+  --gul-t:   rgba(243, 212, 161, .14);
+  --coral-t: rgba(227, 160, 143, .14);
+  --lilac-t: rgba(180, 177, 212, .14);
+  --grey-t:  rgba(250, 248, 244, .06);
+
+  --ui:   'Neue Haas Grotesk Display Pro', Inter, Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, Menlo, Consolas, monospace;
+
+  --sidebar-w: 232px;
+}
+
+* { box-sizing: border-box; }
+
+/* Filters set `el.hidden`, which relies on the UA rule
+   `[hidden] { display: none }`. That rule has the same specificity as
+   `.ai2-tr { display: grid }` and loses on source order, so filtered
+   rows stayed on screen. Needed for every filter on every screen. */
+[hidden] { display: none !important; }
+
+body.jytte {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--ui);
+  -webkit-font-smoothing: antialiased;
+  display: grid;
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+a { color: var(--aqua); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+:is(button, a, [tabindex]):focus-visible {
+  outline: 2px solid var(--gul); outline-offset: 2px; border-radius: 6px;
+}
+
+/* ---- sidebar (232px) ---------------------------------------------- */
+.sb {
+  position: sticky; top: 0; align-self: start;
+  height: 100vh; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 28px;
+  padding: 24px 14px 20px;
+  background: var(--sidebar);
+  border-right: 1px solid var(--line);
+}
+.sb-brand { display: flex; align-items: center; gap: 10px; padding: 0 10px; }
+.sb-mark { width: 20px; height: 20px; border-radius: 50%; background: var(--gul); flex: 0 0 auto; }
+.sb-name { font-size: 18px; font-weight: 500; letter-spacing: -.02em; }
+.sb-host {
+  margin-left: auto; font-family: var(--mono); font-size: 10px; color: var(--faint);
+  border: 1px solid var(--line-pill); border-radius: 999px; padding: 2px 7px;
+}
+
+.sb-nav { display: flex; flex-direction: column; gap: 18px; }
+.sb-group { display: flex; flex-direction: column; gap: 2px; }
+.sb-glabel {
+  font-size: 10.5px; font-weight: 500; letter-spacing: .11em;
+  text-transform: uppercase; color: var(--faint); padding: 0 10px 7px;
+}
+.sb-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: 8px;
+  font-size: 14px; color: var(--nav-idle);
+  text-decoration: none; transition: background .14s ease, color .14s ease;
+}
+.sb-item.is-active { font-weight: 500; }
+.sb-item:hover { background: var(--hover); color: var(--text); text-decoration: none; }
+.sb-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--line-pill); flex: 0 0 auto; }
+.sb-key { margin-left: auto; font-family: var(--mono); font-size: 10px; color: var(--fainter); }
+.sb-item.is-active { background: var(--aqua-t); color: var(--text); }
+.sb-item.is-active .sb-dot { background: var(--aqua); }
+
+.sb-foot {
+  margin-top: auto; display: flex; flex-direction: column; gap: 8px;
+  padding: 14px 10px 0; border-top: 1px solid var(--line);
+  font-size: 12px; color: var(--muted);
+}
+.sb-stat { display: flex; align-items: center; gap: 8px; }
+.sb-stat b { margin-left: auto; font-family: var(--mono); font-weight: 400; color: var(--faint); }
+.sb-stat.is-warn b { color: var(--gul); }
+.sb-stat.is-bad b { color: var(--coral); }
+
+/* ---- main ---------------------------------------------------------- */
+.mn {
+  display: flex; flex-direction: column; gap: 24px;
+  padding: 28px 32px; min-width: 0;
+}
+
+.hd { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.hd-id { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.eyebrow {
+  font-size: 11.5px; font-weight: 500; letter-spacing: .11em;
+  text-transform: uppercase; color: var(--aqua);
+}
+/* A neutral eyebrow for places where aqua would compete with a status
+   colour next to it. */
+.eyebrow.plain { color: var(--faint); font-weight: 400; }
+h1.pg {
+  margin: 0; font-size: 34px; font-weight: 600;
+  letter-spacing: -.028em; line-height: 1; text-wrap: balance;
+  color: var(--text);
+}
+.hd-right { margin-left: auto; display: flex; gap: 16px; align-items: center; }
+.search {
+  width: 300px; max-width: 46vw; display: flex; align-items: center;
+  padding: 9px 16px; border: 1px solid var(--line-strong); border-radius: 999px;
+  font-size: 13px; color: var(--faint); background: none; font-family: inherit;
+  text-align: left; cursor: pointer;
+}
+.search kbd { margin-left: auto; font-family: var(--mono); font-size: 11px; }
+.sync { display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--muted); white-space: nowrap; }
+
+/* ---- stat strip: 4 columns between two hairlines ------------------- */
+.strip {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+}
+.strip > * {
+  padding: 16px 20px; border-left: 1px solid var(--line);
+  display: flex; flex-direction: column; gap: 6px; min-width: 0;
+}
+.strip > *:first-child { border-left: 1px solid transparent; }
+.strip .v {
+  font-size: 40px; font-weight: 300; letter-spacing: -.03em; line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.strip .s { font-size: 12.5px; color: var(--muted); }
+.strip .eyebrow { color: var(--faint); font-weight: 500; }
+.strip .s.is-warn { color: var(--gul); }
+.strip .s.is-bad  { color: var(--coral); }
+
+/* ---- panel --------------------------------------------------------- */
+.pn {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+  display: flex; flex-direction: column; min-width: 0; min-height: 0;
+  overflow: hidden;
+}
+.pn-pad { padding: 16px 18px; gap: 8px; }
+.pn-h { display: flex; align-items: center; gap: 10px; padding: 16px 18px; flex-wrap: wrap; }
+.pn-pad > .pn-h { padding: 0 0 6px; }
+.pn-t { font-size: 16px; font-weight: 600; letter-spacing: -.01em; color: var(--text); }
+/* Subtitle under or beside a panel title: clearly a tier down in size
+   and weight, but not in legibility. */
+.pn-sub { font-size: 12.5px; color: var(--muted); }
+/* Every panel header names its source - the rule survives from the
+   previous build and the mock keeps it. */
+.pn-src { font-family: var(--mono); font-size: 11.5px; color: var(--faint); }
+.pn-act { margin-left: auto; display: flex; gap: 4px; font-size: 12px; align-items: center; }
+.pn-body { overflow-y: auto; min-height: 0; }
+
+/* segmented filter: outline pill, 3px inner padding, active fill */
+.seg {
+  display: flex; gap: 0; padding: 3px; border: 1px solid var(--line-strong);
+  border-radius: 999px; font-size: 12px;
+}
+/* `a` as well as `button`: a segment that changes a query param is a
+   link, and should be one, so it opens in a tab and survives no-JS. */
+.seg button, .seg a {
+  appearance: none; background: none; border: 0; cursor: pointer; font: inherit;
+  padding: 4px 10px; border-radius: 999px; color: var(--muted);
+  text-decoration: none;
+  transition: background .14s ease, color .14s ease;
+}
+.seg button:hover, .seg a:hover { color: var(--text); text-decoration: none; }
+.seg button[aria-pressed="true"], .seg a[aria-pressed="true"] {
+  background: var(--fill-active); color: var(--text);
+}
+
+/* ---- list rows ----------------------------------------------------- */
+.row {
+  display: grid; gap: 12px; align-items: start;
+  padding: 12px 18px; border-top: 1px solid var(--line-soft);
+  color: inherit; text-decoration: none;
+  transition: background .14s ease;
+}
+.row:hover { background: var(--hover); text-decoration: none; }
+.dot { width: 6px; height: 6px; border-radius: 50%; flex: 0 0 auto; }
+.col { display: flex; flex-direction: column; min-width: 0; }
+.clip { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---- pills --------------------------------------------------------- */
+.pill {
+  font-size: 10.5px; font-weight: 500; letter-spacing: .06em;
+  text-transform: uppercase; padding: 2.5px 8px; border-radius: 999px;
+  white-space: nowrap; background: var(--grey-t); color: var(--muted);
+}
+.pill.aqua  { background: var(--aqua-t);  color: var(--aqua); }
+.pill.gul   { background: var(--gul-t);   color: var(--gul); }
+.pill.coral { background: var(--coral-t); color: var(--coral); }
+.pill.lilac { background: var(--lilac-t); color: var(--lilac); }
+.pill.line  { background: none; border: 1px solid var(--line-pill); color: var(--muted); }
+
+.mono { font-family: var(--mono); }
+.tnum { font-variant-numeric: tabular-nums; }
+.f-aqua { color: var(--aqua); }  .f-gul { color: var(--gul); }
+.f-coral { color: var(--coral); } .f-lilac { color: var(--lilac); }
+.f-muted { color: var(--muted); } .f-faint { color: var(--faint); }
+.f-t2 { color: var(--text-2); }
+
+/* ---- buttons ------------------------------------------------------- */
+.btn {
+  appearance: none; cursor: pointer; font-family: inherit;
+  font-size: 12px; font-weight: 500; padding: 9px 16px; border-radius: 999px;
+  background: var(--text); color: var(--bg); border: 1px solid var(--text);
+  transition: opacity .14s ease;
+}
+.btn:hover { opacity: .88; }
+.btn.ghost {
+  background: none; color: var(--text); border: 1px solid rgba(250, 248, 244, .2);
+}
+.btn.ghost:hover { border-color: var(--line-pill); opacity: 1; }
+
+/* ---- link tiles ---------------------------------------------------- */
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.tile {
+  display: flex; align-items: center; gap: 12px; padding: 14px 18px;
+  border: 1px solid var(--line); border-radius: 14px;
+  color: inherit; text-decoration: none; transition: background .14s ease, border-color .14s ease;
+}
+.tile:hover { background: var(--hover); border-color: var(--line-strong); text-decoration: none; }
+.tile .v { font-size: 20px; font-weight: 500; letter-spacing: -.02em; }
+.tile .arw { margin-left: auto; color: var(--faint); }
+
+/* ---- skeleton / empty / stale -------------------------------------- */
+.sk { display: flex; flex-direction: column; gap: 10px; padding: 14px 18px; }
+.sk span { display: block; height: 11px; border-radius: 4px; background: var(--line-soft); }
+.sk span:nth-child(2) { width: 78%; }
+.sk span:nth-child(3) { width: 54%; }
+.empty { padding: 18px; font-size: 13px; color: var(--faint); }
+.stale {
+  margin: 0; padding: 9px 18px; font-size: 12px; color: var(--gul);
+  background: var(--gul-t); border-bottom: 1px solid var(--line-soft);
+}
+
+/* ---- legacy notice ------------------------------------------------- */
+.lg-note {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+  padding: 22px 24px; max-width: 76ch; display: flex; flex-direction: column; gap: 12px;
+}
+.lg-note h2 { margin: 0; font-size: 21px; font-weight: 600; letter-spacing: -.02em; color: var(--text); }
+.lg-note p { margin: 0; font-size: 14px; line-height: 1.62; color: var(--text-2); }
+.lg-note .row-act { display: flex; gap: 10px; align-items: center; margin-top: 4px; }
+.lg-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.lg-card {
+  display: flex; flex-direction: column; gap: 6px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+  padding: 16px 18px; color: inherit; text-decoration: none;
+  transition: background .14s ease, border-color .14s ease;
+}
+.lg-card:hover { background: var(--hover); border-color: var(--line-strong); text-decoration: none; }
+.lg-card .t { font-size: 15.5px; font-weight: 600; color: var(--text); }
+.lg-card .u { font-family: var(--mono); font-size: 11px; color: var(--faint); }
+.lg-card .d { font-size: 13px; color: var(--muted); line-height: 1.55; }
+
+/* ---- reflow. The mock is a fixed 1440x960 frame; the handoff says
+   layouts must still reflow, so every fixed column becomes minmax. --- */
+@media (max-width: 1180px) {
+  .cols-3 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; }
+  .tiles  { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .strip  { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .strip > *:nth-child(3) { border-left: 1px solid transparent; }
+}
+@media (max-width: 860px) {
+  body.jytte { grid-template-columns: minmax(0, 1fr); }
+  .sb {
+    position: static; height: auto; flex-direction: row; flex-wrap: wrap;
+    gap: 14px; align-items: center; border-right: 0; border-bottom: 1px solid var(--line);
+  }
+  .sb-nav { flex-direction: row; flex-wrap: wrap; gap: 10px; }
+  .sb-group { flex-direction: row; flex-wrap: wrap; align-items: center; }
+  .sb-glabel { padding: 0 4px 0 0; }
+  .sb-foot { margin-top: 0; border-top: 0; padding: 0; flex-direction: row; gap: 14px; flex-wrap: wrap; }
+  .sb-key { display: none; }
+  .mn { padding: 20px 16px; }
+  .cols-3 { grid-template-columns: minmax(0, 1fr) !important; }
+  .tiles, .strip { grid-template-columns: minmax(0, 1fr); }
+  .strip > * { border-left: 1px solid transparent !important; border-top: 1px solid var(--line); }
+  .strip > *:first-child { border-top: 0; }
+  h1.pg { font-size: 26px; }
+  .strip .v { font-size: 32px; }
+  .hd-right { margin-left: 0; width: 100%; }
+  .search { width: 100%; max-width: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition-duration: .01ms !important; }
+}
+
+/* ======================================================================
+   Screens 1b-1i. Classes only; every value traces to the handoff.
+   ====================================================================== */
+
+/* ---- 1b AI stack --------------------------------------------------- */
+.ai2-top { display: grid; grid-template-columns: 1.15fr minmax(0, 1fr); gap: 16px; }
+.ai2-health { display: grid; grid-template-columns: 1fr 1fr; row-gap: 16px; column-gap: 12px; }
+.ai2-h-v {
+  font-size: 28px; font-weight: 300; letter-spacing: -.03em; line-height: 1;
+  font-variant-numeric: tabular-nums; color: var(--text);
+}
+.ai2-layers { border-left: 1px solid var(--line); padding-left: 24px; }
+
+.ai2-ov {
+  display: grid; grid-template-columns: minmax(0, 1fr) 120px; gap: 16px;
+  padding-top: 12px; margin-top: 12px; border-top: 1px solid var(--line-soft);
+}
+.ai2-ov:first-child { margin-top: 0; }
+.ai2-ov-v { font-size: 22px; font-weight: 300; letter-spacing: -.02em; line-height: 1; }
+.ai2-ov-bar { width: 100%; height: 4px; border-radius: 2px; background: var(--line); }
+.ai2-ov-bar i { display: block; height: 4px; border-radius: 2px; }
+
+.ai2-link {
+  appearance: none; background: none; border: 0; padding: 0; cursor: pointer;
+  font: inherit; color: var(--text); text-align: left;
+  transition: color .14s ease;
+}
+.ai2-link:hover, .ai2-link[aria-pressed="true"] { color: var(--gul); }
+
+.ai2-legend { margin-left: auto; display: flex; gap: 14px; align-items: center;
+  font-size: 11px; color: var(--muted); flex-wrap: wrap; }
+.ai2-legend span { display: flex; gap: 6px; align-items: center; }
+.ai2-legend i { width: 10px; height: 6px; border-radius: 2px; display: block; }
+
+.ai2-tw { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.ai2-th, .ai2-tr {
+  display: grid;
+  grid-template-columns: 1.5fr .6fr 1.2fr .5fr 1.9fr 1fr .55fr 1.35fr;
+  gap: 12px; align-items: center; padding: 8px 18px;
+}
+.ai2-th {
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--faint); position: sticky; top: 0; background: var(--panel); z-index: 1;
+}
+.ai2-tr { border-bottom: 1px solid rgba(250, 248, 244, .05); font-size: 13px; }
+.ai2-tr:hover { background: var(--hover); }
+.ai2-att {
+  display: flex; height: 8px; border-radius: 4px; overflow: hidden; gap: 1px;
+  background: var(--line); min-width: 70px;
+}
+.ai2-att i { display: block; height: 100%; }
+.ai2-att .t-ok { background: var(--aqua); }
+.ai2-att .t-warn { background: var(--aqua-2); }
+.ai2-att .t-hot { background: var(--aqua-3); }
+.ai2-att .t-bad { background: var(--coral); }
+.ai2-att-n { font-size: 11px; color: var(--text-2); margin-left: 8px; }
+.ai2-delta { font-size: 11px; margin-left: 6px; }
+.ai2-na { font-size: 11px; color: var(--fainter); font-family: var(--mono); }
+.ai2-foot { font-size: 12px; line-height: 1.55; color: var(--fainter); }
+.ai2-foots { padding: 12px 18px 14px; display: flex; flex-direction: column; gap: 6px; }
+.ai2-foots p { margin: 0; font-size: 12px; line-height: 1.6; color: var(--fainter); }
+.ai2-foots b { color: var(--muted); }
+
+/* ---- slide-in panel, shared by 1b/1c/1d --------------------------- */
+.jp {
+  position: fixed; top: 0; right: 0; bottom: 0; width: 340px; max-width: 92vw;
+  z-index: 60; display: flex; flex-direction: column;
+  background: var(--panel); border-left: 1px solid var(--line);
+  transform: translateX(100%);
+  transition: transform .22s cubic-bezier(.2, .75, .3, 1);
+  overflow: hidden;
+}
+.jp.is-open { transform: translateX(0); }
+.jp.is-pinned { border-left: 2px solid var(--gul); }
+.jp.is-pinned::after {
+  content: "Esc lukker"; position: absolute; left: 20px; bottom: 11px;
+  font-family: var(--mono); font-size: 10px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--fainter);
+}
+.jp-x {
+  position: absolute; top: 12px; right: 14px; z-index: 2;
+  appearance: none; cursor: pointer; width: 28px; height: 28px;
+  display: grid; place-items: center; border-radius: 8px;
+  background: none; border: 1px solid transparent; color: var(--muted);
+  font-size: 1.2rem; line-height: 1; font-family: inherit;
+}
+.jp-x:hover { color: var(--text); background: var(--hover); border-color: var(--line); }
+.jp-body { flex: 1; overflow-y: auto; padding: 20px; min-height: 0; }
+.jp-eye {
+  margin: 0 0 6px; font-size: 11px; font-weight: 500; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--gul);
+}
+.jp-body h3 {
+  margin: 0 0 12px; font-family: var(--mono); font-size: 18px; font-weight: 500;
+  padding-right: 34px; overflow-wrap: anywhere; color: var(--text);
+}
+.jp-body h4 {
+  margin: 18px 0 0; padding-top: 12px; border-top: 1px solid var(--line);
+  font-size: 11px; font-weight: 500; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--aqua);
+}
+.jp-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+.jp-chips button { cursor: pointer; border: 0; font-family: var(--mono); }
+.jp-desc { margin: 12px 0 0; font-size: 13.5px; line-height: 1.55; color: var(--text-2); }
+.jp-foot {
+  flex: 0 0 auto; margin: 0; padding: 12px 20px 30px; border-top: 1px solid var(--line);
+  font-family: var(--mono); font-size: 10px; color: var(--fainter); overflow-wrap: anywhere;
+}
+
+/* ---- 1c constellation --------------------------------------------
+   The field is deliberately larger than its viewport: dragging around
+   it is the point, so it is not squeezed onto one screen. Geometry
+   comes from aiview.py, where the numbers were solved against the real
+   14 agents rather than eyeballed. */
+.jy-sky-wrap { display: flex; flex-direction: column; gap: 16px; min-height: 0; }
+.jy-sky {
+  position: relative; overflow: hidden; flex: 1;
+  min-height: clamp(460px, 64vh, 820px);
+  background:
+    radial-gradient(900px 560px at 50% 45%, #17171E 0%, transparent 70%),
+    var(--canvas);
+  border: 1px solid var(--line); border-radius: 14px;
+  cursor: grab; touch-action: none;
+}
+.jy-sky.is-dragging { cursor: grabbing; }
+.jy-sky:focus-visible { outline: 2px solid var(--gul); outline-offset: -2px; }
+.jy-sky-inner { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
+.jy-sky-svg { position: absolute; inset: 0; pointer-events: none; }
+
+/* Edges. Hovering an agent lights its own and dims the rest, which is
+   what makes a field of 14 agents and 44 skills readable. */
+.jy-edge {
+  stroke: rgba(243, 212, 161, .30); stroke-width: 1.4;
+  transition: stroke .16s ease, stroke-width .16s ease;
+}
+.jy-edge-skill { stroke: rgba(250, 248, 244, .13); stroke-width: 1; }
+.jy-edge.is-dim { stroke: rgba(250, 248, 244, .04); }
+.jy-edge.is-lit { stroke: var(--gul); stroke-width: 1.8; }
+.jy-edge-skill.is-lit { stroke: rgba(150, 183, 185, .7); stroke-width: 1.4; }
+
+.jy-sector {
+  position: absolute; transform: translate(-50%, -50%);
+  display: flex; align-items: baseline; gap: 7px;
+  pointer-events: none; white-space: nowrap;
+}
+.jy-sector span {
+  font-size: 13px; font-weight: 600; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--text-2);
+}
+.jy-sector i {
+  font-style: normal; font-family: var(--mono); font-size: 11px; color: var(--faint);
+}
+
+.jy-hub {
+  position: absolute; transform: translate(-50%, -50%);
+  width: 88px; height: 88px; border-radius: 50%;
+  background: var(--gul); color: var(--bg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; box-shadow: 0 0 0 10px rgba(243, 212, 161, .08);
+}
+
+/* ---- agents ------------------------------------------------------- */
+.jy-agent {
+  position: absolute; transform: translate(-50%, -50%);
+  appearance: none; background: none; border: 0; padding: 0; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  font: inherit; color: inherit; z-index: 2;
+  transition: opacity .16s ease;
+}
+/* Label above or below, alternating, so two neighbours never share a
+   baseline. */
+.jy-agent.lbl-above { flex-direction: column-reverse; }
+.jy-agent-disc {
+  width: 56px; height: 56px; border-radius: 50%; box-sizing: border-box;
+  background: #1D1D22; border: 1.5px solid var(--lilac);
+  display: grid; place-items: center;
+  transition: box-shadow .16s ease, transform .16s ease, border-color .16s ease;
+}
+.jy-agent-n {
+  font-style: normal; font-family: var(--mono); font-size: 12px;
+  color: var(--text-2); font-variant-numeric: tabular-nums;
+}
+.jy-agent-l {
+  font-size: 12px; color: var(--text-2); white-space: nowrap;
+  transition: color .16s ease;
+}
+.jy-agent:hover .jy-agent-disc { transform: scale(1.07); }
+.jy-agent.is-sel .jy-agent-disc,
+.jy-agent[aria-pressed="true"] .jy-agent-disc,
+.jy-agent.is-lit .jy-agent-disc {
+  border-color: var(--gul); box-shadow: 0 0 0 7px rgba(243, 212, 161, .12);
+}
+.jy-agent.is-sel .jy-agent-l,
+.jy-agent[aria-pressed="true"] .jy-agent-l,
+.jy-agent.is-lit .jy-agent-l { color: var(--gul); }
+/* Never run: hollow and dashed, so it reads without colour. */
+.jy-agent.is-cold .jy-agent-disc {
+  background: none; border-style: dashed; border-color: var(--line-pill);
+}
+/* Drift: a notch out of the ring, again a shape difference. */
+.jy-agent.is-drift .jy-agent-disc { border-color: var(--coral); border-right-color: transparent; }
+.jy-agent.is-flag .jy-agent-l { color: var(--gul); }
+.jy-agent.is-dim { opacity: .22; }
+
+/* ---- skills ------------------------------------------------------- */
+.jy-skill {
+  position: absolute; transform: translate(-50%, -50%);
+  appearance: none; background: none; border: 0; padding: 0; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  font: inherit; color: inherit; z-index: 1;
+  transition: opacity .16s ease;
+}
+.jy-skill-dot {
+  width: calc(var(--r) * 2); height: calc(var(--r) * 2); border-radius: 50%;
+  background: rgba(150, 183, 185, .55);
+  transition: background .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+.jy-skill.is-flag .jy-skill-dot { background: var(--gul); }
+.jy-skill.is-shared .jy-skill-dot { box-shadow: 0 0 0 2px rgba(243, 212, 161, .35); }
+.jy-skill.is-missing .jy-skill-dot { background: none; border: 1px dashed var(--coral); }
+/* 44 labels cannot all be read, so they are off until the pointer is
+   on the skill or on the agent that owns it. */
+.jy-skill-l {
+  font-size: 11px; color: var(--muted); white-space: nowrap;
+  opacity: 0; transition: opacity .16s ease;
+}
+.jy-skill:hover .jy-skill-l,
+.jy-skill[aria-pressed="true"] .jy-skill-l,
+.jy-skill.is-lit .jy-skill-l { opacity: 1; }
+.jy-skill:hover .jy-skill-dot,
+.jy-skill[aria-pressed="true"] .jy-skill-dot,
+.jy-skill.is-lit .jy-skill-dot { transform: scale(1.25); }
+.jy-skill.is-dim { opacity: .18; }
+
+.jy-zoom { position: absolute; right: 16px; top: 14px; display: flex; gap: 4px; z-index: 3; }
+.jy-zoom button {
+  width: 28px; height: 28px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--line-strong); background: rgba(20, 20, 24, .85);
+  color: var(--muted); display: grid; place-items: center;
+  font-family: var(--mono); font-size: 11px;
+}
+.jy-zoom button:hover { color: var(--text); border-color: var(--line-pill); }
+
+.jy-leg {
+  position: absolute; left: 18px; bottom: 16px; z-index: 3;
+  display: flex; gap: 18px; align-items: center; flex-wrap: wrap;
+  font-size: 11.5px; color: var(--muted); pointer-events: none;
+}
+.jy-leg span { display: flex; gap: 6px; align-items: center; }
+.jy-leg i { display: block; box-sizing: border-box; }
+.jy-leg .l-agent { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--lilac); }
+.jy-leg .l-skill { width: 8px; height: 8px; border-radius: 50%; background: rgba(150, 183, 185, .55); }
+.jy-leg .l-flag { width: 8px; height: 8px; border-radius: 50%; background: var(--gul); }
+.jy-leg .l-cold { width: 12px; height: 12px; border-radius: 50%; border: 1.5px dashed var(--line-pill); }
+
+.jy-ctx {
+  padding: 5px 12px; border-radius: 999px; font-size: 12px;
+  color: var(--muted); text-decoration: none;
+}
+.jy-ctx:hover { color: var(--text); text-decoration: none; }
+.jy-ctx[aria-pressed="true"] { background: var(--fill-active); color: var(--text); }
+
+.jy-shared { display: flex; flex-direction: column; gap: 8px; }
+.jy-shared-row { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 14px; align-items: center; }
+
+/* ---- 1d workflows -------------------------------------------------- */
+.jy-wf { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 20px; align-items: start; }
+.jy-wf-list { display: flex; flex-direction: column; gap: 4px; position: sticky; top: 16px; }
+.jy-wf-item {
+  display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; gap: 10px;
+  align-items: center; padding: 10px; border-radius: 10px;
+  border: 1px solid transparent; color: inherit; text-decoration: none;
+  transition: background .14s ease, border-color .14s ease;
+}
+.jy-wf-item:hover { background: var(--hover); border-color: var(--line); text-decoration: none; }
+.jy-wf-item.is-sel { background: var(--node-sel); border-color: var(--line-strong); }
+.jy-ok { background: var(--aqua); }
+.jy-warn { background: var(--gul); }
+
+.jy-canvas {
+  background: var(--canvas); border: 1px solid var(--line); border-radius: 14px;
+  overflow: auto; max-height: 62vh;
+  background-image: radial-gradient(circle at 1px 1px, rgba(250, 248, 244, .07) 1px, transparent 0);
+  background-size: 20px 20px;
+}
+.jy-canvas-in { position: relative; }
+.jy-canvas-in > svg { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
+.jy-node {
+  position: absolute; width: 152px; min-height: 76px;
+  background: var(--node); border: 1px solid var(--line); border-radius: 12px;
+  padding: 9px 11px; display: flex; flex-direction: column; gap: 4px;
+  color: inherit; text-decoration: none; transform: translateY(-50%);
+  transition: border-color .16s ease, box-shadow .16s ease;
+}
+.jy-node:hover { border-color: var(--line-strong); text-decoration: none; }
+.jy-node.is-sel { border-color: var(--gul); box-shadow: 0 0 0 6px rgba(243, 212, 161, .1); }
+.jy-node-h { display: flex; align-items: center; gap: 7px; }
+.jy-node-no {
+  width: 16px; height: 16px; border-radius: 5px; flex: 0 0 auto;
+  display: grid; place-items: center; background: var(--fill-chip);
+  font-family: var(--mono); font-size: 9.5px; color: var(--text-2);
+}
+.jy-node-no.is-big { width: 22px; height: 22px; font-size: 11px; }
+.jy-node-k {
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--faint);
+}
+.jy-node-t { font-size: 12.5px; line-height: 1.25; color: var(--text); }
+.clip2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.jy-node-r { font-size: 10px; color: var(--lilac); }
+.jy-node.k-trigger .jy-node-no { background: var(--gul-t); color: var(--gul); }
+.jy-node.k-tool .jy-node-no { background: var(--grey-t); color: var(--grey); }
+.jy-node.k-if .jy-node-no { background: var(--aqua-t); color: var(--aqua); }
+.jy-node.k-agent .jy-node-no { background: var(--lilac-t); color: var(--lilac); }
+.jy-node.k-skill .jy-node-no { background: var(--aqua-t); color: var(--aqua); }
+.jy-node.k-gate .jy-node-no { background: var(--coral-t); color: var(--coral); }
+.jy-spark { fill: var(--gul); filter: drop-shadow(0 0 5px rgba(243, 212, 161, .8)); }
+
+.jy-step { display: grid; grid-template-columns: 1.1fr 1.4fr .9fr 1fr; gap: 20px; }
+.jy-inset {
+  white-space: pre-wrap; font-size: 11px; line-height: 1.6; color: var(--text-2);
+  background: var(--inset); border: 1px solid var(--line-soft);
+  border-radius: 8px; padding: 10px 12px; overflow: auto;
+}
+
+/* ---- board: equal cells, two per row, drag and collapse -----------
+   Panels used to be one full-width column. On a wide monitor that put
+   a pipeline name on the far left and its status 1500px away, with the
+   whole middle empty. Two equal cells read as rows instead. */
+.board {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px; align-items: start;
+}
+/* A card that needs the full row: a flow canvas, a wide table. */
+.board > [data-span="2"] { grid-column: 1 / -1; }
+/* Home keeps the handoff's three-up with mail widest. Dragging still
+   works; the cells just are not equal there, which is deliberate. */
+.board-3 { grid-template-columns: 1.3fr minmax(0, 1fr) minmax(0, 1fr); }
+/* Stack health splits inside its own card now that the card is half a
+   board rather than the full width. */
+.ai2-hwrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; }
+.board.is-sorting { cursor: grabbing; }
+.board.is-sorting * { pointer-events: none; }
+
+.pn-h-grab { cursor: grab; user-select: none; }
+.board.is-sorting .pn-h-grab { cursor: grabbing; }
+
+.pn-tools { margin-left: auto; display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.pn-grip {
+  font-family: var(--mono); font-size: 11px; letter-spacing: -.18em;
+  color: var(--fainter); line-height: 1;
+}
+.pn-h-grab:hover .pn-grip { color: var(--muted); }
+.pn-fold {
+  appearance: none; cursor: pointer; width: 22px; height: 22px;
+  display: grid; place-items: center; border-radius: 6px;
+  background: none; border: 1px solid transparent; color: var(--faint);
+  transition: color .14s ease, background .14s ease, border-color .14s ease;
+}
+.pn-fold:hover { color: var(--text); background: var(--hover); border-color: var(--line); }
+.pn-fold svg { transition: transform .18s ease; }
+.pn-fold[aria-expanded="false"] svg { transform: rotate(-90deg); }
+
+/* Collapsed: the header stays, everything under it goes. The card
+   keeps its own height so a collapsed panel is a tidy bar. */
+[data-card].is-collapsed > :not(.pn-h) { display: none !important; }
+[data-card].is-collapsed { min-height: 0; }
+[data-card].is-dragging {
+  opacity: .72; outline: 1px solid var(--gul); outline-offset: -1px;
+  border-radius: 14px;
+}
+
+/* A panel header already holds a title, a source and sometimes a
+   filter; the tools must not be pushed off by them. */
+.pn-h > .pn-act { margin-left: 0; }
+
+/* ---- rows: group the meta, do not strand it ----------------------
+   A row of `1fr auto auto auto` gives every spare pixel to the first
+   column, which is what pushed the status pill to the far edge. The
+   meta cluster is now one right-aligned group, so the row reads as a
+   unit at any width. */
+.row-meta {
+  display: flex; align-items: center; gap: 12px; flex: 0 0 auto;
+  justify-content: flex-end;
+}
+.row-grp { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+
+@media (max-width: 1400px) {
+  .board-3 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+@media (max-width: 1100px) {
+  .board, .board-3 { grid-template-columns: minmax(0, 1fr); }
+  .ai2-hwrap { grid-template-columns: minmax(0, 1fr); }
+  .ai2-layers { border-left: 0; padding-left: 0; border-top: 1px solid var(--line); padding-top: 14px; }
+}
+
+/* ---- 1e projects --------------------------------------------------- */
+.jy-pcols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: start; }
+.jy-pcard { gap: 10px; }
+.jy-bar { height: 4px; border-radius: 2px; background: var(--line); }
+.jy-bar i { display: block; height: 4px; border-radius: 2px; }
+
+/* ---- 1f devops ----------------------------------------------------- */
+.jy-ado { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.jy-group {
+  margin: 0; padding: 10px 18px 4px; font-size: 10px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--faint);
+}
+
+/* ---- 1g news ------------------------------------------------------- */
+.jy-news { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 24px; align-items: start; }
+.jy-chan {
+  display: flex; align-items: center; gap: 10px; padding: 9px 0;
+  border-bottom: 1px solid var(--line-soft); font-size: 13px;
+  color: var(--muted); text-decoration: none;
+}
+.jy-chan:hover { color: var(--text); text-decoration: none; }
+.jy-chan.is-sel { color: var(--text); }
+.jy-chan b { margin-left: auto; font-weight: 400; font-size: 11px; color: var(--faint); }
+/* ---- 1g news cards, wireframe from the legacy page ----------------
+   Image on top, title, summary, then source and date on a footer line
+   separated by a hairline. The title is aqua so it reads as the link,
+   which is what the legacy card did and what makes the card scannable
+   at a glance. */
+.jy-chans { display: flex; flex-direction: column; gap: 2px; position: sticky; top: 16px; }
+
+.jy-cards {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 18px; align-items: start; min-width: 0;
+}
+.jy-card {
+  display: flex; flex-direction: column; min-width: 0;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+  overflow: hidden; color: inherit; text-decoration: none;
+  transition: border-color .16s ease, background .16s ease;
+}
+.jy-card:hover { border-color: var(--line-strong); background: var(--surface, var(--panel)); text-decoration: none; }
+.jy-card-img { display: block; background: var(--inset); line-height: 0; }
+.jy-card-img img {
+  width: 100%; height: 176px; object-fit: cover; display: block;
+  /* A dead image URL must not leave a broken-icon box in the card. */
+  color: transparent;
+}
+.jy-card-body { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px 0; }
+.jy-card-t {
+  font-size: 15.5px; font-weight: 600; line-height: 1.32;
+  letter-spacing: -.01em; color: var(--aqua);
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.jy-card:hover .jy-card-t { color: var(--text); }
+.jy-card-s {
+  font-size: 13px; line-height: 1.5; color: var(--muted);
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.jy-card-f {
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  margin-top: 12px; padding: 10px 0 14px; border-top: 1px solid var(--line-soft);
+}
+.jy-card-src {
+  font-family: var(--mono); font-size: 11px; font-weight: 500;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--text-2);
+}
+.jy-card-date { margin-left: auto; font-size: 11px; color: var(--fainter); white-space: nowrap; }
+
+@media (max-width: 900px) {
+  .jy-chans { position: static; flex-direction: row; flex-wrap: wrap; gap: 6px; }
+  .jy-chans .eyebrow { width: 100%; padding: 8px 0 4px !important; }
+  .jy-chan { border-bottom: 0; border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; }
+  .jy-cards { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ---- 1h budget ----------------------------------------------------- */
+.jy-bud { display: grid; grid-template-columns: 1.2fr minmax(0, 1fr); gap: 16px; align-items: start; }
+.jy-cat { display: grid; grid-template-columns: 110px minmax(0, 1fr) 150px; gap: 14px; align-items: center; }
+
+/* ---- reflow -------------------------------------------------------- */
+@media (max-width: 1280px) {
+  .jy-step { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 1180px) {
+  .ai2-top, .jy-ado, .jy-bud { grid-template-columns: minmax(0, 1fr); }
+  .ai2-layers { border-left: 0; padding-left: 0; border-top: 1px solid var(--line); padding-top: 14px; }
+  .jy-pcols { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ai2-th, .ai2-tr { grid-template-columns: 1.6fr .6fr 1.2fr .5fr 1.9fr .6fr; }
+  .ai2-th > :nth-child(n+7), .ai2-tr > :nth-child(n+7) { display: none; }
+}
+@media (max-width: 900px) {
+  .jy-wf, .jy-news { grid-template-columns: minmax(0, 1fr); }
+  .jy-wf-list { position: static; }
+  .jy-pcols { grid-template-columns: minmax(0, 1fr); }
+  .jy-step { grid-template-columns: minmax(0, 1fr); }
+  .jp { width: 100%; max-width: 100%; top: auto; height: 76vh; border-left: 0;
+        border-top: 1px solid var(--line); transform: translateY(100%); }
+  .jp.is-open { transform: translateY(0); }
+  .jp.is-pinned { border-left: 0; border-top: 2px solid var(--gul); }
+  .ai2-th, .ai2-tr { grid-template-columns: 1.6fr .7fr 1.6fr; }
+  .ai2-th > :nth-child(n+4), .ai2-tr > :nth-child(n+4) { display: none; }
+  .jy-shared-row { grid-template-columns: minmax(0, 1fr); }
+  .jy-cat { grid-template-columns: 90px minmax(0, 1fr) 110px; }
+}
+
+/* ---- overlap pairs already ruled on (config/ai_visibility.yml) ------
+   Collapsed, because the panel's job is what you have NOT looked at.
+   Kept visible at all rather than dropped, so a decision can be found
+   and reversed without opening the config. */
+.ai2-decided { border-top: 1px solid var(--line-soft); margin-top: 4px; }
+.ai2-decided > summary {
+  cursor: pointer; list-style: none; padding: 10px 0 8px;
+  font-size: 12px; color: var(--faint); user-select: none;
+}
+.ai2-decided > summary::-webkit-details-marker { display: none; }
+.ai2-decided > summary::before { content: "\25b8 "; color: var(--fainter); }
+.ai2-decided[open] > summary::before { content: "\25be "; }
+.ai2-decided > summary:hover { color: var(--text-2); }
+.ai2-decided > summary:focus-visible { outline: 2px solid var(--aqua); outline-offset: 2px; border-radius: 3px; }
+.ai2-ov.is-decided { opacity: .62; }
+.ai2-ov.is-decided:hover { opacity: 1; }
+
+/* ---- budget per person ---------------------------------------------
+   Three columns: one per person, then the shared pot. The shared one is
+   visually quieter because it is a pot rather than a person, and it is
+   the column every pre-existing entry landed in. */
+.bud-people {
+  display: grid; gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+.bud-person {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 16px 16px 14px; border-radius: 12px;
+  background: var(--fill-chip);
+}
+.bud-person.is-shared { background: var(--hover); }
+.bud-person-h { display: flex; align-items: baseline; gap: 8px; }
+.bud-person-n { font-size: 14.5px; font-weight: 500; color: var(--text); }
+.bud-person-c { font-size: 11.5px; color: var(--faint); margin-left: auto; }
+.bud-person-net {
+  font-family: var(--mono); font-variant-numeric: tabular-nums;
+  font-size: 23px; font-weight: 500; color: var(--aqua); line-height: 1.1;
+}
+.bud-person-net.is-neg { color: var(--coral); }
+.bud-person-rows {
+  display: grid; grid-template-columns: 1fr auto; gap: 4px 10px;
+  font-size: 12px; color: var(--muted);
+}
+.bud-person-rows b { font-size: 12px; font-weight: 500; color: var(--text-2); }
+
+/* ---- salary breakdown (/salary) ------------------------------------
+   The payslip read top to bottom. Rules mark the three points where one
+   stage of the calculation ends and the next begins, which is the only
+   structure the numbers need. */
+.sal-rows {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 5px 14px;
+  font-size: 12.5px; color: var(--muted);
+}
+.sal-rows b { font-size: 12.5px; font-weight: 500; color: var(--text-2); }
+.sal-rows .sal-sep { margin-top: 7px; padding-top: 7px; border-top: 1px solid var(--line-soft); }
+.sal-rows .sal-sep + b { margin-top: 7px; padding-top: 7px; border-top: 1px solid var(--line-soft); }
+.sal-neg { color: var(--coral) !important; }
+.sal-foot {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 14px;
+  padding-top: 10px; border-top: 1px solid var(--line-strong); font-size: 12.5px;
+  color: var(--muted);
+}
+.sal-foot b { font-size: 13px; font-weight: 500; color: var(--gul); }
+.sal-foot span:last-child { grid-column: 1 / -1; font-size: 11.5px; }
+
+/* ---- salary form (/salary) -----------------------------------------
+   The form lives inside the same card as the figures and swaps in over
+   HTMX, so it inherits the card's padding and only has to lay out its
+   own fields. Two columns where there is room, one when there is not.
+
+   Deliberately plain controls: this form is filled in roughly twice a
+   year, when a new skattekort arrives, so legibility of the LABELS
+   matters more than the chrome on the inputs. */
+.sal-cols {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px; align-items: start;
+}
+
+.salf { display: flex; flex-direction: column; gap: 12px; }
+
+.salf-sec {
+  margin: 4px 0 0; font-size: 10px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--faint);
+}
+.salf-sec:first-child { margin-top: 0; }
+.salf-note { margin: -6px 0 0; font-size: 11.5px; line-height: 1.5; color: var(--muted); }
+
+.salf-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+  gap: 11px 14px;
+}
+.salf-f { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.salf-l { font-size: 12px; color: var(--text-2); display: flex; align-items: baseline; gap: 6px; }
+.salf-req {
+  font-style: normal; font-size: 9.5px; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--gul);
+}
+.salf-h { font-size: 10.5px; line-height: 1.45; color: var(--fainter); }
+
+.salf-f input {
+  width: 100%; min-width: 0; box-sizing: border-box;
+  background: var(--bg); color: var(--text);
+  border: 1px solid var(--line); border-radius: 7px;
+  padding: 7px 10px; font-size: 13px;
+  font-family: var(--mono); font-variant-numeric: tabular-nums;
+}
+.salf-f input::placeholder { color: var(--fainter); }
+.salf-f input:focus { outline: none; border-color: var(--aqua); }
+
+.salf-chk {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--text-2); cursor: pointer;
+}
+.salf-chk input { accent-color: var(--aqua); width: 15px; height: 15px; }
+
+.salf-act {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding-top: 4px; border-top: 1px solid var(--line-soft);
+}
+
+/* Validation and the one warning the figures can carry. Both coral,
+   because both mean a number on the page is not to be trusted. */
+.salf-err, .salf-warn {
+  margin: 0; padding: 9px 12px; border-radius: 8px;
+  background: var(--coral-t); border-left: 2px solid var(--coral);
+  font-size: 12px; line-height: 1.5; color: var(--text-2);
+}

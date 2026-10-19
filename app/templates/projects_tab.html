@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Projects :: Jytte{% endblock %}
+
+{% block content %}
+{#
+  Projects page. Two sections - AI projects and normal projects - driven
+  by `project_kind:` in each note's frontmatter under Nichlas/Projects/.
+
+  A project is something the user BUILDS or LEARNS from. Customer work
+  like "Handling Unit" is not a project - it only groups tasks through a
+  task's `project:` field and has no page.
+
+  Source is the generated view at Nichlas/Projects/_index.json, written
+  by LLM-Wiki/scripts/build_projects_view.py. Jytte reads it; the
+  llm-wiki-librarian creates and refreshes it, and only ever after
+  asking. Read-only here.
+#}
+<section class="proj" hx-ext="sse" sse-connect="/events">
+  <header class="proj-head">
+    <h1>Projects</h1>
+    <p class="muted small">
+      {% if data.ready %}
+        {{ data.open_count }} open of {{ data.count }}
+        :: generated view, <code>{{ data.root }}</code>
+        {% if data.generated_at %}:: generated <span data-ts="{{ data.generated_at }}" data-ts-label="">{{ data.generated_at[:16] }}</span>{% endif %}
+      {% else %}
+        not scanned yet
+      {% endif %}
+    </p>
+  </header>
+
+  {% if not data.ready %}
+  <p class="muted">{{ data.reason or 'The projects widget has not produced state yet.' }}</p>
+  {% else %}
+
+  {% for section in sections %}
+  {% set rows = data.by_kind.get(section.kind) or [] %}
+  <section class="proj-section" id="section-{{ section.kind }}">
+    <header class="proj-section-head">
+      <h2>{{ section.title }}</h2>
+      <span class="muted small">{{ section.blurb }}</span>
+      <span class="proj-section-count">{{ rows | rejectattr('closed') | list | length }}</span>
+    </header>
+
+    {% if not rows %}
+    <p class="muted fp-empty">{{ section.empty }}</p>
+    {% else %}
+    <div class="proj-grid">
+      {% for p in rows %}
+      <article class="proj-card{% if p.closed %} proj-card-closed{% endif %}" id="project-{{ p.slug }}">
+        <header class="proj-card-head">
+          {% if p.origin %}<span class="tag proj-owner">{{ p.origin }}</span>{% endif %}
+          {% if p.wiki_root %}<span class="tag proj-wiki" title="engagement context in LLM-Wiki/projects/">{{ p.wiki_root }}</span>{% endif %}
+          {% if p.status %}<span class="tag proj-status-{{ p.status }}">{{ p.status }}</span>{% endif %}
+
+        </header>
+        <h3 class="proj-card-title">{{ p.title }}</h3>
+        <p class="proj-card-slug muted small"><code>{{ p.slug }}</code></p>
+
+        {% set tcount = task_counts.get(p.slug) or 0 %}
+        <p class="proj-card-tasks">
+          {% if tcount %}
+            <a href="/#fp-box-now">{{ tcount }} open task{{ 's' if tcount != 1 else '' }}</a>
+          {% else %}
+            <span class="muted small">no open tasks</span>
+          {% endif %}
+          {% if p.target %}<span class="muted small">:: target {{ p.target }}</span>{% endif %}
+          {% if p.effort %}<span class="muted small">:: effort {{ p.effort }}</span>{% endif %}
+        </p>
+
+        {% if p.tags %}
+        <p class="proj-card-tags">
+          {% for tg in p.tags %}<span class="tag proj-tag">{{ tg }}</span>{% endfor %}
+        </p>
+        {% endif %}
+        <p class="proj-card-path muted small"><code>Projects/{{ p.file }}</code></p>
+      </article>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </section>
+  {% endfor %}
+
+  {% set unknown = data.by_kind.get('unknown') or [] %}
+  {% if unknown %}
+  <section class="proj-section proj-section-warn">
+    <header class="proj-section-head">
+      <h2>Missing project_kind</h2>
+      <span class="muted small">
+        These notes carry no valid <code>project_kind: ai | normal</code>,
+        so they belong to neither section.
+      </span>
+      <span class="proj-section-count">{{ unknown | length }}</span>
+    </header>
+    <ul class="proj-warn-list">
+      {% for p in unknown %}
+      <li><strong>{{ p.title }}</strong> <code class="muted">{{ p.path }}</code></li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  {% if orphan_projects %}
+  <section class="proj-section proj-section-warn">
+    <header class="proj-section-head">
+      <h2>Tasks pointing at a missing project</h2>
+      <span class="muted small">
+        A task's <code>relates_to_project:</code> slug matches no note in
+        <code>Projects/</code>.
+      </span>
+      <span class="proj-section-count">{{ orphan_projects | length }}</span>
+    </header>
+    <ul class="proj-warn-list">
+      {% for slug, n in orphan_projects.items() %}
+      <li><code>{{ slug }}</code> - {{ n }} task{{ 's' if n != 1 else '' }}</li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  {% endif %}
+</section>
+{% endblock %}

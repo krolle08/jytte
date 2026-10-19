@@ -33,7 +33,10 @@ def _scan_sync() -> list[dict]:
             continue
         meta = post.metadata or {}
         status = str(meta.get("status", "")).lower()
-        if status in {"done", "completed", "cancelled", "archived"}:
+        # "closed" was missing here, so a closed task was surfacing in
+        # the front page's Now/today box. Keep this list in sync with
+        # whatever the task-note template can actually write.
+        if status in {"done", "completed", "cancelled", "archived", "closed"}:
             continue
         items.append({
             "path": str(md.relative_to(TASKS_PATH)).replace("\\", "/"),
@@ -43,6 +46,13 @@ def _scan_sync() -> list[dict]:
             "due": str(meta.get("due")) if meta.get("due") else None,
             "category": meta.get("category"),
             "customer": meta.get("customer"),
+            # The customer or internal work this task belongs to. A
+            # grouping label only - there is no page behind it.
+            "project": meta.get("project"),
+            # A project in Nichlas/Projects/ that this task feeds, i.e.
+            # something the user is building or learning from. Joined
+            # against Projects/_index.json.
+            "relates_to_project": meta.get("relates_to_project"),
             "tags": meta.get("tags") or [],
         })
 

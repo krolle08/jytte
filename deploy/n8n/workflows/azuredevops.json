@@ -1,10 +1,12 @@
 {
+  "id": "jytteAzureDevOpsFetch01",
   "name": "azuredevops",
   "active": false,
   "settings": {
     "executionOrder": "v1",
     "saveDataErrorExecution": "all",
-    "saveDataSuccessExecution": "all"
+    "saveDataSuccessExecution": "all",
+    "errorWorkflow": "jytteAzureDevOpsFetch01"
   },
   "pinData": {},
   "nodes": [
@@ -13,7 +15,10 @@
       "name": "Every 5 minutes",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
-      "position": [-400, 0],
+      "position": [
+        -400,
+        0
+      ],
       "parameters": {
         "rule": {
           "interval": [
@@ -30,14 +35,37 @@
       "name": "Config",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [-200, 0],
+      "position": [
+        -200,
+        0
+      ],
       "parameters": {
         "assignments": {
           "assignments": [
-            { "id": "1", "name": "org",     "value": "={{$env.AZDO_ORG}}",     "type": "string" },
-            { "id": "2", "name": "project", "value": "={{$env.AZDO_PROJECT}}", "type": "string" },
-            { "id": "3", "name": "base",    "value": "=https://dev.azure.com/{{$env.AZDO_ORG}}/{{$env.AZDO_PROJECT}}", "type": "string" },
-            { "id": "4", "name": "vssps",   "value": "=https://vssps.dev.azure.com/{{$env.AZDO_ORG}}", "type": "string" }
+            {
+              "id": "1",
+              "name": "org",
+              "value": "={{$env.AZDO_ORG}}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "project",
+              "value": "={{$env.AZDO_PROJECT}}",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "base",
+              "value": "=https://dev.azure.com/{{$env.AZDO_ORG}}/{{$env.AZDO_PROJECT}}",
+              "type": "string"
+            },
+            {
+              "id": "4",
+              "name": "vssps",
+              "value": "=https://vssps.dev.azure.com/{{$env.AZDO_ORG}}",
+              "type": "string"
+            }
           ]
         },
         "options": {}
@@ -48,7 +76,10 @@
       "name": "Smoke - list projects",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [0, 0],
+      "position": [
+        0,
+        0
+      ],
       "parameters": {
         "method": "GET",
         "url": "=https://dev.azure.com/{{$env.AZDO_ORG}}/_apis/projects?api-version=7.1",
@@ -69,18 +100,49 @@
       "name": "Shape payload",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [200, 0],
+      "position": [
+        200,
+        0
+      ],
       "parameters": {
         "assignments": {
           "assignments": [
-            { "id": "1", "name": "ready", "value": true, "type": "boolean" },
-            { "id": "2", "name": "summary",
+            {
+              "id": "1",
+              "name": "ready",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "2",
+              "name": "summary",
               "value": "=n8n smoke push :: {{ $json.count || ($json.value && $json.value.length) || 0 }} projects visible",
-              "type": "string" },
-            { "id": "3", "name": "org",     "value": "={{$('Config').item.json.org}}",     "type": "string" },
-            { "id": "4", "name": "project", "value": "={{$('Config').item.json.project}}", "type": "string" },
-            { "id": "5", "name": "smoke",   "value": "={{$json}}", "type": "object" },
-            { "id": "6", "name": "fetched_at", "value": "={{$now.toISO()}}", "type": "string" }
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "org",
+              "value": "={{$('Config').item.json.org}}",
+              "type": "string"
+            },
+            {
+              "id": "4",
+              "name": "project",
+              "value": "={{$('Config').item.json.project}}",
+              "type": "string"
+            },
+            {
+              "id": "5",
+              "name": "smoke",
+              "value": "={{$json}}",
+              "type": "object"
+            },
+            {
+              "id": "6",
+              "name": "fetched_at",
+              "value": "={{$now.toISO()}}",
+              "type": "string"
+            }
           ]
         },
         "options": {}
@@ -91,15 +153,24 @@
       "name": "POST -> Jytte /state",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [400, 0],
+      "position": [
+        400,
+        0
+      ],
       "parameters": {
         "method": "POST",
         "url": "={{$env.JYTTE_BASE_URL}}/widgets/azuredevops/state",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "X-Jytte-Internal-Secret", "value": "={{$env.JYTTE_INTERNAL_SECRET}}" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "X-Jytte-Internal-Secret",
+              "value": "={{$env.JYTTE_INTERNAL_SECRET}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
@@ -113,7 +184,10 @@
       "name": "On any error",
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
-      "position": [-200, 200],
+      "position": [
+        -200,
+        200
+      ],
       "parameters": {}
     },
     {
@@ -121,22 +195,37 @@
       "name": "Shape error payload",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [0, 200],
+      "position": [
+        0,
+        200
+      ],
       "parameters": {
         "assignments": {
           "assignments": [
-            { "id": "1", "name": "code",
+            {
+              "id": "1",
+              "name": "code",
               "value": "={{$json.execution && $json.execution.error && ($json.execution.error.httpCode || $json.execution.error.name) || 'unknown'}}",
-              "type": "string" },
-            { "id": "2", "name": "message",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "message",
               "value": "={{$json.execution && $json.execution.error && ($json.execution.error.message || JSON.stringify($json.execution.error)) || 'unknown'}}",
-              "type": "string" },
-            { "id": "3", "name": "execution_id",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "execution_id",
               "value": "={{$json.execution && $json.execution.id}}",
-              "type": "string" },
-            { "id": "4", "name": "workflow_id",
+              "type": "string"
+            },
+            {
+              "id": "4",
+              "name": "workflow_id",
               "value": "={{$json.workflow && $json.workflow.id}}",
-              "type": "string" }
+              "type": "string"
+            }
           ]
         },
         "options": {}
@@ -147,15 +236,24 @@
       "name": "POST -> Jytte /error",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [200, 200],
+      "position": [
+        200,
+        200
+      ],
       "parameters": {
         "method": "POST",
         "url": "={{$env.JYTTE_BASE_URL}}/widgets/azuredevops/error",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "X-Jytte-Internal-Secret", "value": "={{$env.JYTTE_INTERNAL_SECRET}}" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "X-Jytte-Internal-Secret",
+              "value": "={{$env.JYTTE_INTERNAL_SECRET}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
@@ -166,12 +264,72 @@
     }
   ],
   "connections": {
-    "Every 5 minutes": { "main": [[{ "node": "Config", "type": "main", "index": 0 }]] },
-    "Config": { "main": [[{ "node": "Smoke - list projects", "type": "main", "index": 0 }]] },
-    "Smoke - list projects": { "main": [[{ "node": "Shape payload", "type": "main", "index": 0 }]] },
-    "Shape payload": { "main": [[{ "node": "POST -> Jytte /state", "type": "main", "index": 0 }]] },
-    "On any error": { "main": [[{ "node": "Shape error payload", "type": "main", "index": 0 }]] },
-    "Shape error payload": { "main": [[{ "node": "POST -> Jytte /error", "type": "main", "index": 0 }]] }
+    "Every 5 minutes": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Smoke - list projects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Smoke - list projects": {
+      "main": [
+        [
+          {
+            "node": "Shape payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shape payload": {
+      "main": [
+        [
+          {
+            "node": "POST -> Jytte /state",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On any error": {
+      "main": [
+        [
+          {
+            "node": "Shape error payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shape error payload": {
+      "main": [
+        [
+          {
+            "node": "POST -> Jytte /error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
   "meta": {
     "templateCredsSetupCompleted": false,

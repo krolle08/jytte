@@ -1,0 +1,205 @@
+# Opslagsværk - tools and concepts worth looking up again.
+#
+# WHY THIS IS A FILE AND NOT A DATABASE TABLE
+# The value here is the writing, not the row. An entry is a paragraph
+# you will read in six months when you have forgotten why you saved it,
+# and that is written in an editor, not typed into a web form. The file
+# is bind-mounted read-only at /jytte/config, so an edit on the host
+# shows on the next page refresh without a rebuild.
+#
+# `notes` is the part that grows. Each note is dated, so the page can
+# show how an entry's understanding developed rather than only its
+# current state. That is the "over time" half of the description.
+#
+# kind: vaerktoej | koncept | teori | how-to | katalog
+# Keep `summary` to one sentence. If it needs two, it belongs in `why`.
+
+entries:
+
+  - slug: opentelemetry
+    title: OpenTelemetry
+    kind: vaerktoej
+    tags: [observability, telemetri, traces, metrics, logs]
+    added: 2026-10-15
+    summary: >-
+      Én leverandørneutral standard for traces, metrics og logs, så
+      instrumenteringen overlever et skift af backend.
+    why: >-
+      Det er instrumenteringen der er dyr at lave om, ikke dashboardet.
+      OTel flytter den omkostning væk fra leverandøren: koden udsender
+      OTLP, og collectoren afgør hvor det lander. Relevant for Jytte i
+      det øjeblik widgets og n8n-flows skal kunne fejlfindes på tværs
+      frem for én container ad gangen.
+    links:
+      - label: Hvad er OpenTelemetry
+        url: https://opentelemetry.io/docs/what-is-opentelemetry/
+        note: startpunktet - begreberne og hvorfor det findes
+      - label: Collector data flow dashboard
+        url: https://opentelemetry.io/docs/demo/collector-data-flow-dashboard/
+        note: viser hvad der faktisk sker inde i collectoren, receiver til exporter
+    notes:
+      - at: 2026-10-15
+        text: >-
+          Den vigtige skelnen er API/SDK mod collector. Collectoren er en
+          selvstændig proces man kan sætte ind uden at røre koden, og det
+          er typisk der man starter.
+
+  - slug: kyverno
+    title: Kyverno
+    kind: vaerktoej
+    tags: [kubernetes, policy, supply-chain, sikkerhed]
+    added: 2026-10-15
+    summary: >-
+      Policy engine til Kubernetes der skrives som YAML-ressourcer frem
+      for i et selvstændigt sprog.
+    why: >-
+      Det er admission control man kan læse. verify-images er den del der
+      betyder noget: den kræver at et image er signeret og at signaturen
+      stemmer, før det må køre. Det lukker hullet hvor en pipeline er
+      stram og klyngen alligevel tager imod hvad som helst.
+    links:
+      - label: verify-images, oversigt
+        url: https://kyverno.io/docs/policy-types/cluster-policy/verify-images/overview/
+        note: signaturverifikation ved admission
+    notes:
+      - at: 2026-10-15
+        text: >-
+          Værd at huske: en policy kan køre i Audit eller Enforce. Audit
+          først på en klynge der allerede kører, ellers afviser man sine
+          egne workloads på dag ét.
+
+  - slug: ferc
+    title: FERC og Hybrid Intelligence
+    kind: teori
+    tags: [ai, samarbejde, metode, governance]
+    added: 2026-10-15
+    summary: >-
+      Frame, Explore, Refine, Commit - fire faser der holder mennesket
+      som forfatter i arbejde med generativ AI.
+    why: >-
+      Rammen er bygget mod to konkrete skader: deskilling, hvor man
+      langsomt afgiver sin egen dømmekraft, og authorship drift, hvor det
+      bliver uklart hvem der egentlig har besluttet noget. Den behandler
+      AI som medskabende assistent og ikke som orakel, og den styrer
+      interaktionsmønstret frem for at optimere outputtet. Det er samme
+      problem som orkestreringsplatformen skal løse, bare formuleret som
+      proces i stedet for som værktøj.
+    links:
+      - label: FERC-rammen
+        url: https://hi-infinity.ai/ferc/
+      - label: FERC, historikken bag
+        url: https://hi-infinity.ai/ferc/#fromHistory
+      - label: Hybrid Intelligence
+        url: https://hi-infinity.ai/
+    notes:
+      - at: 2026-10-15
+        text: >-
+          Kernepåstanden: det er ikke prompten der afgør kvaliteten, men
+          om der er en iteration med evaluering i. Enkeltskuds-prompting
+          er netop det mønster der fører til drift.
+
+  - slug: sdd-fowler
+    title: Spec-Driven Development, Böckeler
+    kind: teori
+    tags: [sdd, ai, metode, kritik]
+    added: 2026-10-15
+    summary: >-
+      Gennemgang af tre SDD-værktøjer med en ærlig liste over hvad der
+      ikke virker endnu.
+    why: >-
+      Den mest brugbare del er de tre niveauer: spec-first (specen
+      starter arbejdet), spec-anchored (specen lever videre gennem
+      vedligehold) og spec-as-source (mennesket redigerer kun specen).
+      De tre er ikke grader af modenhed, de er forskellige væddemål.
+      Direkte relevant for orkestreringsplatformen, som skal vælge
+      niveau før den vælger værktøj.
+    links:
+      - label: Exploring Gen AI - SDD, del 3, værktøjer
+        url: https://martinfowler.com/articles/exploring-gen-ai/sdd-3-tools.html
+        note: Birgitta Böckeler, Thoughtworks. Dækker Kiro, Spec-kit og Tessl
+    notes:
+      - at: 2026-10-15
+        text: >-
+          Forbeholdene er værd at tage alvorligt: at læse lange
+          markdown-specs er tungere end at læse kode, og agenter ignorerer
+          instruktioner uanset hvor mange checklister man lægger på.
+      - at: 2026-10-15
+        text: >-
+          Parallellen hun trækker til Model-Driven Development er den
+          skarpeste advarsel: MDD faldt på stivhed, og LLM'er lægger
+          ikke-determinisme oveni.
+
+  - slug: kube-vip
+    title: kube-vip
+    kind: vaerktoej
+    tags: [kubernetes, netværk, ha, bare-metal]
+    added: 2026-10-15
+    summary: >-
+      Virtuel IP og load balancing til Kubernetes control plane uden en
+      cloud-leverandør under sig.
+    why: >-
+      Problemet den løser på bare metal og hjemmeklynger: control plane
+      skal nås på én adresse, også når noden bag den er væk. DaemonSet
+      er den variant man vil have når klyngen allerede kører; static pod
+      hører til ved bootstrap.
+    links:
+      - label: Installation som DaemonSet
+        url: https://kube-vip.io/docs/installation/daemonset/
+    notes:
+      - at: 2026-10-15
+        text: >-
+          Vær opmærksom på ARP mod BGP. ARP er enklest og nok i ét
+          subnet; BGP kræver at netværket spiller med, men skalerer.
+
+  - slug: sqlite-i-docker
+    title: SQLite i Docker
+    kind: how-to
+    tags: [sqlite, docker, drift, persistens]
+    added: 2026-10-15
+    summary: >-
+      Hvornår SQLite i en container er det rigtige valg, og de to
+      indstillinger man altid skal sætte.
+    why: >-
+      Direkte relevant for Jytte, som netop er én container med én
+      SQLite-fil. Artiklen bekræfter at opsætningen er rigtig her, og
+      siger præcist hvornår den holder op med at være det - nemlig i det
+      øjeblik en container nummer to vil skrive til samme fil.
+    links:
+      - label: How to run SQLite in Docker, when and how
+        url: https://oneuptime.com/blog/post/2026-02-08-how-to-run-sqlite-in-docker-when-and-how/view
+    notes:
+      - at: 2026-10-15
+        text: >-
+          De to pragmaer der betyder noget - journal_mode=WAL, så læsninger
+          kan køre samtidig med en skrivning, og busy_timeout=5000, så en
+          låst database venter i stedet for at fejle med det samme.
+      - at: 2026-10-15
+        text: >-
+          Navngivne volumes frem for bind mounts. Fillåsning er upålidelig
+          over netværksfilsystemer, og det rammer SQLite hårdere end noget
+          andet. Backup via SQLite's egen backup-API, ikke ved at kopiere
+          filen mens den er i brug.
+
+  - slug: keepclaw-skills
+    title: KeepClaw skills-katalog
+    kind: katalog
+    tags: [ai, agenter, skills, inspiration]
+    added: 2026-10-15
+    summary: >-
+      Markedsplads med 340+ skills til AI-agenter, delt i officielle og
+      fællesskabsbyggede.
+    why: >-
+      Ikke noget der skal installeres, men værd at bladre i. Det er den
+      hurtigste måde at se hvordan andre afgrænser en skill - og
+      afgrænsningen er præcis det problem der er dyrt i den lokale
+      .claude-opsætning, hvor 52 skills allerede overlapper hinanden.
+    links:
+      - label: Skills-katalog
+        url: https://keepclaw.ai/skills
+    notes:
+      - at: 2026-10-15
+        text: >-
+          Læs det som en kilde til afgrænsning, ikke til installation.
+          Interessant: de skelner eksplicit mellem officielt vedligeholdte
+          og fællesskabsbyggede skills, hvilket er den skelnen der mangler
+          i min egen opsætning.

@@ -87,6 +87,46 @@ CREATE TABLE IF NOT EXISTS budget_entries (
     updated_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS budget_entries_category ON budget_entries(category_id);
+
+-- Who an entry belongs to. Two people plus a shared pot is the whole
+-- model: an expense is yours, hers, or the household's, never split,
+-- so `budget_entries.owner` is a nullable slug and NULL means shared.
+-- A nullable column beats a join table here precisely because an entry
+-- belongs to exactly one bucket.
+CREATE TABLE IF NOT EXISTS budget_people (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    slug TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    sort_order INTEGER NOT NULL DEFAULT 100,
+    created_at TEXT NOT NULL
+);
+
+-- One payroll profile per person, keyed to budget_people.slug.
+--
+-- Everything monetary is oere (INTEGER minor units) and every rate is
+-- BASIS POINTS (also INTEGER): 36% -> 3600, 10,18% -> 1018. No float
+-- touches a salary figure at any point, which is the same reason the
+-- budget stores amount_cents.
+--
+-- traek_bp and fradrag_oere come straight off the skattekort. They
+-- already encode kommuneskat, kirkeskat, bundskat, beskaeftigelses-
+-- fradrag and personfradrag, so none of those are modelled here.
+-- See app/widgets/salary/calc.py for why.
+CREATE TABLE IF NOT EXISTS salary_profiles (
+    person TEXT PRIMARY KEY,
+    gross_oere INTEGER NOT NULL DEFAULT 0,
+    traek_bp INTEGER NOT NULL DEFAULT 0,
+    fradrag_oere INTEGER NOT NULL DEFAULT 0,
+    pension_bp INTEGER NOT NULL DEFAULT 0,
+    atp_oere INTEGER NOT NULL DEFAULT 0,
+    holiday_oere INTEGER NOT NULL DEFAULT 0,
+    supplement_oere INTEGER NOT NULL DEFAULT 0,
+    benefit_oere INTEGER NOT NULL DEFAULT 0,
+    reimbursement_oere INTEGER NOT NULL DEFAULT 0,
+    post_tax_deduction_oere INTEGER NOT NULL DEFAULT 0,
+    pension_on_supplement INTEGER NOT NULL DEFAULT 1,
+    updated_at TEXT NOT NULL
+);
 """
 
 # Pre-seeded categories. Idempotent: INSERT OR IGNORE on slug.
@@ -114,13 +154,43 @@ MIGRATIONS_WIDGET_STATE = [
     ("last_success_at",      "TEXT"),
 ]
 
+# Per-person budget. `owner` is a budget_people.slug, or NULL for a
+# shared household entry - which is also what every pre-existing row
+# becomes, since they were entered before anyone was named. Same
+# idempotent PRAGMA-gated pattern as above.
+MIGRATIONS_BUDGET_ENTRIES = [
+    ("owner", "TEXT"),
+]
+
+# What each person transfers to the joint account every month. Stored on
+# the person rather than as a budget entry, because it is a property of
+# the household arrangement, not a bill anyone manages. It surfaces as a
+# PAIR of derived rows - an expense on the payer, income on Faelles - so
+# the household total is unchanged by it. A transfer moves money between
+# columns; it never creates or destroys any.
+MIGRATIONS_BUDGET_PEOPLE = [
+    ("transfer_oere", "INTEGER NOT NULL DEFAULT 0"),
+]
+
+# Seeded so the page has something to show on a fresh DB. Rename them
+# in the UI or straight in SQLite; the slug is what entries point at,
+# so change the name freely and leave the slug alone.
+SEED_BUDGET_PEOPLE = [
+    # (slug, name, sort_order)
+    ("me",      "Mig",      10),
+    ("partner", "Partner",  20),
+]
+
 
 async def init_db() -> None:
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     async with aiosqlite.connect(DB_PATH) as db:
         await db.executescript(SCHEMA)
         await _apply_widget_state_migrations(db)
+        await _apply_budget_entry_migrations(db)
+        await _apply_budget_people_migrations(db)
         await _seed_budget_categories(db)
+        await _seed_budget_people(db)
         await db.commit()
 
 
@@ -140,12 +210,45 @@ async def _seed_budget_categories(db: aiosqlite.Connection) -> None:
         )
 
 
+async def _seed_budget_people(db: aiosqlite.Connection) -> None:
+    """Insert the default two people. Idempotent via INSERT OR IGNORE on
+    the unique slug, so renaming someone in the UI survives a restart
+    instead of being seeded back over."""
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc).isoformat()
+    for slug, name, sort_order in SEED_BUDGET_PEOPLE:
+        await db.execute(
+            """
+            INSERT OR IGNORE INTO budget_people
+                (slug, name, sort_order, created_at)
+            VALUES (?, ?, ?, ?)
+            """,
+            (slug, name, sort_order, now),
+        )
+
+
 async def _apply_widget_state_migrations(db: aiosqlite.Connection) -> None:
     cur = await db.execute("PRAGMA table_info(widget_state)")
     cols = {row[1] for row in await cur.fetchall()}
     for col_name, col_def in MIGRATIONS_WIDGET_STATE:
         if col_name not in cols:
             await db.execute(f"ALTER TABLE widget_state ADD COLUMN {col_name} {col_def}")
+
+
+async def _apply_budget_entry_migrations(db: aiosqlite.Connection) -> None:
+    cur = await db.execute("PRAGMA table_info(budget_entries)")
+    cols = {row[1] for row in await cur.fetchall()}
+    for col_name, col_def in MIGRATIONS_BUDGET_ENTRIES:
+        if col_name not in cols:
+            await db.execute(f"ALTER TABLE budget_entries ADD COLUMN {col_name} {col_def}")
+
+
+async def _apply_budget_people_migrations(db: aiosqlite.Connection) -> None:
+    cur = await db.execute("PRAGMA table_info(budget_people)")
+    cols = {row[1] for row in await cur.fetchall()}
+    for col_name, col_def in MIGRATIONS_BUDGET_PEOPLE:
+        if col_name not in cols:
+            await db.execute(f"ALTER TABLE budget_people ADD COLUMN {col_name} {col_def}")
 
 
 async def connect() -> aiosqlite.Connection:

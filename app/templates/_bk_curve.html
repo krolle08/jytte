@@ -1,0 +1,54 @@
+{# Cumulative spend across the month, against a straight-line plan.
+
+   The plan is a dashed diagonal: the reference app's one good idea is
+   that "am I overspending" is a question about PACE, and pace only
+   reads against a line. Geometry comes from bankview.curve(); this
+   partial draws it and does no arithmetic of its own.
+
+   Days after today are drawn flat and faint rather than omitted, so
+   the horizontal axis keeps its full width and the curve does not
+   appear to fill the month on the 3rd. #}
+<div class="bk-curve">
+  <svg viewBox="0 0 320 110" preserveAspectRatio="none" class="bk-curve-svg"
+       role="img" aria-label="Forbrug hen over måneden">
+    {% set w = 320.0 %}
+    {% set h = 96.0 %}
+    {% set step = w / (curve.days - 1 if curve.days > 1 else 1) %}
+
+    {# plan line #}
+    {% if curve.plan %}
+    <line x1="0" y1="{{ h }}" x2="{{ w }}"
+          y2="{{ (h - h * curve.plan.month_oere / curve.max_oere)|round(2) }}"
+          class="bk-plan" />
+    {% endif %}
+
+    {# area under the spent part #}
+    {% set pts = [] %}
+    {% for p in curve.points if not p.future %}
+    {% set _ = pts.append('%s,%s'|format((loop.index0 * step)|round(2), (h - h * p.y / 100.0)|round(2))) %}
+    {% endfor %}
+    {% if pts %}
+    <polygon class="bk-fill"
+             points="0,{{ h }} {{ pts|join(' ') }} {{ ((pts|length - 1) * step)|round(2) }},{{ h }}" />
+    <polyline class="bk-line" points="{{ pts|join(' ') }}" />
+    <circle class="bk-head"
+            cx="{{ ((pts|length - 1) * step)|round(2) }}"
+            cy="{{ (h - h * curve.points[curve.day_now - 1].y / 100.0)|round(2) }}"
+            r="3.5" />
+    {% endif %}
+  </svg>
+  <div class="bk-curve-x">
+    <span class="mono">1</span>
+    <span class="mono">{{ (curve.days / 2)|round|int }}</span>
+    <span class="mono">{{ curve.days }}</span>
+  </div>
+  <div class="bk-curve-k">
+    <span><i class="k-line"></i>brugt, {{ curve.spent_kr }}</span>
+    {% if curve.plan %}
+    <span><i class="k-plan"></i>plan, {{ curve.plan.month_kr }} for hele måneden</span>
+    <span class="bk-curve-r mono">{{ curve.plan.left_kr }} tilbage</span>
+    {% else %}
+    <span class="bk-curve-r mono f-faint">ingen planlinje, budgettet er tomt</span>
+    {% endif %}
+  </div>
+</div>

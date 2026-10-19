@@ -1,0 +1,32 @@
+[
+  {
+    "d": "Review RKE2 upgrade plan with Dagrofa",
+    "f": "Projects/Dagrofa.md",
+    "done": 0
+  },
+  {
+    "d": "Update Krav_tracker with Geek+ interface items",
+    "f": "Projects/Dagrofa.md",
+    "done": 0
+  },
+  {
+    "d": "Write learning plan for new architects, week 3",
+    "f": "Growth/Intro-program.md",
+    "done": 0
+  },
+  {
+    "d": "Fix crashing iOS signing step",
+    "f": "Projects/Mobil-App.md",
+    "done": 0
+  },
+  {
+    "d": "Renew home server certificate",
+    "f": "Home/Server.md",
+    "done": 1
+  },
+  {
+    "d": "Read: OPA policy testing chapter",
+    "f": "Growth/Reading.md",
+    "done": 1
+  }
+]

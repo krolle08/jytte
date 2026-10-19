@@ -1,0 +1,310 @@
+{% extends "base.html" %}
+{% block title %}AI-arkitektur :: Jytte{% endblock %}
+{% block body_class %}warm{% endblock %}
+
+{% block content %}
+{#
+  AI architecture view.
+
+  Two halves, chosen from the three directions in REVIEW-01 T11:
+    - constellation concept from Observatory Field (agents on a ring
+      per category, size from runs, hover and click)
+    - canvas from Reactor Lattice (step cells, routed edges, pulse)
+
+  Detail is NOT rendered under an agent. It slides in from the right,
+  leaves when the pointer does, stays when the agent was clicked, and
+  takes Esc or its own X. See app/static/ai.js.
+
+  The constellation is server rendered so it is readable with no JS.
+  The canvas is client rendered from one embedded blob - it needs
+  measured geometry, a pulse and zoom, and it must never navigate,
+  because a full page load throws the viewport to the top.
+#}
+<section class="ai">
+
+  <header class="ai-top">
+    <div class="ai-top-id">
+      <h1>AI-arkitektur</h1>
+      {% if d.ready %}
+      <p class="ai-when">
+        scannet <span data-ts="{{ d.generated_at }}" data-ts-label="">{{ d.generated_at[:16] }}</span>
+        &middot; {{ d.stats.claude_dirs }} .claude-mapper, {{ d.stats.worktree_dirs }} worktrees sprunget over
+      </p>
+      {% endif %}
+    </div>
+    {% if d.ready %}
+    <div class="ai-gauges">
+      <div class="ai-gauge"><b>{{ d.agents|length }}</b><span>agents</span></div>
+      <div class="ai-gauge"><b>{{ d.skills|length }}</b><span>skills</span></div>
+      <div class="ai-gauge"><b>{{ d.stats.workflows }}</b><span>workflows</span></div>
+      <div class="ai-gauge"><b>{{ d.stats.total_runs }}</b><span>kørsler</span></div>
+      {# The only figure here that ever needs acting on is the only one
+         that gets colour. If every number were lit, none would read as
+         the one to look at. #}
+      <div class="ai-gauge is-alarm"><b>{{ d.stats.drifted }}</b><span>driftet</span></div>
+    </div>
+    {% endif %}
+  </header>
+
+  {% if not d.ready %}
+  <p class="ai-dead">{{ d.reason }}</p>
+  <p class="ai-hint">Kør <code>python scripts/scan_ai.py</code> på hosten og genindlæs.</p>
+  {% else %}
+
+  <div class="ai-views" role="tablist">
+    <button role="tab" id="tab-sky" aria-selected="true" aria-controls="view-sky">Agent-konstellation</button>
+    <button role="tab" id="tab-flow" aria-selected="false" aria-controls="view-flow">Workflows</button>
+  </div>
+
+{# ══ SCOPE AND DUPLICATE SUMMARY ═════════════════════════════════
+     The question the gauges above do not answer: what is global, what
+     is bound to one project, and what exists more than once. Split
+     into identical duplicates (a tidy-up) and differing ones (a
+     decision), because those are not the same problem. #}
+  <div class="ai-sum">
+    {% for blk, label, d in [("agents", "Agents", summary.agents), ("skills", "Skills", summary.skills)] %}
+    <div class="ai-sum-card">
+      <div class="ai-sum-h">
+        <h2>{{ label }}</h2>
+        <b>{{ d.total }}</b>
+      </div>
+      <dl class="ai-sum-grid">
+        <div><dt>global</dt><dd>{{ d['global'] }}</dd></div>
+        <div><dt>projekt</dt><dd>{{ d.project }}</dd></div>
+        {% if d.both %}
+        {# Both at once is the loudest merge signal there is: the same
+           name in ~/.claude and in a project .claude. #}
+        <div class="is-alarm"><dt>begge steder</dt><dd>{{ d.both }}</dd></div>
+        {% endif %}
+        <div><dt>findes flere steder</dt><dd>{{ d.dup }}</dd></div>
+        <div class="is-quiet"><dt>heraf identiske</dt><dd>{{ d.dup_identical }}</dd></div>
+        <div class="is-alarm"><dt>skal flettes</dt><dd>{{ d.merge|length }}</dd></div>
+        {% if blk == "agents" %}
+        <div><dt>aldrig kørt</dt><dd>{{ d.cold|length }}</dd></div>
+        {% else %}
+        <div><dt>uden ejer</dt><dd>{{ d.orphan|length }}</dd></div>
+        {% endif %}
+      </dl>
+      {% if d.merge %}
+      <p class="ai-sum-note">
+        <b>Flet-kandidater</b> - samme navn, forskelligt indhold:
+        {% for n in d.merge %}<button class="ai-chip is-alarm" data-{{ 'agent' if blk == 'agents' else 'skill' }}="{{ n }}">{{ n }}</button>{% endfor %}
+      </p>
+      {% endif %}
+      {% if d.both_names %}
+      <p class="ai-sum-note">
+        <b>Findes både globalt og i et projekt</b>:
+        {% for n in d.both_names %}<button class="ai-chip is-alarm" data-{{ 'agent' if blk == 'agents' else 'skill' }}="{{ n }}">{{ n }}</button>{% endfor %}
+      </p>
+      {% endif %}
+      {% if blk == "agents" and d.cold %}
+      <p class="ai-sum-note">
+        <b>Aldrig kørt</b>:
+        {% for n in d.cold %}<button class="ai-chip" data-agent="{{ n }}">{{ n }}</button>{% endfor %}
+      </p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  {# ══ CONSTELLATION ═══════════════════════════════════════════════ #}
+  <section id="view-sky" role="tabpanel" aria-labelledby="tab-sky">
+    <p class="ai-note">
+      Størrelse er antal kørsler. Pulsen er <b>hvor ofte</b> den bruges,
+      ikke hvornår sidst: scanneren gemmer ingen tidsstempler endnu.
+      Stiplet omrids betyder aldrig kørt. Dobbelt ring betyder flere
+      versioner på disk. Peg eller klik for detaljen til højre.
+    </p>
+
+    {# The field is a fixed canvas inside a panning viewport. It has to
+       be a viewport: the detail panel is fixed to the right edge, so
+       anything under it was unclickable and un-hoverable. Hovering an
+       agent now pans the sky so that agent sits just clear of the
+       panel, and the pan is clamped so you can never drag off into
+       empty space. #}
+    <div class="ai-sky" id="ai-sky" tabindex="0"
+         aria-label="Agent-felt, kan trækkes">
+      <div class="ai-sky-canvas" id="ai-sky-canvas"
+           style="width: {{ sky_w }}px; height: {{ sky_h }}px">
+      {% for cat in cats %}
+      <div class="ai-cluster"
+           style="left: {{ cat.sky_x }}px; top: {{ cat.sky_y }}px;
+                  width: {{ cluster_w }}px; height: {{ cluster_h }}px">
+        <div class="ai-cluster-name">
+          <em>{{ cat.name }}</em>
+          <i>{{ cat.agents|length }} {{ "agent" if cat.agents|length == 1 else "agenter" }}</i>
+        </div>
+        {% for a in cat.agents %}
+        <button class="ai-body{% if not a.runs %} is-cold{% endif %}{% if a.versions > 1 %} is-drift{% endif %}"
+                data-agent="{{ a.id }}"
+                style="left: calc(50% + {{ a.ring_x }}px); top: calc(50% + {{ a.ring_y }}px)">
+          <span class="ai-orb-shell">
+            <span class="ai-orb" style="--sz: {{ a.size }}px; --glow: {{ a.glow }}px; --period: {{ a.period }}s"></span>
+            {% if a.moons %}
+            <span class="ai-moons">
+              {% for m in a.moons %}<span class="ai-moon" style="left: {{ m.x }}%; top: {{ m.y }}%"></span>{% endfor %}
+            </span>
+            {% endif %}
+          </span>
+          <span class="ai-body-n">{{ a.id }}</span>
+          <span class="ai-body-m">{{ a.runs ~ " kørsler" if a.runs else "aldrig kørt" }}</span>
+        </button>
+        {% endfor %}
+      </div>
+      {% endfor %}
+      </div>
+      <p class="ai-sky-hint">træk for at flytte feltet</p>
+    </div>
+
+    {% if orphan_skills %}
+    <div class="ai-orphans">
+      <h2>Skills uden ejer</h2>
+      <p class="ai-note">{{ orphan_skills|length }} skills som ingen agent erklærer. Enten mangler de en ejer, eller også kalder du dem kun direkte.</p>
+      <div class="ai-chips">
+        {% for s in orphan_skills %}<button class="ai-chip" data-skill="{{ s }}">{{ s }}</button>{% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </section>
+
+  {# ══ WORKFLOWS ═══════════════════════════════════════════════════ #}
+  <section id="view-flow" role="tabpanel" aria-labelledby="tab-flow" hidden>
+    <div class="ai-flow">
+      <aside class="ai-rail" id="ai-rail"></aside>
+      <div class="ai-canvas-col">
+        <div class="ai-canvas-head">
+          <h2 id="ai-wf-title"></h2>
+          <span class="ai-chip is-static" id="ai-wf-eng"></span>
+          <span class="ai-chip is-static" id="ai-wf-run"></span>
+        </div>
+        <p class="ai-note" id="ai-wf-desc"></p>
+        <div class="ai-tools">
+          <button id="ai-zoom-out" title="zoom ud">&minus;</button>
+          <button id="ai-zoom-fit">fit</button>
+          <button id="ai-zoom-in" title="zoom ind">+</button>
+          <button id="ai-replay">kør pulsen igen</button>
+        </div>
+        <div class="ai-scroll" id="ai-scroll"><div class="ai-stage" id="ai-stage"></div></div>
+        <div class="ai-key">
+          <span class="k-trigger">trigger</span><span>tool</span>
+          <span class="k-if">branch</span><span class="k-skill">skill</span>
+          <span class="k-agent">agent</span><span class="k-gate">gate</span>
+        </div>
+        <p class="ai-src" id="ai-wf-src"></p>
+      </div>
+    </div>
+  </section>
+
+{# ══ LEDGER ══════════════════════════════════════════════════════
+     Every agent and skill in one table, because "what do I have and
+     what is doubled" is the same question for both.
+
+     The attempts bar is NOT a success rate and is not labelled as one.
+     It counts invocations per (session, description). See the footnote:
+     nothing in any log records an outcome, so this is the closest
+     honest proxy and it errs in both directions. #}
+  <section class="ai-ledger">
+    <div class="ai-ledger-head">
+      <h2>Agents og skills</h2>
+      <div class="ai-filters" id="ai-filters">
+        <button data-f="all" aria-pressed="true">alle <i>{{ ledger|length }}</i></button>
+        <button data-f="agent" aria-pressed="false">agents <i>{{ summary.agents.total }}</i></button>
+        <button data-f="skill" aria-pressed="false">skills <i>{{ summary.skills.total }}</i></button>
+        <button data-f="global" aria-pressed="false">global <i>{{ summary.agents['global'] + summary.skills['global'] }}</i></button>
+        <button data-f="project" aria-pressed="false">projekt <i>{{ summary.agents.project + summary.skills.project }}</i></button>
+        {% set both = summary.agents.both + summary.skills.both %}
+        {% if both %}<button data-f="both" aria-pressed="false">begge steder <i>{{ both }}</i></button>{% endif %}
+        <button data-f="merge" aria-pressed="false">flet <i>{{ summary.agents.merge|length + summary.skills.merge|length }}</i></button>
+        <button data-f="cold" aria-pressed="false">aldrig brugt <i>{{ summary.agents.cold|length }}</i></button>
+      </div>
+    </div>
+
+    <div class="ai-table-wrap">
+      <table class="ai-table">
+        <thead>
+          <tr>
+            <th class="c-name">navn</th>
+            <th>scope</th>
+            <th class="c-num">kopier</th>
+            <th class="c-num">vers.</th>
+            <th class="c-num">kørsler</th>
+            <th class="c-num">sess.</th>
+            <th class="c-num">opgaver</th>
+            <th class="c-bar">forsøg pr. opgave</th>
+            <th class="c-num">1. gang</th>
+            <th>seneste log</th>
+            <th>brugt i</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in ledger %}
+          <tr data-kind="{{ r.kind }}" data-scope="{{ r.scope }}"
+              data-merge="{{ 1 if r.merge else 0 }}" data-cold="{{ 1 if r.cold else 0 }}">
+            <td class="c-name">
+              <button class="ai-ledger-n" data-{{ r.kind }}="{{ r.name }}">{{ r.name }}</button>
+              <span class="ai-kind k-{{ r.kind }}">{{ r.kind }}</span>
+            </td>
+            <td><span class="ai-scope s-{{ r.scope }}">{{ r.scope }}</span></td>
+            <td class="c-num">{{ r.copies }}</td>
+            {# Doubled left edge, not just a colour, so drift reads in grayscale. #}
+            <td class="c-num{% if r.merge %} is-merge{% endif %}">{{ r.versions }}</td>
+            <td class="c-num">{{ r.runs if r.runs is not none else "&ndash;"|safe }}</td>
+            <td class="c-num">{{ r.sessions if r.sessions is not none else "&ndash;"|safe }}</td>
+            <td class="c-num">{{ r.tasks or ("&ndash;"|safe if r.kind == "skill" else 0) }}</td>
+            <td class="c-bar">
+              {% if r.bars %}
+              <span class="ai-att" title="{% for b in r.bars %}{{ b.label }}: {{ b.n }} {% endfor %}">
+                {% for b in r.bars %}{% if b.n %}<i class="t-{{ b.tone }}" style="width: {{ b.pct }}%"></i>{% endif %}{% endfor %}
+              </span>
+              {% elif r.kind == "skill" %}
+              <span class="ai-na">ingen log for skills</span>
+              {% else %}
+              <span class="ai-na">ingen kørsler</span>
+              {% endif %}
+            </td>
+            <td class="c-num">{{ (r.first_pass * 100)|round|int ~ "%" if r.first_pass is not none else "&ndash;"|safe }}</td>
+            <td class="c-ts">
+              {% if r.last_run %}<span data-ts="{{ r.last_run }}" data-ts-label="">{{ r.last_run[:10] }}</span>
+              {% else %}<span class="ai-na">&ndash;</span>{% endif %}
+            </td>
+            <td class="c-used">
+              {% if r.used_in %}{{ r.used_in|length }} <span class="ai-na">{{ r.used_in|join(", ")|truncate(42) }}</span>
+              {% else %}<span class="ai-na">&ndash;</span>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="ai-foots">
+      <p><b>forsøg pr. opgave er ikke en succesrate.</b> {{ summary.caveat }}</p>
+      <p>Skills har ingen kolonner for kørsler: der findes ingen log over
+        skill-kald, kun over agent-kald ({{ summary.log_rows }} rækker i
+        <code>agent-usage.jsonl</code>). Varighed pr. kørsel ligger i
+        <code>agent-runs.jsonl</code>, som har {{ summary.durations }} rækker
+        {% if not summary.durations %}- hooket er installeret, men ingen Task er kørt siden{% endif %}.</p>
+      {% if summary.unattributed %}
+      <p>{{ summary.unattributed_runs }} kørsler er logget på
+        {{ summary.unattributed|length }} navne uden en definitionsfil:
+        {{ summary.unattributed|join(", ") }}. Nogle er indbyggede
+        (Explore, Plan, general-purpose, fork), resten er slettede agents
+        hvis historik blev liggende.</p>
+      {% endif %}
+    </div>
+  </section>
+
+  {# ══ SLIDE-IN DETAIL ═════════════════════════════════════════════
+     One panel, reused by agents, skills and flow nodes. Lives outside
+     both views so switching tab does not destroy it mid-animation. #}
+  <aside class="ai-panel" id="ai-panel" aria-hidden="true" aria-live="polite">
+    <button class="ai-panel-x" id="ai-panel-x" aria-label="luk">&times;</button>
+    <div class="ai-panel-body" id="ai-panel-body"></div>
+    <p class="ai-panel-foot" id="ai-panel-foot"></p>
+  </aside>
+
+  <script type="application/json" id="ai-data">{{ payload|tojson }}</script>
+  <script src="/static/ai.js" defer></script>
+  {% endif %}
+</section>
+{% endblock %}

@@ -127,25 +127,174 @@ main {
   margin: 0 auto;
 }
 
-/* asymmetric grid - tasks 2x (left), news 1x (right), chat full row */
-.grid {
+/* ----------------------------------------------------------------------
+   front page - a fixed prioritised stack, not a widget grid.
+   Order: hero (now/today) -> mail -> medium|low|internal -> ADO -> more.
+   The old `.grid` rules are gone with dashboard.html; the only grid
+   left is the "More" strip at the bottom.
+   ---------------------------------------------------------------------- */
+.fp {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.fp-box-head { align-items: flex-start; gap: 1rem; }
+.fp-box-titles { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.fp-box-blurb { font-weight: 400; letter-spacing: 0; text-transform: none; }
+
+.fp-box-count {
+  flex: 0 0 auto;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--muted);
+}
+.fp-box-count-hero { font-size: 2.4rem; color: var(--accent); }
+
+/* the hero box carries the only accent rail on the page, so the eye
+   lands on "now/today" before anything else */
+.fp-box-hero {
+  border-color: var(--line-strong);
+  box-shadow: 0 0 40px -20px var(--accent-glow);
+  position: relative;
+  overflow: hidden;
+}
+.fp-box-hero::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--accent);
+  box-shadow: 0 0 18px -2px var(--accent-glow);
+}
+.fp-box-hero .card-head h2 { font-size: 1.15rem; }
+
+.fp-row-three {
   display: grid;
-  grid-template-columns: 2fr 1fr;
-  grid-auto-flow: dense;
+  grid-template-columns: repeat(3, 1fr);
   gap: 1.25rem;
   align-items: start;
 }
-.grid > .card-geomap       { grid-column: 1 / -1; grid-row: 1; }
-.grid > .card-tasks        { grid-column: 1; grid-row: 2; }
-.grid > .card-football     { grid-column: 2; grid-row: 2; }
-.grid > .card-budget       { grid-column: 1; grid-row: 3; }
-.grid > .card-news         { grid-column: 2; grid-row: 3; }
-.grid > .card-azuredevops  { grid-column: 1 / -1; grid-row: 4; }
-.grid > .card-chat         { grid-column: 1 / -1; grid-row: 5; }
-@media (max-width: 880px) {
-  .grid { grid-template-columns: 1fr; }
-  .grid > .card-tasks, .grid > .card-news, .grid > .card-chat,
-  .grid > .card-azuredevops, .grid > .card-budget { grid-column: 1; }
+@media (max-width: 1000px) { .fp-row-three { grid-template-columns: 1fr; } }
+
+.fp-empty { font-style: italic; opacity: 0.75; }
+
+/* --- task rows --- */
+.fp-task-list { list-style: none; padding: 0; margin: 0; }
+.fp-task {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.5rem 0.4rem 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--line);
+  position: relative;
+}
+.fp-task:last-child { border-bottom: 0; }
+.fp-task::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 18%; bottom: 18%;
+  width: 2px;
+  background: transparent;
+}
+.fp-task-overdue::before { background: var(--danger); box-shadow: 0 0 10px -2px rgba(255, 111, 122, 0.6); }
+.fp-task-today::before   { background: var(--accent-2); box-shadow: 0 0 10px -2px var(--accent-2-glow); }
+
+.fp-task-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+  flex: 1 1 auto;
+  cursor: pointer;
+}
+.fp-task-main:hover .fp-task-title { color: var(--accent); }
+.fp-task-title { font-weight: 500; font-size: 0.9rem; line-height: 1.3; }
+.fp-task-list-hero .fp-task-title { font-size: 1rem; }
+.fp-task-meta { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
+
+.fp-tag-overdue  { color: var(--danger);   border-color: rgba(255, 111, 122, 0.5);  background: rgba(255, 111, 122, 0.09); }
+.fp-tag-today    { color: var(--accent-2); border-color: rgba(244, 184, 96, 0.5);   background: rgba(244, 184, 96, 0.09); }
+.fp-tag-customer { color: var(--text);     border-color: var(--line-strong);        background: var(--surface-2); }
+.fp-tag-status   { color: var(--muted);    border-color: var(--line);               background: transparent; }
+.fp-tag-baddate  { color: var(--warn);     border-color: rgba(255, 195, 107, 0.45); background: rgba(255, 195, 107, 0.07); }
+
+/* --- mail rows --- */
+.fp-mail-list { list-style: none; padding: 0; margin: 0; }
+.fp-mail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.55rem 0.5rem 0.55rem 0.6rem;
+  border-bottom: 1px solid var(--line);
+  position: relative;
+}
+.fp-mail:last-child { border-bottom: 0; }
+.fp-mail-unread::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 16%; bottom: 16%;
+  width: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 10px -2px var(--accent-glow);
+}
+.fp-mail-unread .fp-mail-subject { font-weight: 600; color: var(--text); }
+
+.fp-mail-top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.45rem; }
+.fp-mail-from {
+  flex: 0 0 auto; max-width: 12rem;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: var(--muted); font-size: 0.82rem;
+}
+.fp-mail-subject {
+  flex: 1 1 14rem; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: var(--text); font-size: 0.9rem;
+  border-bottom: 1px dashed transparent;
+}
+a.fp-mail-subject:hover { border-bottom-color: var(--accent-2); }
+.fp-mail-when { flex: 0 0 auto; margin-left: auto; font-family: var(--font-mono); }
+.fp-mail-tags { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
+.fp-mail-preview {
+  display: block;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.fp-reason-unread      { color: var(--accent);   border-color: rgba(94, 225, 208, 0.4);  background: rgba(94, 225, 208, 0.06); }
+.fp-reason-flagged     { color: var(--danger);   border-color: rgba(255, 111, 122, 0.45); background: rgba(255, 111, 122, 0.07); }
+.fp-reason-categorized { color: var(--accent-2); border-color: rgba(244, 184, 96, 0.45); background: rgba(244, 184, 96, 0.07); }
+.fp-reason-important   { color: var(--warn);     border-color: rgba(255, 195, 107, 0.45); background: rgba(255, 195, 107, 0.07); }
+.fp-mail-cat           { color: var(--text);     border-color: var(--line-strong);        background: var(--surface-2); }
+
+/* --- embedded full ADO widget --- */
+.fp-ado {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 1.1rem 1.25rem 1.25rem;
+}
+.fp-ado-head { margin-bottom: 0.5rem; }
+.fp-ado-head h2 { font-family: var(--font-display); font-size: 1.05rem; margin: 0 0 0.15rem; }
+
+/* --- "More" strip: widgets without a hand-placed slot --- */
+.fp-more { margin-top: 0.5rem; }
+.fp-more-head {
+  display: flex; align-items: baseline; gap: 0.6rem;
+  margin-bottom: 0.7rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--line);
+}
+.fp-more-head h2 {
+  font-family: var(--font-display); font-size: 0.8rem; margin: 0;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
+}
+.fp-more-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.25rem;
+  align-items: start;
 }
 
 /* cards */
@@ -1380,3 +1529,1054 @@ body.drawer-open { overflow: hidden; }
 .ado-vote-0  { color: var(--muted); }
 .ado-vote--5 { color: var(--warn); border-color: rgba(255, 195, 107, 0.45); background: rgba(255, 195, 107, 0.08); }
 .ado-vote--10{ color: var(--danger); border-color: rgba(255, 111, 122, 0.5); background: rgba(255, 111, 122, 0.08); }
+
+/* ----------------------------------------------------------------------
+   mail widget (n8n-sourced email card)
+   Reuses .tag for the sender bucket pills; palette tokens only, no
+   hardcoded hex.
+   ---------------------------------------------------------------------- */
+.mail-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+.mail-count {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.mail-list { list-style: none; padding: 0; margin: 0; }
+.mail-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.5rem 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.9rem;
+  position: relative;
+}
+.mail-list li:last-child { border-bottom: 0; }
+
+/* unread gets the same left-rail treatment as .task-item, but always on */
+.mail-item.mail-unread::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 14%;
+  bottom: 14%;
+  width: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 10px -2px var(--accent-glow);
+}
+.mail-item.mail-unread .mail-subject { font-weight: 600; color: var(--text); }
+
+.mail-from {
+  flex: 0 0 auto;
+  max-width: 11rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.mail-subject {
+  flex: 1 1 14rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+  border-bottom: 1px dashed transparent;
+}
+a.mail-subject:hover { border-bottom-color: var(--accent-2); }
+.mail-clip { flex: 0 0 auto; opacity: 0.6; font-size: 0.75rem; }
+.mail-when { flex: 0 0 auto; margin-left: auto; font-family: var(--font-mono); }
+
+.mail-tag-trustworks   { color: var(--accent);   border-color: rgba(94, 225, 208, 0.35); background: rgba(94, 225, 208, 0.05); }
+.mail-tag-dagrofa      { color: var(--accent-2); border-color: rgba(244, 184, 96, 0.45); background: rgba(244, 184, 96, 0.06); }
+.mail-tag-computerworld{ color: var(--muted);    border-color: var(--line-strong);       background: var(--surface-2); }
+
+.mail-foot { margin-top: 0.45rem; font-family: var(--font-mono); }
+
+@media (max-width: 560px) {
+  .mail-from { max-width: 100%; flex: 1 1 100%; }
+  .mail-when { margin-left: 0; }
+}
+
+/* ----------------------------------------------------------------------
+   task framing - owner (customer / Internal / Private) > project
+   Grouping comes from buckets.group_by_frame(); this only paints it.
+   ---------------------------------------------------------------------- */
+.fp-frame + .fp-frame { margin-top: 0.7rem; }
+.fp-frame-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  padding: 0.25rem 0 0.3rem;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 0.15rem;
+}
+.fp-frame-owner {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.1rem 0.45rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  background: var(--surface-2);
+  color: var(--text);
+}
+.fp-owner-internal   { color: var(--accent);   border-color: rgba(94, 225, 208, 0.35); background: rgba(94, 225, 208, 0.05); }
+.fp-owner-private    { color: var(--accent-2); border-color: rgba(244, 184, 96, 0.35); background: rgba(244, 184, 96, 0.05); }
+.fp-owner-unassigned { color: var(--muted);    border-color: var(--line);              background: transparent; }
+
+.fp-frame-sep { color: var(--muted-2); font-size: 0.8rem; }
+.fp-frame-project {
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: var(--text);
+  border-bottom: 1px dashed transparent;
+}
+a.fp-frame-project:hover { border-bottom-color: var(--accent-2); }
+/* a task pointing at a project page that does not exist, and a task with
+   no project at all, are different problems - show them differently */
+.fp-frame-project-missing { color: var(--warn); }
+.fp-frame-noproject { color: var(--muted-2); font-style: italic; font-weight: 400; }
+.fp-frame-count { margin-left: auto; font-family: var(--font-mono); }
+
+/* ----------------------------------------------------------------------
+   /projects page
+   ---------------------------------------------------------------------- */
+.proj { display: flex; flex-direction: column; gap: 1.5rem; }
+.proj-head h1 { font-family: var(--font-display); font-size: 1.3rem; margin: 0 0 0.2rem; }
+
+.proj-section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  padding-bottom: 0.45rem;
+  margin-bottom: 0.9rem;
+  border-bottom: 1px solid var(--line);
+}
+.proj-section-head h2 {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  margin: 0;
+}
+.proj-section-count {
+  margin-left: auto;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  color: var(--accent);
+  line-height: 1;
+}
+.proj-section-warn .proj-section-count { color: var(--warn); }
+
+.proj-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+.proj-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.85rem 1rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.proj-card:target { border-color: var(--accent); box-shadow: 0 0 30px -16px var(--accent-glow); }
+.proj-card-closed { opacity: 0.55; }
+.proj-card-head { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
+.proj-card-title { font-family: var(--font-display); font-size: 0.98rem; margin: 0.1rem 0 0; }
+.proj-card-slug, .proj-card-path { margin: 0; }
+.proj-card-path code { font-size: 0.68rem; color: var(--muted-2); }
+.proj-card-tasks { margin: 0.2rem 0 0; font-size: 0.82rem; }
+.proj-card-tags { display: flex; flex-wrap: wrap; gap: 0.25rem; margin: 0.25rem 0 0; }
+
+.proj-owner  { color: var(--text);     border-color: var(--line-strong);        background: var(--surface-2); }
+.proj-tag    { color: var(--muted);    border-color: var(--line);               background: transparent; font-size: 0.6rem; }
+.proj-conf   { color: var(--muted);    border-color: var(--line);               background: transparent; }
+.proj-status-open      { color: var(--accent);   border-color: rgba(94, 225, 208, 0.35); background: rgba(94, 225, 208, 0.05); }
+.proj-status-waiting   { color: var(--warn);     border-color: rgba(255, 195, 107, 0.4); background: rgba(255, 195, 107, 0.06); }
+.proj-status-review    { color: var(--accent-2); border-color: rgba(244, 184, 96, 0.4);  background: rgba(244, 184, 96, 0.06); }
+.proj-status-done      { color: var(--ok);       border-color: rgba(110, 231, 168, 0.35);background: rgba(110, 231, 168, 0.06); }
+.proj-status-cancelled { color: var(--muted-2);  border-color: var(--line);              background: transparent; }
+
+.proj-warn-list { list-style: none; padding: 0; margin: 0; font-size: 0.85rem; }
+.proj-warn-list li { padding: 0.3rem 0; border-bottom: 1px solid var(--line); }
+.proj-warn-list li:last-child { border-bottom: 0; }
+
+.proj-card-counts { display: flex; align-items: baseline; gap: 0.35rem; margin: 0 0 0.3rem; }
+.proj-count { font-family: var(--font-display); font-size: 1.3rem; color: var(--accent); line-height: 1; }
+.proj-count + .muted + .proj-count { margin-left: 0.6rem; }
+
+/* a task that feeds one of the user's own projects - a real reference,
+   unlike the `project:` grouping label next to it */
+.fp-tag-relates { color: var(--accent); border-color: rgba(94, 225, 208, 0.4); background: rgba(94, 225, 208, 0.06); }
+.fp-tag-relates:hover { border-color: var(--accent); }
+.fp-tag-relates-missing { color: var(--warn); border-color: rgba(255, 195, 107, 0.45); background: rgba(255, 195, 107, 0.07); }
+.proj-wiki { color: var(--muted); border-color: var(--line); background: transparent; }
+
+/* the LLM-Wiki project a task belongs to, shown beside the unit tag */
+.fp-frame-wiki {
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.05rem 0.35rem;
+}
+
+/* ======================================================================
+   Today view - home-monitor port, roadmap step 0.
+   Dark only per docs/home-monitor/CLAUDE.md: no light branch, no
+   prefers-color-scheme, every surface painted from a token so the page
+   can never borrow a light background.
+   ====================================================================== */
+.hm { display:flex; flex-direction:column; gap:14px; }
+
+.hm-panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  min-width: 0;
+}
+.hm-head {
+  display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;
+  padding: 11px 15px 9px;
+  border-bottom: 1px solid var(--line);
+}
+.hm-head h2 {
+  font-family: var(--font-display);
+  font-size: .74rem; font-weight:600; margin:0;
+  letter-spacing:.13em; text-transform:uppercase; color: var(--text);
+}
+.hm-src {
+  font-family: var(--font-mono); font-size:.64rem; color: var(--muted-2);
+  margin-left:auto; white-space:nowrap;
+}
+.hm-count {
+  font-family: var(--font-mono); font-size:.72rem; color: var(--muted);
+  font-variant-numeric: tabular-nums; white-space:nowrap;
+}
+.hm-mock {
+  font-family: var(--font-mono); font-size:.58rem; letter-spacing:.08em;
+  text-transform:uppercase; color: var(--accent-2);
+  border:1px dashed rgba(244,184,96,.45); border-radius:3px; padding:1px 5px;
+}
+.hm-body { padding: 12px 15px 14px; }
+.hm-scroll { max-height: 340px; overflow-y:auto; }
+.hm-sub {
+  font-family: var(--font-mono); font-size:.63rem; letter-spacing:.09em;
+  text-transform:uppercase; color: var(--muted-2);
+  margin: 10px 0 5px; padding-bottom:3px; border-bottom:1px solid var(--line);
+}
+.hm-sub:first-child { margin-top:0; }
+.hm-link {
+  font-family: var(--font-mono); font-size:.64rem; color: var(--accent);
+  white-space:nowrap; flex:0 0 auto; border-bottom:0;
+}
+.hm-link:hover { color: var(--text); border-bottom:0; }
+.hm-foot { font-size:.73rem; color: var(--muted-2); margin: 2px 0 0; }
+
+/* brief */
+.hm-lead {
+  font-family: var(--font-display); font-weight:500;
+  font-size:1.26rem; line-height:1.34; letter-spacing:-.015em;
+  margin:0 0 14px; text-wrap:balance; color: var(--text);
+}
+.hm-brief-cols { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+.hm-brief-cols h3 {
+  font-family: var(--font-mono); font-size:.62rem; letter-spacing:.1em;
+  text-transform:uppercase; color: var(--muted-2); margin:0 0 6px; font-weight:500;
+}
+.hm-brow { margin:0 0 5px; font-size:.84rem; line-height:1.4; color: var(--text); }
+.hm-kind, .hm-time {
+  font-family: var(--font-mono); font-size:.64rem; color: var(--muted-2);
+  margin-right:7px; display:inline-block; min-width:3.2rem;
+}
+.hm-time { color: var(--accent); }
+
+/* rows */
+.hm-row-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; align-items:start; }
+.hm-row-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:start; }
+
+/* calendar */
+.hm-cal {
+  display:grid; grid-template-columns:46px 3px 1fr auto; gap:9px;
+  align-items:start; padding:7px 0; border-bottom:1px solid var(--line);
+}
+.hm-cal:last-child { border-bottom:0; }
+.hm-cal.is-off { opacity:.45; text-decoration:line-through; }
+.hm-cal-t { font-family: var(--font-mono); font-size:.72rem; color: var(--muted); font-variant-numeric:tabular-nums; padding-top:2px; }
+.hm-cal-bar { width:3px; border-radius:2px; background: var(--line-strong); align-self:stretch; min-height:24px; }
+.hm-cal:first-child .hm-cal-bar { background: var(--accent); }
+.hm-cal-main { min-width:0; }
+.hm-cal-title { display:block; font-size:.86rem; font-weight:500; color: var(--text); }
+.hm-cal-sub { display:block; font-size:.71rem; color: var(--muted-2); }
+.hm-gap { font-family: var(--font-mono); font-size:.64rem; color: var(--muted-2); margin:2px 0 2px 55px; }
+
+/* mail */
+.hm-mail {
+  display:grid; grid-template-columns:1fr auto; gap:9px;
+  padding:7px 0 7px 9px; border-bottom:1px solid var(--line); position:relative;
+}
+.hm-mail:last-child { border-bottom:0; }
+.hm-mail.is-unread::before {
+  content:""; position:absolute; left:0; top:12px;
+  width:5px; height:5px; border-radius:50%; background: var(--accent);
+}
+.hm-mail-main { min-width:0; }
+.hm-mail-top { display:flex; justify-content:space-between; gap:8px; }
+.hm-mail-from { font-size:.74rem; color: var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.hm-mail-when { font-family: var(--font-mono); font-size:.66rem; color: var(--muted-2); flex:0 0 auto; }
+.hm-mail-subj { display:block; font-size:.85rem; color: var(--muted); }
+.hm-mail.is-unread .hm-mail-subj { color: var(--text); font-weight:500; }
+.hm-mail-why { display:block; font-family: var(--font-mono); font-size:.62rem; color: var(--accent-2); margin-top:2px; }
+
+/* vault tasks */
+.hm-task { display:grid; grid-template-columns:16px 1fr; gap:9px; padding:6px 0; border-bottom:1px solid var(--line); }
+.hm-task:last-child { border-bottom:0; }
+.hm-check {
+  width:14px; height:14px; margin-top:3px; border-radius:3px; cursor:pointer;
+  border:1px solid var(--line-strong); background: var(--surface-2); padding:0;
+}
+.hm-check:hover { border-color: var(--accent); }
+.hm-check:focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+.hm-task-main { min-width:0; cursor:pointer; }
+.hm-task-main:hover .hm-task-title { color: var(--accent); }
+.hm-task-title { display:block; font-size:.84rem; line-height:1.32; color: var(--text); }
+.hm-task.is-late .hm-task-title { color: var(--danger); }
+.hm-task-sub { display:block; font-family: var(--font-mono); font-size:.63rem; color: var(--muted-2); }
+
+/* PR + pipeline rows */
+.hm-pr {
+  display:grid; grid-template-columns:1fr auto; gap:9px; align-items:center;
+  padding:8px 0; border-bottom:1px solid var(--line);
+}
+.hm-pr:last-child { border-bottom:0; }
+a.hm-pr { color:inherit; border-bottom:0; }
+a.hm-pr:hover .hm-pr-title { color: var(--accent); }
+.hm-pr-main { min-width:0; }
+.hm-pr-title { display:block; font-size:.85rem; font-weight:500; color: var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.hm-pr-sub { display:block; font-family: var(--font-mono); font-size:.64rem; color: var(--muted-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+.hm-pill {
+  font-family: var(--font-mono); font-size:.61rem; letter-spacing:.05em;
+  text-transform:uppercase; padding:2px 7px; border-radius:3px;
+  border:1px solid var(--line); color: var(--muted); white-space:nowrap; flex:0 0 auto;
+}
+.hm-pill.is-ok   { color: var(--ok);       border-color: rgba(110,231,168,.4); }
+.hm-pill.is-warn { color: var(--accent-2); border-color: rgba(244,184,96,.45); }
+.hm-pill.is-bad  { color: var(--danger);   border-color: rgba(255,111,122,.5); background: rgba(255,111,122,.08); }
+.hm-pill.is-run  { color: var(--accent);   border-color: rgba(94,225,208,.45); }
+
+/* taskboard */
+.hm-board { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:11px; align-items:start; }
+.hm-col { min-width:0; }
+.hm-col-h {
+  display:flex; justify-content:space-between; gap:6px; margin:0 0 7px;
+  font-family: var(--font-mono); font-size:.64rem; letter-spacing:.08em;
+  text-transform:uppercase; color: var(--muted-2);
+  padding-bottom:4px; border-bottom:1px solid var(--line);
+}
+.hm-card {
+  display:block; background: var(--surface-2); border:1px solid var(--line);
+  border-radius:6px; padding:7px 9px; margin-bottom:7px; color:inherit; border-bottom:1px solid var(--line);
+}
+.hm-card:hover { border-color: var(--line-strong); }
+.hm-card:hover .hm-card-t { color: var(--accent); }
+.hm-card-id { display:block; font-family: var(--font-mono); font-size:.6rem; color: var(--muted-2); }
+.hm-card-t { display:block; font-size:.78rem; line-height:1.3; color: var(--text); }
+
+@media (max-width: 1100px) { .hm-row-3 { grid-template-columns:1fr 1fr; } .hm-brief-cols { grid-template-columns:1fr 1fr; } }
+@media (max-width: 760px)  { .hm-row-3, .hm-row-2, .hm-brief-cols { grid-template-columns:1fr; } }
+
+/* ==== AI architecture view (/ai) =====================================
+   The merged direction: constellation concept from Observatory Field,
+   canvas from Reactor Lattice, in Reactor's warm palette so the page
+   is one thing and not two.
+
+   WARMTH IS SCOPED, DELIBERATELY
+   `body.warm` redefines the shared tokens instead of changing :root,
+   so Today, Boxes, ADO, News and Budget keep the palette they have
+   until each one is reviewed. Scoping it to the <section> instead
+   would have left a cold topbar above a warm page, which is a visible
+   seam - hence the body class.
+
+   Dark only. No prefers-color-scheme branch, nothing light, every
+   surface painted from a token.
+
+   Type roles per docs/home-monitor/docs/UI-ANALYSIS.md: Space Grotesk
+   for display only, Inter for everything read as prose, JetBrains Mono
+   for data. All three are vendored locally, so the page still has zero
+   external requests.
+   ==================================================================== */
+body.warm {
+  --bg: #100d0f;
+  --bg-grad-a: #140f12;
+  --bg-grad-b: #171114;
+  --surface: #1b1619;
+  --surface-2: #241d21;
+  --surface-3: #2e2529;
+  --line: #332a2e;
+  --line-strong: #483b40;
+
+  --accent: #ffc24a;
+  --accent-glow: rgba(255, 194, 74, 0.34);
+  --accent-2: #ff8a5c;
+  --accent-2-glow: rgba(255, 138, 92, 0.30);
+  --text: #f4ece9;
+
+  /* Both muted tokens were below WCAG AA on the old palette: measured
+     2.51:1 and 4.18:1, and both carry real content. These clear it. */
+  --muted: #bdaaa6;
+  --muted-2: #998884;
+
+  --danger: #ff6f5e;
+  --warn: #ffc24a;
+  --ok: #74b49b;
+
+  --ai-calm: #74b49b;
+  --ai-alarm: #ff6f5e;
+  --ai-violet: #b08ce8;
+  --ai-edge: #6d5d5b;
+  --ai-line: #483b40;
+
+  background:
+    radial-gradient(780px 440px at 10% -4%, #251419 0%, transparent 62%),
+    radial-gradient(640px 430px at 92% 10%, #1e1621 0%, transparent 60%),
+    var(--bg);
+}
+
+.ai { display: flex; flex-direction: column; gap: 18px; padding-block: 6px 10px; }
+
+/* ---- masthead ---------------------------------------------------- */
+.ai-top { display: flex; align-items: flex-end; gap: 20px; flex-wrap: wrap; }
+.ai-top-id { min-width: 0; }
+.ai-top h1 {
+  font-family: var(--font-display); font-size: 1.7rem; font-weight: 700;
+  letter-spacing: -0.03em; margin: 0; line-height: 1.05; color: var(--text);
+}
+.ai-when {
+  font-family: var(--font-mono); font-size: .66rem; color: var(--muted-2);
+  margin: 5px 0 0;
+}
+.ai-gauges { margin-left: auto; display: flex; gap: 1px; }
+.ai-gauge {
+  padding: 7px 15px; background: var(--surface); border: 1px solid var(--line);
+  display: flex; flex-direction: column; gap: 1px; min-width: 84px;
+}
+.ai-gauge:first-child { border-radius: 8px 0 0 8px; }
+.ai-gauge:last-child { border-radius: 0 8px 8px 0; }
+.ai-gauge b {
+  font-family: var(--font-display); font-size: 1.35rem; font-weight: 700;
+  line-height: 1.05; letter-spacing: -0.02em; color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.ai-gauge span {
+  font-family: var(--font-mono); font-size: .6rem; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--muted-2);
+}
+.ai-gauge.is-alarm { border-color: #6b2f29; background: #1f1312; }
+.ai-gauge.is-alarm b { color: var(--ai-alarm); }
+
+.ai-dead { margin: 0; font-size: .95rem; color: var(--accent-2); }
+.ai-hint { margin: 6px 0 0; font-size: .86rem; color: var(--muted); }
+.ai-hint code {
+  font-family: var(--font-mono); font-size: .8rem;
+  background: var(--surface-2); padding: 1px 5px; border-radius: 3px;
+}
+
+.ai-note { font-size: .92rem; line-height: 1.6; color: var(--muted); margin: 0; max-width: 72ch; }
+.ai-note b { color: var(--text); font-weight: 500; }
+
+/* ---- tabs. No navigation, so the viewport never moves. ----------- */
+.ai-views { display: flex; gap: 6px; }
+.ai-views button {
+  appearance: none; cursor: pointer;
+  font-family: var(--font-display); font-size: .86rem; font-weight: 600;
+  padding: 8px 17px; border-radius: 999px;
+  background: var(--surface); color: var(--muted);
+  border: 1px solid var(--line);
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.ai-views button:hover { color: var(--text); border-color: var(--line-strong); }
+.ai-views button[aria-selected="true"] {
+  background: var(--accent); color: #1a1205; border-color: var(--accent);
+}
+/* The page had no keyboard focus state at all before this. */
+.ai :is(button, a, [tabindex]):focus-visible,
+.ai-panel :is(button, a, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 5px;
+}
+
+/* ===== CONSTELLATION ============================================== */
+/* ---- the sky: a viewport over a fixed canvas ----------------------
+   The detail panel is fixed to the right edge, so an agent under it
+   was unclickable and un-hoverable. The field is now a framed box you
+   can drag in both directions, and hovering an agent pans it clear of
+   the panel. Clamped in ai.js so you can never drag off into nothing. */
+.ai-sky {
+  position: relative; overflow: hidden;
+  height: clamp(420px, 64vh, 760px);
+  border: 1px solid var(--line); border-radius: 14px;
+  background:
+    radial-gradient(900px 520px at 22% 18%, #20141a 0%, transparent 64%),
+    radial-gradient(700px 480px at 85% 76%, #1b1522 0%, transparent 60%),
+    var(--bg-grad-a);
+  cursor: grab; touch-action: none;
+}
+.ai-sky:active, .ai-sky.is-dragging { cursor: grabbing; }
+.ai-sky:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+.ai-sky-canvas { position: absolute; top: 0; left: 0; will-change: transform; }
+
+.ai-sky-hint {
+  position: absolute; left: 14px; bottom: 11px; margin: 0;
+  font-family: var(--font-mono); font-size: .6rem; letter-spacing: .11em;
+  text-transform: uppercase; color: var(--muted-2);
+  pointer-events: none; opacity: .75;
+}
+
+/* Ring geometry comes from aiview.py: n bodies on a ring of radius R
+   sit a chord of 2*R*sin(pi/n) apart, so 5 members at R=96 are 113px
+   apart against a 104px body. Positions are px from the centre, not
+   percent, so the ring is a circle whatever the cluster width. */
+.ai-cluster { position: absolute; }
+.ai-cluster-name {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: 152px; text-align: center; pointer-events: none; z-index: 1;
+}
+/* Loudest thing in its cluster. It names the group, so it leads it -
+   the opposite of the first build, where it was the dimmest and
+   smallest thing on the page. */
+.ai-cluster-name em {
+  display: block; font-style: normal;
+  font-family: var(--font-display); font-size: 1.6rem; font-weight: 700;
+  letter-spacing: -0.03em; line-height: 1.08; color: var(--text);
+  text-shadow: 0 0 24px var(--bg), 0 0 9px var(--bg);
+}
+.ai-cluster-name i {
+  display: block; font-style: normal; font-family: var(--font-mono);
+  font-size: .63rem; letter-spacing: .13em; text-transform: uppercase;
+  color: var(--muted-2); margin-top: 6px;
+}
+
+.ai-body {
+  position: absolute; appearance: none; background: none; border: 0;
+  padding: 0; cursor: pointer; width: 104px;
+  transform: translate(-50%, -50%);
+  display: flex; flex-direction: column; align-items: center; gap: 7px;
+  color: inherit; font: inherit;
+}
+.ai-orb-shell { position: relative; width: 66px; height: 66px; display: grid; place-items: center; }
+.ai-orb {
+  width: var(--sz); height: var(--sz); border-radius: 50%;
+  background: radial-gradient(circle at 35% 29%, #ffe3ae, var(--accent) 45%, #a9741a 82%);
+  box-shadow: 0 0 var(--glow) var(--accent-glow);
+  animation: ai-breathe var(--period) ease-in-out infinite;
+  transition: transform .2s cubic-bezier(.2,.8,.3,1), box-shadow .2s ease;
+}
+/* Pulse period encodes HOW OFTEN it is used, not how recently: the
+   scan stores no last-run timestamp. Said in the note above the field
+   rather than implied. */
+@keyframes ai-breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.05); }
+}
+/* Never run: a capability that exists only on paper. Hollow, so it
+   differs in SHAPE and not only in colour - it survives grayscale. */
+.ai-body.is-cold .ai-orb {
+  background: none; border: 1px dashed var(--line-strong);
+  box-shadow: none; animation: none;
+}
+/* Drift: the same name exists in more than one version on disk. A
+   notched ring, again a shape difference and not a red fill. */
+.ai-body.is-drift .ai-orb-shell::before {
+  content: ""; position: absolute; inset: 1px; border-radius: 50%;
+  border: 1.5px solid var(--ai-alarm);
+  clip-path: polygon(0 0, 100% 0, 100% 32%, 64% 32%, 64% 100%, 0 100%);
+}
+.ai-body.is-drift .ai-orb-shell::after {
+  content: ""; position: absolute; inset: -4px; border-radius: 50%;
+  border: 1px dotted var(--ai-alarm); opacity: .4;
+}
+
+.ai-moons { position: absolute; inset: 0; pointer-events: none; }
+.ai-moon {
+  position: absolute; width: 4px; height: 4px; border-radius: 50%;
+  background: var(--ai-violet); opacity: .62;
+  transform: translate(-50%, -50%);
+  transition: opacity .2s ease, box-shadow .2s ease;
+}
+
+.ai-body-n {
+  font-size: .86rem; font-weight: 500; line-height: 1.22; text-align: center;
+  color: var(--text); transition: color .15s ease;
+}
+.ai-body-m {
+  font-family: var(--font-mono); font-size: .62rem; color: var(--muted-2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Hover reveals - the slide-in panel fills with the full definition -
+   and nothing in the layout shifts under the cursor. */
+.ai-body:hover .ai-orb, .ai-body[aria-pressed="true"] .ai-orb {
+  transform: scale(1.14); box-shadow: 0 0 42px var(--accent-glow);
+}
+.ai-body:hover .ai-moon, .ai-body[aria-pressed="true"] .ai-moon {
+  opacity: 1; box-shadow: 0 0 7px var(--ai-violet);
+}
+.ai-body:hover .ai-body-n, .ai-body[aria-pressed="true"] .ai-body-n { color: var(--accent); }
+.ai-body:active .ai-orb { transform: scale(1.02); }
+/* Pressed is a persistent channel and hover is transient, so they are
+   never confusable: the pressed body keeps a ring the hover does not. */
+.ai-body[aria-pressed="true"] .ai-orb-shell {
+  box-shadow: 0 0 0 1px var(--accent), 0 0 0 5px rgba(255,194,74,.12);
+  border-radius: 50%;
+}
+
+.ai-orphans { border-top: 1px solid var(--line); padding-top: 16px; }
+.ai-orphans h2 {
+  font-family: var(--font-display); font-size: 1.6rem; font-weight: 700;
+  letter-spacing: -0.03em; margin: 0 0 4px; color: var(--text);
+}
+.ai-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 11px; }
+
+.ai-chip {
+  appearance: none; cursor: pointer;
+  font-family: var(--font-mono); font-size: .68rem; letter-spacing: .03em;
+  padding: 3px 9px; border-radius: 4px; white-space: nowrap;
+  background: var(--surface); color: var(--muted);
+  border: 1px solid var(--line);
+  transition: color .14s ease, border-color .14s ease, background .14s ease;
+}
+.ai-chip:hover { color: var(--accent); border-color: #a9741a; background: var(--surface-2); }
+.ai-chip[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
+.ai-chip.is-static { cursor: default; }
+.ai-chip.is-static:hover { color: var(--muted); border-color: var(--line); background: var(--surface); }
+.ai-chip.is-gold { color: var(--accent); border-color: #a9741a; }
+.ai-chip.is-alarm { color: var(--ai-alarm); border-color: #6b2f29; }
+
+/* ===== SLIDE-IN DETAIL PANEL ======================================
+   Hover is transient, pinned is deliberate. Same panel, two modes:
+   the pinned one gets a lit edge and an Esc hint so it is obvious it
+   is waiting for you to dismiss it. */
+.ai-panel {
+  position: fixed; top: 64px; right: 0; bottom: 0; width: 384px; max-width: 92vw;
+  z-index: 60; display: flex; flex-direction: column;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  border-left: 1px solid var(--line);
+  box-shadow: -18px 0 46px rgba(0, 0, 0, .55);
+  transform: translateX(100%);
+  transition: transform .22s cubic-bezier(.2,.75,.3,1);
+  overflow: hidden;
+}
+.ai-panel.is-open { transform: translateX(0); }
+.ai-panel.is-pinned { border-left: 2px solid var(--accent); }
+.ai-panel.is-pinned::after {
+  content: "Esc lukker"; position: absolute; left: 20px; bottom: 11px;
+  font-family: var(--font-mono); font-size: .6rem; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted-2);
+}
+.ai-panel-x {
+  position: absolute; top: 11px; right: 13px; z-index: 2;
+  appearance: none; cursor: pointer; width: 28px; height: 28px;
+  display: grid; place-items: center; border-radius: 6px;
+  background: none; border: 1px solid transparent;
+  color: var(--muted); font-size: 1.25rem; line-height: 1;
+  font-family: var(--font-body);
+  transition: color .14s ease, background .14s ease, border-color .14s ease;
+}
+.ai-panel-x:hover { color: var(--text); background: var(--surface-3); border-color: var(--line); }
+.ai-panel-body { flex: 1; overflow-y: auto; padding: 18px 20px 14px; min-height: 0; }
+.ai-panel-eyebrow {
+  font-family: var(--font-mono); font-size: .62rem; letter-spacing: .17em;
+  text-transform: uppercase; color: var(--accent); margin: 0 0 6px;
+}
+.ai-panel-body h3 {
+  font-family: var(--font-display); font-size: 1.5rem; font-weight: 700;
+  letter-spacing: -0.03em; margin: 0 0 11px; color: var(--text);
+  padding-right: 34px; overflow-wrap: anywhere;
+}
+.ai-panel-body h4 {
+  font-family: var(--font-mono); font-size: .64rem; letter-spacing: .13em;
+  text-transform: uppercase; color: var(--muted-2);
+  margin: 18px 0 0; padding-top: 11px; border-top: 1px solid var(--line);
+}
+.ai-panel-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+.ai-panel-desc {
+  font-size: .92rem; line-height: 1.6; color: var(--muted);
+  margin: 13px 0 0; max-width: 46ch;
+}
+.ai-panel-foot {
+  flex: 0 0 auto; margin: 0; padding: 11px 20px 28px;
+  border-top: 1px solid var(--line);
+  font-family: var(--font-mono); font-size: .6rem; color: var(--muted-2);
+  overflow-wrap: anywhere;
+}
+
+/* ===== WORKFLOWS ================================================== */
+.ai-flow { display: grid; grid-template-columns: 248px 1fr; gap: 26px; align-items: start; }
+.ai-rail { position: sticky; top: 16px; }
+.ai-rail-group { margin-bottom: 18px; }
+.ai-rail-group h3 {
+  font-family: var(--font-display); font-size: 1.16rem; font-weight: 700;
+  letter-spacing: -0.025em; margin: 0 0 2px; color: var(--text);
+}
+.ai-rail-proj {
+  font-family: var(--font-mono); font-size: .61rem; letter-spacing: .13em;
+  text-transform: uppercase; color: var(--muted-2); margin: 0 0 8px;
+}
+.ai-rail-item {
+  display: grid; grid-template-columns: 1fr auto auto; gap: 9px; align-items: center;
+  width: 100%; appearance: none; background: none; cursor: pointer;
+  border: 1px solid transparent; border-radius: 7px; padding: 7px 9px;
+  text-align: left; color: inherit; font: inherit;
+  transition: background .14s ease, border-color .14s ease;
+}
+.ai-rail-item:hover { background: var(--surface); border-color: var(--line); }
+/* Selected is a different channel from hover, so the hovered row and
+   the chosen row never look alike. */
+.ai-rail-item[aria-current="true"] { background: var(--surface-2); border-color: #a9741a; }
+.ai-rail-item[aria-current="true"] .ai-rail-n { color: var(--accent); }
+.ai-rail-n {
+  font-size: .86rem; font-weight: 500; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ai-rail-c { font-family: var(--font-mono); font-size: .61rem; color: var(--muted-2); }
+.ai-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted-2); }
+.ai-dot.good { background: var(--ai-calm); }
+.ai-dot.warn { background: var(--accent); }
+.ai-dot.bad { background: var(--ai-alarm); }
+
+.ai-canvas-col { min-width: 0; }
+.ai-canvas-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 7px; }
+.ai-canvas-head h2 {
+  font-family: var(--font-display); font-size: 1.6rem; font-weight: 700;
+  letter-spacing: -0.03em; margin: 0; color: var(--text);
+}
+.ai-tools { display: flex; gap: 6px; margin: 13px 0 0; }
+.ai-tools button {
+  appearance: none; cursor: pointer;
+  font-family: var(--font-mono); font-size: .65rem; letter-spacing: .08em;
+  text-transform: uppercase; padding: 4px 11px; border-radius: 5px;
+  background: var(--surface); color: var(--muted); border: 1px solid var(--line);
+  transition: color .14s ease, border-color .14s ease;
+}
+.ai-tools button:hover { color: var(--text); border-color: var(--line-strong); }
+
+.ai-scroll {
+  overflow: auto; margin-top: 12px; max-height: 68vh;
+  border: 1px solid var(--line); border-radius: 12px;
+  background:
+    radial-gradient(circle at 1px 1px, #2a2226 1px, transparent 0) 0 0 / 26px 26px,
+    var(--bg-grad-a);
+}
+.ai-stage { position: relative; transform-origin: 0 0; }
+.ai-stage > svg { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
+
+.ai-cell {
+  position: absolute; width: 168px; padding: 9px 11px;
+  appearance: none; cursor: pointer; text-align: left; font: inherit;
+  background: var(--surface); color: inherit;
+  border: 1px solid var(--line); border-radius: 9px;
+  transform: translateY(-50%);
+  transition: border-color .16s ease, box-shadow .16s ease;
+}
+.ai-cell:hover { border-color: var(--line-strong); box-shadow: 0 8px 26px rgba(0,0,0,.55); }
+.ai-cell[aria-pressed="true"] { border-color: var(--accent); }
+.ai-cell::before {
+  content: ""; position: absolute; left: -1px; top: 11px; bottom: 11px;
+  width: 3px; border-radius: 3px; background: var(--line-strong);
+}
+.ai-cell-k {
+  display: block; font-family: var(--font-mono); font-size: .58rem;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--muted-2);
+}
+.ai-cell-w { display: block; font-size: .84rem; font-weight: 500; line-height: 1.28; color: var(--text); margin-top: 2px; }
+.ai-cell-y {
+  margin-top: 5px; font-size: .7rem; line-height: 1.4; color: var(--muted-2);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.ai-cell.k-trigger::before { background: var(--accent); }
+.ai-cell.k-if::before      { background: var(--ai-calm); }
+.ai-cell.k-agent::before   { background: var(--ai-alarm); }
+.ai-cell.k-skill::before   { background: var(--ai-violet); }
+.ai-cell.k-gate::before    { background: var(--ai-alarm); }
+
+/* Detour lane: what a step reaches sideways for, dropped below the
+   chain on a dashed tether. */
+.ai-drop {
+  position: absolute; width: 152px; padding: 6px 10px;
+  appearance: none; text-align: left; font: inherit; color: inherit;
+  border: 1px dashed var(--line-strong); border-radius: 8px;
+  background: rgba(27, 22, 25, .84);
+  transition: border-color .15s ease;
+}
+button.ai-drop { cursor: pointer; }
+button.ai-drop:hover { border-color: var(--accent); }
+.ai-drop-k {
+  display: block; font-family: var(--font-mono); font-size: .56rem;
+  letter-spacing: .13em; text-transform: uppercase; color: var(--muted-2);
+}
+.ai-drop-w { display: block; font-size: .78rem; font-weight: 500; margin-top: 1px; }
+.ai-drop.is-skill .ai-drop-w { color: var(--ai-violet); }
+.ai-drop.is-agent .ai-drop-w { color: var(--ai-alarm); }
+/* An empty lane is shown empty rather than hidden, so what the scanner
+   does not read yet is visible instead of silently absent. */
+.ai-drop.is-empty { border-style: dotted; opacity: .5; }
+.ai-drop.is-empty .ai-drop-w { color: var(--muted-2); font-style: italic; }
+
+.ai-elabel {
+  position: absolute; font-family: var(--font-mono); font-size: .62rem;
+  color: var(--ai-calm); background: var(--bg-grad-a);
+  padding: 0 5px; border-radius: 3px; transform: translate(-50%, -50%);
+}
+.ai-spark { fill: var(--accent); filter: drop-shadow(0 0 6px var(--accent-glow)); }
+
+.ai-key { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 16px; }
+.ai-key span {
+  font-family: var(--font-mono); font-size: .62rem; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--muted);
+  padding: 3px 9px 3px 7px; border-radius: 5px;
+  border: 1px solid var(--line); border-left: 3px solid var(--line-strong);
+}
+.ai-key .k-trigger { border-left-color: var(--accent); }
+.ai-key .k-if      { border-left-color: var(--ai-calm); }
+.ai-key .k-agent   { border-left-color: var(--ai-alarm); }
+.ai-key .k-skill   { border-left-color: var(--ai-violet); }
+.ai-key .k-gate    { border-left-color: var(--ai-alarm); }
+
+.ai-src {
+  margin: 12px 0 0; font-family: var(--font-mono); font-size: .62rem;
+  color: var(--muted-2); overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai *, .ai-panel, .ai-panel * { animation: none !important; transition-duration: .01ms !important; }
+}
+
+@media (max-width: 1000px) {
+  .ai-flow { grid-template-columns: 1fr; }
+  .ai-rail { position: static; }
+}
+@media (max-width: 760px) {
+  .ai-gauges { margin-left: 0; }
+  /* A 322px ring does not fit a phone, so drop the viewport, stop
+     positioning absolutely, and let everything stack. ai.js watches the
+     same breakpoint and turns panning off. */
+  .ai-sky {
+    height: auto; overflow: visible; cursor: auto;
+    border: 0; border-radius: 0; background: none;
+  }
+  .ai-sky-hint { display: none; }
+  .ai-sky-canvas {
+    position: static; width: auto !important; height: auto !important;
+    transform: none !important;
+    display: flex; flex-direction: column; gap: 26px;
+  }
+  .ai-cluster {
+    position: static; width: auto !important; height: auto !important;
+    display: flex; flex-direction: column; gap: 13px;
+  }
+  .ai-cluster-name { position: static; transform: none; width: auto; text-align: left; }
+  .ai-body {
+    position: static !important; transform: none; width: 100%;
+    flex-direction: row; align-items: center; gap: 13px; text-align: left;
+  }
+  .ai-body-n, .ai-body-m { text-align: left; }
+  .ai-panel { top: auto; width: 100%; max-width: 100%; height: 76vh; border-left: 0; border-top: 1px solid var(--line); }
+  .ai-panel.is-pinned { border-left: 0; border-top: 2px solid var(--accent); }
+  .ai-panel { transform: translateY(100%); }
+  .ai-panel.is-open { transform: translateY(0); }
+}
+
+/* ---- scope and duplicate summary ---------------------------------- */
+.ai-sum { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.ai-sum-card {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 12px; padding: 15px 17px 16px;
+}
+.ai-sum-h { display: flex; align-items: baseline; gap: 11px; margin-bottom: 12px; }
+.ai-sum-h h2 {
+  font-family: var(--font-display); font-size: 1.35rem; font-weight: 700;
+  letter-spacing: -0.03em; margin: 0; color: var(--text);
+}
+.ai-sum-h b {
+  font-family: var(--font-display); font-size: 1.35rem; font-weight: 700;
+  color: var(--accent); font-variant-numeric: tabular-nums; margin-left: auto;
+}
+.ai-sum-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  gap: 11px 14px; margin: 0;
+}
+.ai-sum-grid > div { display: flex; flex-direction: column-reverse; }
+.ai-sum-grid dt {
+  font-family: var(--font-mono); font-size: .61rem; letter-spacing: .09em;
+  text-transform: uppercase; color: var(--muted-2); margin-top: 3px;
+}
+.ai-sum-grid dd {
+  margin: 0; font-family: var(--font-display); font-size: 1.22rem;
+  font-weight: 700; line-height: 1; color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+/* Only the count that needs a decision is lit. An identical duplicate
+   is a tidy-up and stays quiet. */
+.ai-sum-grid .is-alarm dd { color: var(--ai-alarm); }
+.ai-sum-grid .is-quiet dd { color: var(--muted); font-size: 1rem; }
+.ai-sum-note {
+  margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--line);
+  font-size: .84rem; color: var(--muted); line-height: 2.1;
+}
+.ai-sum-note b { color: var(--text); font-weight: 500; }
+
+/* ---- ledger -------------------------------------------------------- */
+.ai-ledger { border-top: 1px solid var(--line); padding-top: 20px; }
+.ai-ledger-head { display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap; margin-bottom: 14px; }
+.ai-ledger-head h2 {
+  font-family: var(--font-display); font-size: 1.6rem; font-weight: 700;
+  letter-spacing: -0.03em; margin: 0; color: var(--text);
+}
+.ai-filters { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+.ai-filters button {
+  appearance: none; cursor: pointer; display: flex; align-items: baseline; gap: 6px;
+  font-family: var(--font-body); font-size: .8rem; font-weight: 500;
+  padding: 5px 12px; border-radius: 999px;
+  background: var(--surface); color: var(--muted); border: 1px solid var(--line);
+  transition: background .14s ease, color .14s ease, border-color .14s ease;
+}
+.ai-filters button i {
+  font-style: normal; font-family: var(--font-mono); font-size: .66rem;
+  color: var(--muted-2); font-variant-numeric: tabular-nums;
+}
+.ai-filters button:hover { color: var(--text); border-color: var(--line-strong); }
+.ai-filters button[aria-pressed="true"] {
+  background: var(--accent); color: #1a1205; border-color: var(--accent);
+}
+.ai-filters button[aria-pressed="true"] i { color: #1a1205; opacity: .72; }
+
+.ai-table-wrap {
+  overflow-x: auto; border: 1px solid var(--line); border-radius: 12px;
+  background: var(--surface);
+}
+.ai-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.ai-table th {
+  position: sticky; top: 0; z-index: 1; text-align: left;
+  font-family: var(--font-mono); font-size: .6rem; font-weight: 400;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--muted-2);
+  background: var(--surface-2); padding: 9px 11px;
+  border-bottom: 1px solid var(--line); white-space: nowrap;
+}
+.ai-table td { padding: 8px 11px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.ai-table tbody tr:last-child td { border-bottom: 0; }
+.ai-table tbody tr:hover td { background: var(--surface-2); }
+.ai-table .c-num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--font-mono); font-size: .75rem; white-space: nowrap; }
+.ai-table .c-name { min-width: 230px; }
+.ai-table .c-bar { width: 160px; min-width: 130px; }
+.ai-table .c-ts, .ai-table .c-used { white-space: nowrap; font-family: var(--font-mono); font-size: .7rem; color: var(--muted); }
+
+.ai-ledger-n {
+  appearance: none; background: none; border: 0; padding: 0; cursor: pointer;
+  font: inherit; font-weight: 500; color: var(--text); text-align: left;
+  transition: color .14s ease;
+}
+.ai-ledger-n:hover, .ai-ledger-n[aria-pressed="true"] { color: var(--accent); }
+
+.ai-kind, .ai-scope {
+  font-family: var(--font-mono); font-size: .58rem; letter-spacing: .1em;
+  text-transform: uppercase; padding: 1px 6px; border-radius: 3px;
+  border: 1px solid var(--line); color: var(--muted-2); margin-left: 7px;
+  white-space: nowrap;
+}
+.ai-kind.k-skill { color: var(--ai-violet); border-color: #4e3a70; }
+.ai-scope { margin-left: 0; }
+.ai-scope.s-global { color: var(--accent); border-color: var(--gold-dim, #a9741a); }
+/* Project scope gets a left notch as well as a colour, so the two
+   scopes are distinguishable without hue. */
+.ai-scope.s-project { color: var(--muted); box-shadow: inset 3px 0 0 var(--line-strong); padding-left: 10px; }
+/* Both at once: lives globally AND inside a project. Double notch, so
+   it is distinguishable from either single scope without colour. */
+.ai-scope.s-both {
+  color: var(--ai-alarm); border-color: #6b2f29; padding-left: 13px;
+  box-shadow: inset 3px 0 0 var(--ai-alarm), inset 6px 0 0 var(--surface), inset 9px 0 0 var(--ai-alarm);
+}
+
+/* A version count above 1 means the same name holds different content:
+   a decision, not a tidy-up. Doubled edge plus colour. */
+.ai-table td.is-merge {
+  color: var(--ai-alarm);
+  box-shadow: inset 3px 0 0 var(--ai-alarm), inset 6px 0 0 var(--surface);
+}
+
+/* Attempts: a stacked bar, leftmost segment is always "first time", so
+   a widening left block is the thing to watch as memory lands. */
+.ai-att {
+  display: flex; height: 9px; border-radius: 3px; overflow: hidden;
+  background: var(--line); min-width: 90px;
+}
+.ai-att i { display: block; height: 100%; }
+.ai-att .t-ok   { background: var(--ai-calm); }
+.ai-att .t-warn { background: var(--accent); }
+.ai-att .t-hot  { background: var(--accent-2); }
+.ai-att .t-bad  { background: var(--ai-alarm); }
+.ai-na { color: var(--muted-2); font-family: var(--font-mono); font-size: .68rem; }
+
+.ai-foots { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+.ai-foots p { margin: 0; font-size: .8rem; line-height: 1.55; color: var(--muted-2); max-width: 92ch; }
+.ai-foots b { color: var(--muted); font-weight: 500; }
+.ai-foots code {
+  font-family: var(--font-mono); font-size: .72rem;
+  background: var(--surface-2); padding: 1px 4px; border-radius: 3px;
+}
+
+@media (max-width: 860px) {
+  .ai-sum { grid-template-columns: 1fr; }
+  .ai-filters { margin-left: 0; }
+  .ai-ledger-head h2 { font-size: 1.35rem; }
+}
+
+/* aistack Boxes card - four numbers and the one actionable count */
+.ai-card { display:block; border-bottom:0; color:inherit; }
+.ai-card-nums { display:flex; flex-wrap:wrap; gap:16px; }
+.ai-card-n { display:flex; flex-direction:column; gap:1px; }
+.ai-card-n b {
+  font-family: var(--font-display); font-size:1.35rem; font-weight:600;
+  line-height:1; color: var(--text); font-variant-numeric: tabular-nums;
+}
+.ai-card:hover .ai-card-n b { color: var(--accent); }
+.ai-card-n i {
+  font-style:normal; font-family: var(--font-mono); font-size:.58rem;
+  letter-spacing:.09em; text-transform:uppercase; color: var(--muted-2);
+}
+.ai-card-drift {
+  display:block; margin-top:10px; padding:5px 8px; border-radius:5px;
+  font-size:.72rem; color: var(--accent-2);
+  background: rgba(244,184,96,.07); border:1px solid rgba(244,184,96,.3);
+}
+.ai-card-when {
+  display:block; margin-top:9px; font-family: var(--font-mono);
+  font-size:.6rem; color: var(--muted-2);
+}
+.ai-card-dead { margin:0; font-size:.78rem; color: var(--accent-2); }
+.ai-card-hint { margin:5px 0 0; font-size:.72rem; color: var(--muted); }
+.ai-card-hint code {
+  font-family: var(--font-mono); font-size:.68rem;
+  background: var(--surface-2); padding:1px 4px; border-radius:3px;
+}
+/* Fallback when a widget ships no card.html at all. */
+.card-nocard { margin:0; font-size:.78rem; color: var(--muted); }

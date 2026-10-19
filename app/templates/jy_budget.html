@@ -1,0 +1,222 @@
+{% extends "shell.html" %}
+{% block title %}Budget :: Jytte{% endblock %}
+
+{# New-UI skin for the CRUD partials, which are shared with
+   /legacy/budget and styled there by styles.css. Own file so no other
+   page downloads it. #}
+{% block head_extra %}
+<link rel="stylesheet" href="/static/jy_budget.css" />
+{% endblock %}
+
+{% block content %}
+{# Mock 1h. Stat strip, by-category bars, entries.
+
+   Three things the mock shows have no source: a budget ceiling per
+   category (so "over budget" cannot be coloured - the bar is share of
+   the largest category and says so), a 6-month history, and the
+   categorizer confidence with its gul Review flag. The budget widget
+   stores planned entries, not imported transactions. #}
+
+<div class="hd">
+  <div class="hd-id">
+    <span class="eyebrow">Budget &middot; app/widgets/budget</span>
+    <h1 class="pg">Budget</h1>
+  </div>
+  {% if ready %}
+  <div class="hd-right">
+    <a class="btn ghost" href="/legacy/budget">Rediger i den gamle side</a>
+  </div>
+  {% endif %}
+</div>
+
+{% if not ready %}
+<div class="lg-note">
+  <h2>Kunne ikke læse budgettet</h2>
+  <p>{{ reason }}</p>
+  <div class="row-act"><a class="btn ghost" href="/legacy/budget">Aabn den gamle side</a></div>
+</div>
+{% else %}
+
+<div class="strip">
+  {% for s in strip %}
+  <div>
+    <span class="eyebrow">{{ s.label }}</span>
+    <span class="v">{{ s.value }}</span>
+    <span class="s{% if s.tone %} is-{{ s.tone }}{% endif %}">{{ s.sub }}</span>
+  </div>
+  {% endfor %}
+</div>
+
+{# ---- per person -----------------------------------------------------
+   One column per person plus the shared pot, side by side. Column
+   totals come from the same summarise() as the strip above, so the
+   two can never be computed differently and disagree.
+
+   An entry belongs to exactly one column: yours, hers, or shared.
+   `budget_entries.owner` is NULL for shared, which is also what every
+   row entered before this feature existed became. #}
+{% if salary_conflicts %}
+{# Both a manual salary row and a computed net exist for the same
+   person. The manual one is counted; the computed one is withheld so
+   the totals are not doubled. #}
+<section class="pn" style="padding:16px 20px; gap:10px; margin-bottom:16px;
+         border-left:2px solid var(--gul)">
+  <div class="pn-h" style="padding:0">
+    <span class="pn-t">Løn står to steder</span>
+  </div>
+  {% for c in salary_conflicts %}
+  <p style="font-size:13px; color:var(--muted); line-height:1.55; margin:0">
+    <b style="color:var(--text)">{{ c.name }}</b> har en manuel post
+    <b class="mono">{{ c.manual_name }} {{ c.manual }}</b>, så den beregnede
+    nettoløn <b class="mono">{{ c.computed }}</b> holdes udenfor for ikke at
+    taelle dobbelt. Slet den manuelle post hvis du vil bruge den beregnede,
+    som følger skattekortet af sig selv.
+  </p>
+  {% endfor %}
+</section>
+{% endif %}
+
+{% if owner_cols %}
+<section class="pn" data-card="people" style="padding:18px 20px; gap:14px; margin-bottom:16px">
+  <div class="pn-h" style="padding:0 0 4px">
+    <span class="pn-t">Pr. person</span>
+    <span class="pn-src">{{ owner_cols|length }} kolonner &middot; fælles er NULL</span>
+  </div>
+  {% include "_bud_people.html" %}
+</section>
+{% endif %}
+
+{# ---- the expense rose ------------------------------------------------
+   A spider grid with one coloured wedge per category, rather than one
+   joined polygon: the ask was to tell the categories apart, and a
+   single polygon gives them all the same colour and the same shape.
+
+   Radius is sqrt-scaled so AREA is proportional to kroner. Geometry is
+   computed in app/budget_viz.py and printed here; no chart library and
+   no JavaScript, same as the flow canvas on /workflows. #}
+<section class="pn" data-card="rose" style="padding:18px 20px; gap:14px; margin-bottom:16px">
+  <div class="pn-h" style="padding:0 0 4px">
+    <span class="pn-t">Hvor pengene går hen</span>
+    <span class="pn-src">{{ rose.n }} udgiftskategorier{% if rose.ready %} &middot; {{ rose.total_fmt }} i alt{% endif %}</span>
+  </div>
+
+  {% if not rose.ready %}
+  <p class="empty">Ingen aktive udgiftsposter endnu, så der er intet at tegne.
+    Tilføj poster i <a href="/legacy/budget">den gamle side</a>, som har CRUD.</p>
+  {% else %}
+  <div class="bv">
+    <div class="bv-fig">
+      <svg viewBox="0 0 {{ rose.box }} {{ rose.box }}" class="bv-svg"
+           role="img" aria-label="Udgifter fordelt på kategorier">
+        {# grid first, so a wedge always sits on top of its own rings #}
+        {% for g in rose.rings %}
+        <circle cx="{{ rose.cx }}" cy="{{ rose.cy }}" r="{{ g.r }}"
+                class="bv-ring{% if g.is_outer %} is-outer{% endif %}" />
+        {% endfor %}
+        {% for s in rose.spokes %}
+        <line x1="{{ s.x1 }}" y1="{{ s.y1 }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}" class="bv-spoke" />
+        {% endfor %}
+
+        {% for w in rose.wedges %}
+        {% if w.path %}
+        <path d="{{ w.path }}" fill="{{ w.colour }}" class="bv-wedge"
+              data-slug="{{ w.slug }}">
+          <title>{{ w.name }}: {{ w.fmt }} ({{ w.share }}%)</title>
+        </path>
+        {% endif %}
+        {% endfor %}
+
+        {# ring values in kroner, so the picture reads back as numbers #}
+        {% for g in rose.rings %}
+        <text x="{{ rose.cx - 4 }}" y="{{ rose.cy - g.r - 3 }}" text-anchor="end" class="bv-rl">{{ g.fmt }}</text>
+        {% endfor %}
+
+        {% for w in rose.wedges %}
+        <text x="{{ w.label_x }}" y="{{ w.label_y }}" text-anchor="{{ w.anchor }}"
+              class="bv-wl" fill="{{ w.colour }}">{{ w.name }}</text>
+        {% endfor %}
+      </svg>
+    </div>
+
+    {# The chart answers "what shape", the table answers "how much".
+       Same colour swatch in both, so neither needs the other named. #}
+    <div class="bv-legend">
+      {% for w in rose.legend %}
+      <div class="bv-row{% if not w.value %} is-zero{% endif %}">
+        <i class="bv-sw" style="background:{{ w.colour }}"></i>
+        <span class="clip">{{ w.name }}</span>
+        <span class="mono tnum bv-amt">{{ w.fmt }}</span>
+        <span class="mono tnum bv-pct">{{ w.share }}%</span>
+      </div>
+      {% endfor %}
+      <div class="bv-row bv-sum">
+        <i class="bv-sw" style="background:transparent"></i>
+        <span>I alt</span>
+        <span class="mono tnum bv-amt">{{ rose.total_fmt }}</span>
+        <span class="mono tnum bv-pct">100%</span>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  <p class="ai2-foot" style="margin:0">{{ rose_note }}</p>
+</section>
+
+<div class="board" data-board="budget">
+  <section class="pn" data-card="categories" style="padding:18px 20px; gap:14px">
+    <div class="pn-h" style="padding:0 0 4px">
+      <span class="pn-t">Pr. kategori</span>
+      <span class="pn-src">{{ cats|length }} kategorier</span>
+    </div>
+    <div class="col" style="gap:12px">
+      {% for c in cats %}
+      <div class="jy-cat">
+        <span class="clip" style="font-size:12.5px">{{ c.name }}</span>
+        <div class="jy-bar"><i style="width:{{ c.pct }}%; background:var(--{{ c.tone }})"></i></div>
+        <span class="mono tnum f-muted" style="font-size:12px; text-align:right">{{ c.fmt }}</span>
+      </div>
+      {% endfor %}
+      {% if not cats %}<p class="empty">Ingen kategorier.</p>{% endif %}
+    </div>
+    <p class="ai2-foot" style="margin:0">{{ bar_note }}</p>
+  </section>
+
+  {# Editable entry list. Same HTMX endpoints as the legacy page; the
+     `view=jy` param brings the swap back in this page's markup instead
+     of the legacy one, so neither page duplicates the other's routes. #}
+  <section class="pn" data-card="editor" style="padding:18px 20px; gap:12px">
+    <div class="pn-h" style="padding:0 0 4px">
+      <span class="pn-t">Redigér</span>
+      <span class="pn-src">{{ entries|length }} aktive poster</span>
+    </div>
+    <div id="budget-add-pane">
+      <button type="button" class="jb-add"
+              hx-get="/widgets/budget/entries/new/form?view=jy"
+              hx-target="#budget-add-pane" hx-swap="innerHTML">+ Ny post</button>
+    </div>
+    <div id="budget-list"
+         hx-get="/widgets/budget/list?view=jy"
+         hx-trigger="load, sse:widget:budget"
+         hx-swap="innerHTML"></div>
+  </section>
+
+  <section class="pn" data-card="entries">
+    <div class="pn-h">
+      <span class="pn-t">Poster</span>
+      <span class="pn-src">{{ entries|length }} aktive</span>
+    </div>
+    <div class="pn-body">
+      {% for e in entries %}
+      <div class="row" style="grid-template-columns:minmax(0,1fr) auto">
+        <span class="col" style="gap:2px">
+          <span class="clip" style="font-size:13px">{{ e.name }}</span>
+          <span class="mono" style="font-size:11px; color:var(--faint)">{{ e.category_name }} &middot; {{ e.recurrence }}</span>
+        </span>
+        <span class="mono tnum" style="font-size:12.5px">{{ fmt(e.amount_cents) }}</span>
+      </div>
+      {% endfor %}
+      {% if not entries %}<p class="empty">Ingen poster i budgettet endnu. Tilføj dem i <a href="/legacy/budget">den gamle side</a>, som har CRUD.</p>{% endif %}
+    </div>
+  </section>
+</div>
+{% endif %}
+{% endblock %}

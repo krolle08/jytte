@@ -1,0 +1,228 @@
+/* ==== Skoleferier (/vacation) =========================================
+   The one page in this UI that is allowed to be cheerful. Everywhere
+   else is instrumentation; this is the page you open because you want
+   to know when you get time off, so it leans warm and seasonal rather
+   than printing another grey table.
+
+   Its own file rather than an append to jytte.css, for the same reason
+   `body.warm` was scoped on /ai: warmth is deliberate and local, and no
+   other page should inherit a token from it by accident. Linked from
+   jy_vacation.html via head_extra, so it is not even downloaded
+   elsewhere.
+
+   Checked against the six rejections in feedback_ui_expression:
+     1. mono on DATA only - counts, dates, week numbers. Headings and
+        labels are Inter and Space Grotesk.
+     2. the holiday name is the loudest thing inside its own card.
+     3. warmth is the ground, not an accent on near-black. Five seasonal
+        hues carry the five holidays.
+     4. no bordered rectangles. Cards are tinted fills with a seasonal
+        top edge; the grid is the structure.
+     5. cards rise in on load, the today-marker breathes. Both off under
+        prefers-reduced-motion.
+     6. the region toggle is HTMX into #vac-body, so selecting a region
+        never moves the viewport.
+   ==================================================================== */
+
+.vac {
+  --vac-card:   #1d1619;
+  --vac-ink:    #F6EFEA;
+  --vac-ink-2:  #D6C7C1;
+  --vac-muted:  #B3A09B;
+
+  /* Five seasons, five hues. Each is the colour that holiday actually
+     feels like, not a severity level. Vinter is the single cool note
+     and is pulled warm enough to sit with the rest. */
+  --t-autumn: #E89A4C;
+  --t-jul:    #7FB894;
+  --t-vinter: #9FB6DB;
+  --t-paaske: #D4D977;
+  --t-sommer: #FFC24A;
+
+  --display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+
+  color: var(--vac-ink);
+  background:
+    radial-gradient(900px 500px at 12% -10%, #2a1a1d 0%, transparent 60%),
+    radial-gradient(760px 430px at 88% -2%, #241c16 0%, transparent 58%);
+  margin: -28px -32px 0;
+  padding: 28px 32px 64px;
+}
+
+.vac [data-tone="autumn"] { --tone: var(--t-autumn); }
+.vac [data-tone="jul"]    { --tone: var(--t-jul); }
+.vac [data-tone="vinter"] { --tone: var(--t-vinter); }
+.vac [data-tone="paaske"] { --tone: var(--t-paaske); }
+.vac [data-tone="sommer"] { --tone: var(--t-sommer); }
+
+/* ---- masthead ------------------------------------------------------ */
+.vac-top { display: flex; align-items: flex-end; gap: 24px; flex-wrap: wrap; margin-bottom: 8px; }
+.vac-top h1 {
+  font-family: var(--display); font-size: clamp(32px, 5vw, 42px); font-weight: 500;
+  letter-spacing: -.022em; margin: 0; line-height: 1;
+}
+.vac-kicker { font-size: 13px; color: var(--vac-muted); margin: 0 0 9px; }
+.vac-top-right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+.vac-stamp { font-size: 12px; color: var(--vac-muted); }
+
+/* ---- region toggle. HTMX, never a link. ---------------------------- */
+.vac-seg { display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: rgba(255,255,255,.055); }
+.vac-seg button {
+  appearance: none; border: 0; cursor: pointer; font: inherit; font-size: 12.5px;
+  padding: 6px 15px; border-radius: 999px; color: var(--vac-muted); background: none;
+  transition: background .16s ease, color .16s ease;
+}
+.vac-seg button:hover { color: var(--vac-ink); }
+.vac-seg button[aria-pressed="true"] { background: rgba(255,194,74,.16); color: var(--t-sommer); }
+.vac-seg button:focus-visible { outline: 2px solid var(--t-sommer); outline-offset: 3px; }
+.vac-seg i { font-style: normal; opacity: .62; margin-left: 5px; }
+
+/* ---- hero ---------------------------------------------------------- */
+.vac-hero { display: flex; align-items: center; gap: 38px; flex-wrap: wrap; padding: 30px 0 34px; }
+.vac-count {
+  font-family: var(--mono); font-variant-numeric: tabular-nums;
+  font-size: clamp(74px, 12.5vw, 128px); line-height: .82; font-weight: 300;
+  color: var(--tone); letter-spacing: -.05em;
+  text-shadow: 0 0 64px color-mix(in srgb, var(--tone) 32%, transparent);
+}
+.vac-hero-txt { display: flex; flex-direction: column; gap: 9px; min-width: 0; }
+.vac-hero-lead {
+  font-size: 12px; letter-spacing: .15em; text-transform: uppercase;
+  color: var(--tone); opacity: .9;
+}
+.vac-hero-name {
+  font-family: var(--display); font-size: clamp(28px, 4.4vw, 44px);
+  font-weight: 500; letter-spacing: -.022em; line-height: 1.05; margin: 0;
+}
+.vac-hero-when { font-family: var(--mono); font-size: 14px; color: var(--vac-ink-2); }
+.vac-hero-unit { font-size: 13.5px; color: var(--vac-muted); margin-top: -4px; }
+
+/* ---- year ribbon --------------------------------------------------- */
+.vac-ribbon-wrap { margin: 4px 0 48px; }
+.vac-ribbon-head { display: flex; align-items: baseline; gap: 13px; margin-bottom: 14px; flex-wrap: wrap; }
+.vac-ribbon-head b { font-family: var(--display); font-size: 18px; font-weight: 500; }
+.vac-ribbon-head span { font-size: 12.5px; color: var(--vac-muted); }
+.vac-ribbon {
+  position: relative; height: 56px; border-radius: 11px;
+  background: rgba(255,255,255,.045);
+}
+.vac-block {
+  position: absolute; top: 5px; bottom: 5px; border-radius: 7px;
+  background: color-mix(in srgb, var(--tone) 62%, transparent);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 10.5px; color: #17110f; font-weight: 700;
+  transition: filter .16s ease; overflow: hidden; white-space: nowrap;
+}
+.vac-block:hover { filter: brightness(1.2); }
+.vac-today { position: absolute; top: -6px; bottom: -6px; width: 2px; background: var(--vac-ink); border-radius: 2px; }
+.vac-today::after {
+  content: ""; position: absolute; left: 50%; top: -5px;
+  width: 9px; height: 9px; margin-left: -4.5px; border-radius: 50%;
+  background: var(--vac-ink); animation: vac-breathe 2.9s ease-in-out infinite;
+}
+@keyframes vac-breathe {
+  0%, 100% { transform: scale(1);   opacity: 1;   }
+  50%      { transform: scale(1.55); opacity: .5;  }
+}
+.vac-ribbon-foot {
+  display: flex; justify-content: space-between;
+  font-family: var(--mono); font-size: 11px; color: var(--vac-muted); margin-top: 10px;
+}
+
+/* ---- holiday cards ------------------------------------------------- */
+.vac-year { margin-bottom: 46px; }
+.vac-year-h { display: flex; align-items: baseline; gap: 14px; margin-bottom: 18px; flex-wrap: wrap; }
+.vac-year-h b { font-family: var(--display); font-size: 22px; font-weight: 500; letter-spacing: -.014em; }
+.vac-year-h span { font-size: 13px; color: var(--vac-muted); }
+
+.vac-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(238px, 1fr)); gap: 16px; }
+.vac-card {
+  position: relative; border-radius: 15px; padding: 21px 20px 19px;
+  background: linear-gradient(168deg,
+              color-mix(in srgb, var(--tone) 14%, var(--vac-card)) 0%,
+              var(--vac-card) 64%);
+  display: flex; flex-direction: column; gap: 13px; overflow: hidden;
+  animation: vac-rise .5s cubic-bezier(.2,.7,.3,1) backwards;
+}
+.vac-card::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 3px; background: var(--tone); }
+@keyframes vac-rise { from { opacity: 0; transform: translateY(15px); } }
+.vac-card.is-now { box-shadow: 0 0 0 1px color-mix(in srgb, var(--tone) 52%, transparent); }
+
+.vac-card-top { display: flex; align-items: flex-start; gap: 10px; }
+.vac-card-name {
+  font-family: var(--display); font-size: 19.5px; font-weight: 500;
+  letter-spacing: -.014em; line-height: 1.15; margin: 0; color: var(--vac-ink);
+}
+.vac-tag {
+  margin-left: auto; flex: none; font-size: 9.5px; letter-spacing: .11em;
+  text-transform: uppercase; padding: 3.5px 9px; border-radius: 999px;
+  background: color-mix(in srgb, var(--tone) 26%, transparent); color: var(--tone);
+}
+.vac-dates { display: flex; align-items: baseline; gap: 9px; font-family: var(--mono); flex-wrap: wrap; }
+.vac-d-big { font-size: 26px; font-weight: 500; color: var(--tone); font-variant-numeric: tabular-nums; line-height: 1; }
+.vac-d-mon { font-size: 12px; color: var(--vac-muted); }
+.vac-arrow { color: var(--vac-muted); font-size: 15px; padding: 0 2px; }
+.vac-len { font-family: var(--mono); font-size: 12px; color: var(--vac-ink-2); font-variant-numeric: tabular-nums; }
+.vac-note { font-size: 12.5px; line-height: 1.5; color: var(--vac-muted); margin: 0; }
+.vac-variants { display: flex; flex-direction: column; gap: 5px; }
+.vac-variants span { font-size: 11.5px; color: var(--vac-muted); }
+.vac-variants .on { color: var(--tone); }
+.vac-variants code { font-family: var(--mono); font-size: 11px; }
+
+/* ---- footnote ------------------------------------------------------ */
+.vac-foot { max-width: 68ch; display: flex; flex-direction: column; gap: 10px; }
+.vac-foot h2 { font-family: var(--display); font-size: 16.5px; font-weight: 500; margin: 0; }
+.vac-foot p { font-size: 13px; line-height: 1.62; color: var(--vac-muted); margin: 0; }
+.vac-foot a { color: var(--t-sommer); text-decoration: none; font-size: 13px; }
+.vac-foot a:hover { text-decoration: underline; }
+
+@media (max-width: 760px) {
+  .vac { margin: -20px -16px 0; padding: 20px 16px 48px; }
+  .vac-hero { gap: 24px; padding: 22px 0 26px; }
+}
+/* ---- seasonal icons ------------------------------------------------ */
+/* Inline SVG from _vac_icons.html, stroked in currentColor so each one
+   inherits its card's --tone without a second variable. */
+.vac-ico { display: block; color: var(--tone); flex: none; }
+
+.vac-ico-wrap {
+  flex: none; width: 40px; height: 40px; border-radius: 12px;
+  display: grid; place-items: center;
+  background: color-mix(in srgb, var(--tone) 17%, transparent);
+  transition: background .18s ease, transform .18s ease;
+}
+.vac-card:hover .vac-ico-wrap {
+  background: color-mix(in srgb, var(--tone) 26%, transparent);
+  transform: rotate(-5deg) scale(1.06);
+}
+
+/* The hero lead is icon + words on one line, so the icon has to sit on
+   the text baseline rather than above it. */
+.vac-hero-lead { display: inline-flex; align-items: center; gap: 7px; }
+.vac-hero-lead .vac-ico { margin-top: -1px; }
+
+/* ---- cosiness ------------------------------------------------------ */
+/* A warm bloom in each card's own season, top-right, behind everything.
+   Costs no markup and is what stops the grid reading as eight boxes. */
+.vac-card::after {
+  content: ""; position: absolute; top: -46px; right: -46px;
+  width: 132px; height: 132px; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle,
+              color-mix(in srgb, var(--tone) 30%, transparent) 0%,
+              transparent 70%);
+  transition: opacity .2s ease;
+  opacity: .75;
+}
+.vac-card { transition: transform .2s cubic-bezier(.2,.7,.3,1); }
+.vac-card:hover { transform: translateY(-3px); }
+.vac-card:hover::after { opacity: 1; }
+
+/* The card title sits beside its icon now. */
+.vac-card-top { align-items: center; }
+
+@media (prefers-reduced-motion: reduce) {
+  .vac-card { animation: none; transition: none; }
+  .vac-card:hover { transform: none; }
+  .vac-card:hover .vac-ico-wrap { transform: none; }
+  .vac-today::after { animation: none; }
+}

@@ -1,0 +1,87 @@
+{% extends "shell.html" %}
+{% block title %}POC'S :: Jytte{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="/static/jy_poc.css" />{% endblock %}
+
+{% block content %}
+{# The POC register. This page exists so that "is this real yet?" has an
+   answer that is written down rather than remembered.
+
+   The number that matters is `blocking_total`, not how many POCs there
+   are: a POC is promotable when its blocking list is empty, and that
+   list is a human judgement recorded in app/poc/catalog.py. #}
+
+<div class="hd">
+  <div class="hd-id">
+    <span class="eyebrow plain">Proof of concept &middot; ikke produktion</span>
+    <h1 class="pg">POC'S</h1>
+  </div>
+  <div class="hd-right">
+    <span class="pn-src">{{ s.total }} POC &middot; {{ s.blocking_total }} udestående</span>
+  </div>
+</div>
+
+<div class="strip poc-ward" style="margin-top:20px">
+  <div>
+    <span class="eyebrow">I alt</span>
+    <span class="v">{{ s.total }}</span>
+    <span class="s">registreret her</span>
+  </div>
+  <div>
+    <span class="eyebrow">WIP</span>
+    <span class="v{% if s.counts.wip %} is-crit{% endif %}">{{ s.counts.wip }}</span>
+    <span class="s{% if s.counts.wip %} is-bad{% endif %}">handl ikke på tallene</span>
+  </div>
+  <div>
+    <span class="eyebrow">Til review</span>
+    <span class="v{% if s.counts.review %} is-warn{% endif %}">{{ s.counts.review }}</span>
+    <span class="s{% if s.counts.review %} is-warn{% endif %}">venter på beslutning</span>
+  </div>
+  <div>
+    <span class="eyebrow">Klar til PROD</span>
+    <span class="v{% if s.promotable %} is-ok{% endif %}">{{ s.promotable }}</span>
+    <span class="s">uden udestående</span>
+  </div>
+</div>
+
+<div class="poc-list">
+  {% for p in pocs %}
+  <article class="poc-card" data-stage="{{ p.stage }}">
+    <div class="poc-card-h">
+      <a class="poc-card-t" href="{{ p.href }}">{{ p.title }}</a>
+      <span class="pill {{ p.st.pill }}">{{ p.st.label }}</span>
+      {% if p.promotable %}
+      <span class="pill aqua">ingen udestående</span>
+      {% else %}
+      <span class="pill line">{{ p.blocking|length }} udestående</span>
+      {% endif %}
+      <span class="pn-act"><span class="pn-src">{{ p.started }}</span></span>
+    </div>
+
+    <p class="poc-one">{{ p.one_liner }}</p>
+    <p class="poc-proves">{{ p.proves }}</p>
+
+    {% if p.blocking %}
+    <div class="poc-block">
+      <span class="poc-block-h">Mangler før PROD</span>
+      <ul>
+        {% for b in p.blocking %}<li>{{ b }}</li>{% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    {% if p.source %}<p class="poc-src">{{ p.source }}</p>{% endif %}
+  </article>
+  {% endfor %}
+</div>
+
+<div class="lg-note" style="margin-top:26px">
+  <h2>Hvorfor en POC ikke kan forfremme sig selv</h2>
+  <p>Stadiet står i <code class="mono">app/poc/catalog.py</code> og flyttes
+    kun af et menneske der redigerer filen. Det er med vilje: et stadie der
+    beregnes ud fra om koden kører, siger kun at koden kører - ikke at
+    nogen har kigget på tallene og troet på dem.</p>
+  <p>En POC er klar når <b>mangler før PROD</b> er tom. Ikke når den ser
+    færdig ud. De to er sjældent det samme, og listen er det eneste der
+    husker forskellen tre uger senere.</p>
+</div>
+{% endblock %}

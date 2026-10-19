@@ -1,1 +1,13 @@
+{# Per-widget card, resolved through the ChoiceLoader on WIDGETS_DIR.
+
+   The fallback matters: `{% include %}` on a missing file raises
+   TemplateNotFound, which came back as a 500 to the hx-get that polls
+   this endpoint on load and every N seconds. A widget with no
+   card.html then showed a skeleton that spun forever and logged a
+   server error on every poll. A missing optional file is not a server
+   error, so fall back to the cached summary line. #}
+{% if widget.has_card %}
 {% include widget.name ~ "/card.html" %}
+{% else %}
+<p class="card-nocard">{{ state.summary or widget.title }}</p>
+{% endif %}

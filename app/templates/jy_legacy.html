@@ -1,0 +1,35 @@
+{% extends "shell.html" %}
+{% block title %}Gamle sider :: Jytte{% endblock %}
+
+{% block content %}
+<div class="hd">
+  <div class="hd-id">
+    <span class="eyebrow">Alt bygget før redesignet</span>
+    <h1 class="pg">Gamle sider</h1>
+  </div>
+</div>
+
+<div class="lg-note">
+  <h2>Intet er slettet</h2>
+  <p>
+    Hver side herunder kører stadig med sin oprindelige skabelon og
+    <code class="mono">styles.css</code>, så den ser ud præcis som før.
+    De ligger her for at kunne migreres stykvis over i det nye design -
+    ikke som arkiv.
+  </p>
+  <p>
+    Det nye design beskriver ni skaerme (1a-1i). Kun <b>Home</b> er bygget
+    endnu; resten peger på deres gamle udgave indtil de er lavet.
+  </p>
+</div>
+
+<div class="lg-list">
+  {% for p in pages %}
+  <a class="lg-card" href="{{ p.url }}">
+    <span class="t">{{ p.title }}</span>
+    <span class="u">{{ p.url }}</span>
+    <span class="d">{{ p.desc }}</span>
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}

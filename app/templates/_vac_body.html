@@ -1,0 +1,130 @@
+{% from "_vac_icons.html" import vac_icon %}
+{# Swappable body of /vacation. The region toggle targets this element,
+   so changing region never reloads the page and never moves the
+   viewport - the hard rule in feedback_ui_expression.
+
+   The toggle is inside the swapped region on purpose: that way
+   aria-pressed is rendered by the server and can never drift from the
+   data below it. #}
+
+<div class="vac-top">
+  <div>
+    <p class="vac-kicker">Danske skoleferier &middot; beregnet, ikke hentet</p>
+    <h1>Ferier</h1>
+  </div>
+  <div class="vac-top-right">
+    <div class="vac-seg" role="group" aria-label="Vinterferie-region">
+      {% for r in regions %}
+      <button type="button"
+              aria-pressed="{{ 'true' if r.key == region else 'false' }}"
+              title="{{ r.where }}"
+              hx-get="/vacation?r={{ r.key }}&partial=1"
+              hx-target="#vac-body"
+              hx-swap="innerHTML"
+              hx-push-url="/vacation?r={{ r.key }}">{{ r.label }}<i>uge {{ r.week }}</i></button>
+      {% endfor %}
+    </div>
+    <span class="vac-stamp">opdateret {{ ago }}</span>
+  </div>
+</div>
+
+{% if hero %}
+<section class="vac-hero" data-tone="{{ hero.h.tone }}">
+  <span class="vac-count">{{ hero.n }}</span>
+  <div class="vac-hero-txt">
+    <span class="vac-hero-lead">{{ vac_icon(hero.h.tone, 18) }} {{ hero.lead }}</span>
+    <h2 class="vac-hero-name">{{ hero.h.name }}</h2>
+    <span class="vac-hero-unit">{{ hero.unit }}</span>
+    <span class="vac-hero-when">{{ hero.h.span }} &middot; {{ hero.h.days }} dage</span>
+  </div>
+</section>
+{% endif %}
+
+{% set y0 = years[0] if years else none %}
+{% if y0 and y0.ribbon %}
+<div class="vac-ribbon-wrap">
+  <div class="vac-ribbon-head">
+    <b>Skoleåret {{ y0.label }}</b>
+    <span>{{ y0.total_days }} fridage fordelt over fem ferier</span>
+  </div>
+  <div class="vac-ribbon">
+    {% for b in y0.ribbon %}
+    <div class="vac-block" data-tone="{{ b.tone }}"
+         style="left:{{ b.left }}%; width:{{ b.width }}%"
+         title="{{ b.name }}: {{ b.span }} ({{ b.days }} dage)">
+      {% if b.width > 7 %}{{ b.days }}d{% endif %}
+    </div>
+    {% endfor %}
+    {% if today_pct is not none %}
+    <div class="vac-today" style="left:{{ today_pct }}%" title="I dag"></div>
+    {% endif %}
+  </div>
+  <div class="vac-ribbon-foot">
+    <span>aug {{ y0.start_year }}</span>
+    <span>skolestart {{ y0.start_year + 1 }}</span>
+  </div>
+</div>
+{% endif %}
+
+{% for y in years %}
+<section class="vac-year">
+  <div class="vac-year-h">
+    <b>{{ y.label }}</b>
+    <span>{{ y.holidays|length }} ferier &middot; {{ y.total_days }} fridage</span>
+  </div>
+  <div class="vac-cards">
+    {% for h in y.holidays %}
+    {% set is_now  = current and current.key == h.key and current.year_label == y.label %}
+    {% set is_next = next and next.key == h.key and next.year_label == y.label %}
+    <article class="vac-card{% if is_now %} is-now{% endif %}"
+             data-tone="{{ h.tone }}"
+             style="animation-delay:{{ loop.index0 * 55 }}ms">
+      <div class="vac-card-top">
+        <span class="vac-ico-wrap">{{ vac_icon(h.tone, 24) }}</span>
+        <h3 class="vac-card-name">{{ h.name }}</h3>
+        {% if is_now %}<span class="vac-tag">Nu</span>
+        {% elif is_next %}<span class="vac-tag">Næste</span>
+        {% elif h.alias %}<span class="vac-tag">{{ h.alias }}</span>{% endif %}
+      </div>
+
+      <div class="vac-dates">
+        <span class="vac-d-big">{{ h.from_day }}</span>
+        <span class="vac-d-mon">{{ h.from_month }}</span>
+        <span class="vac-arrow">&rarr;</span>
+        <span class="vac-d-big">{{ h.to_day }}</span>
+        <span class="vac-d-mon">{{ h.to_month }}</span>
+      </div>
+
+      <span class="vac-len">
+        {{ h.days }} dage{% if h.weeks >= 2 %} &middot; {{ h.weeks }} uger{% endif %}
+        {%- if h.week %} &middot; uge {{ h.week }}{% endif %}
+      </span>
+
+      {% if h.variants %}
+      {# Vinterferie is the one holiday the country does not share, so
+         both weeks are shown and the selected one is lit. #}
+      <div class="vac-variants">
+        {% for v in h.variants %}
+        <span class="{{ 'on' if v.selected else '' }}">
+          <code>uge {{ v.week }}</code> {{ v.span }} &middot; {{ v.where }}
+        </span>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="vac-note">{{ h.note }}</p>
+      {% endif %}
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endfor %}
+
+<div class="vac-foot">
+  <h2>Om datoerne</h2>
+  <p>{{ caveat }}</p>
+  <p>Datoerne er beregnet ud fra reglerne: uge 42, uge 7 eller 8, paaskedag
+    plus de faste afstande, og sidste lørdag i juni. Reglerne rammer den
+    offentliggjorte 2025/2026-tabel præcist, inklusive de 78 fridage, og
+    bliver ved med at virke for år der endnu ikke er publiceret.</p>
+  <a href="{{ source_url }}" target="_blank" rel="noopener">Sammenlign med danmarkshelligdage.dk &rarr;</a>
+</div>

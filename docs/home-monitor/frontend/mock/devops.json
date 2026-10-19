@@ -1,0 +1,104 @@
+{
+  "prs": [
+    {
+      "t": "Dynamic roles: cache permission lookups",
+      "a": "nichlas",
+      "st": "Needs review",
+      "c": "warn",
+      "age": "2d",
+      "chk": "Checks passed"
+    },
+    {
+      "t": "Flutter 3.35 upgrade",
+      "a": "maria",
+      "st": "Approved",
+      "c": "good",
+      "age": "1d",
+      "chk": "Checks passed"
+    },
+    {
+      "t": "Fix push token refresh on iOS",
+      "a": "jonas",
+      "st": "Build failing",
+      "c": "crit",
+      "age": "4h",
+      "chk": "1 check failed"
+    }
+  ],
+  "pipes": [
+    {
+      "n": "mobile-ios-release",
+      "b": "main",
+      "s": "Failed",
+      "c": "crit",
+      "d": "6m 12s",
+      "w": "07:38"
+    },
+    {
+      "n": "mobile-android-release",
+      "b": "main",
+      "s": "Passed",
+      "c": "good",
+      "d": "9m 40s",
+      "w": "07:38"
+    },
+    {
+      "n": "backend-ci",
+      "b": "feature/roles",
+      "s": "Running",
+      "c": "warn",
+      "d": "3m 05s",
+      "w": "08:01"
+    },
+    {
+      "n": "backend-deploy-test",
+      "b": "main",
+      "s": "Passed",
+      "c": "good",
+      "d": "4m 51s",
+      "w": "Fri"
+    }
+  ],
+  "board": {
+    "New": [
+      [
+        "#2041",
+        "Offline mode for roles"
+      ],
+      [
+        "#2044",
+        "Update privacy text"
+      ]
+    ],
+    "Active": [
+      [
+        "#2031",
+        "Role editor UI"
+      ],
+      [
+        "#2038",
+        "iOS signing fix"
+      ]
+    ],
+    "Review": [
+      [
+        "#2029",
+        "Permission cache"
+      ]
+    ],
+    "Done": [
+      [
+        "#2022",
+        "Push token refresh"
+      ],
+      [
+        "#2019",
+        "Crash reporting"
+      ],
+      [
+        "#2017",
+        "Dependabot batch"
+      ]
+    ]
+  }
+}

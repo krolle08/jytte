@@ -1,0 +1,45 @@
+# What the /ai overlap panel is allowed to nag about.
+#
+# `scripts/scan_ai.py` scores every agent/skill pair by description-token
+# overlap and surfaces the top 8. That list is useful exactly once per
+# pair: after you have looked at two capabilities and decided what to do
+# about them, the panel re-showing them forever is noise, and real new
+# overlaps get lost in it.
+#
+# So the panel shows UNDECIDED pairs. Record a decision here and the pair
+# moves into the collapsed "afgjort" section with your note attached.
+# Nothing here changes the skills themselves or how Claude Code resolves
+# them - this is a view preference for Jytte, nothing more.
+#
+# decision values:
+#   keep-separate  looked at it, they should stay two things
+#   merge-planned  agreed they should merge, not done yet
+#   merged         done, the pair should disappear on the next scan
+#   hidden         never show me this pair again, no opinion recorded
+#
+# Pair order does not matter; it is matched as a set.
+
+decisions:
+  # The three the scanner itself scored "Hold adskilt", and that the
+  # 2026-10-08 review agreed on: same shape, genuinely different
+  # toolchains. ArchUnit is not an import-graph walk, and an OpenAPI
+  # diff is not a /openapi.json diff.
+  - pair: [java-architecture-check, java-contract-check]
+    decision: keep-separate
+    note: Different stages of the same rubric, not duplicates of each other.
+    decided: 2026-10-08
+
+  - pair: [python-architecture-check, python-contract-check]
+    decision: keep-separate
+    note: Same reasoning as the java pair.
+    decided: 2026-10-08
+
+  - pair: [web-feedback-check, web-render-check]
+    decision: keep-separate
+    note: Shared name stem only. One checks silent failures, the other HTTP and render health.
+    decided: 2026-10-08
+
+# Capabilities to leave out of the inventory entirely. Use sparingly:
+# a hidden skill still exists and still runs, it just stops being
+# counted and listed here.
+hidden: []

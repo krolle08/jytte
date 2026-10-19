@@ -1,0 +1,328 @@
+{% extends "shell.html" %}
+{% block title %}Bank :: Jytte{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="/static/jy_bank.css" />{% endblock %}
+
+{% block content %}
+{# Bank: where the money went, by category.
+
+   Four sections, switched client-side. The switch only sets `hidden`
+   - no navigation, no re-render, the viewport never moves. Same
+   contract as /opslag and /jobs.
+
+   The number that keeps this page honest is `ukat_pct`, the share of
+   spend no rule caught. It is in the strip at the top, not in a
+   footnote. A categoriser is only as good as that number is small,
+   and hiding it would make the page look finished long before it is.
+
+   There is no per-category budget in the schema, so no category row
+   is coloured "over budget". /budget says the same thing. Inventing a
+   ceiling to make the picture richer would make it wrong. #}
+
+<div class="hd">
+  <div class="hd-id">
+    <span class="eyebrow plain">
+      {{ n_cats }} kategorier &middot; {{ n_rules }} regler
+      {%- if accounts %} &middot; {{ accounts|length }} konti{% endif %}
+    </span>
+    <h1 class="pg">Bank</h1>
+  </div>
+  <div class="hd-right">
+    {% if updated_at %}<span class="pn-src" data-ts="{{ updated_at }}"></span>{% endif %}
+    <a class="btn ghost" href="/budget">Budget</a>
+  </div>
+</div>
+
+{% if book_problems %}
+<div class="bk-warn">
+  <b>Kategorifilerne har fejl.</b>
+  {% for p in book_problems %}<span class="mono">{{ p }}</span>{% endfor %}
+</div>
+{% endif %}
+
+{% if not ready %}
+<div class="lg-note">
+  <h2>Ingen bankdata</h2>
+  <p>{{ reason }}</p>
+  <p>Kontoadgangen er PSD2 via open banking og ligger i n8n, ikke i
+    Jytte. Workflowet <code class="mono">bank</code> er bygget og
+    testet, men venter på at du giver samtykke i en browser én gang.
+    Se <code class="mono">app/widgets/bank/CLAUDE.md</code> for de fire
+    trin, og <a href="/jobs">/jobs</a> for at slå jobbet til bagefter.</p>
+  <p class="f-gul">Jytte opretter ikke selv den adgang. Samtykket er
+    dit, og det er med vilje ikke noget en agent kan give på dine vegne.</p>
+</div>
+
+{# The engine is finished even though there is nothing to run it on,
+   so show what it WILL do rather than an empty page. #}
+<section class="pn" style="padding:18px 20px; gap:14px; margin-top:16px">
+  <div class="pn-h" style="padding:0 0 4px">
+    <span class="pn-t">Kategorierne står klar</span>
+    <span class="pn-src">config/udgiftskategorier.yml</span>
+  </div>
+  <div class="bk-swatches">
+    {% for g in book_groups %}
+    <div class="bk-sw-g">
+      <span class="eyebrow">{{ g.navn }}</span>
+      <div class="bk-sw-row">
+        {% for c in g.kategorier %}
+        <span class="bk-sw" title="{{ c.navn }}{% if c.fast %} (fast udgift){% endif %}">
+          <i style="background:{{ c.farve }}"></i>{{ c.navn }}
+        </span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <p class="ai2-foot" style="margin:0">Farven kommer fra gruppen, ikke fra
+    kategorien: alt under Bolig ligner hinanden og ligner ikke Transport.
+    Tilføjer du en kategori, skal du ikke vælge en farve - men sæt den
+    nederst i sin gruppe, ellers skifter de efterfølgende nuance og to
+    måneder kan ikke længere sammenlignes med øjnene.</p>
+</section>
+
+{% else %}
+
+{# ---- strip ------------------------------------------------------- #}
+<div class="strip">
+  <div>
+    <span class="eyebrow">Brugt i {{ month }}</span>
+    <span class="v">{{ spend_kr }}</span>
+    <span class="s">{{ n_tx_month }} posteringer</span>
+  </div>
+  <div>
+    <span class="eyebrow">Ind</span>
+    <span class="v">{{ income_kr }}</span>
+    <span class="s">netto {{ net_kr }}</span>
+  </div>
+  <div>
+    <span class="eyebrow">Faste udgifter</span>
+    <span class="v">{{ fast_kr }}</span>
+    <span class="s">{{ fast_pct }}% af forbruget</span>
+  </div>
+  <div>
+    <span class="eyebrow">Ukategoriseret</span>
+    <span class="v{% if ukat_pct > 15 %} is-warn{% endif %}">{{ ukat_pct }}%</span>
+    <span class="s{% if ukat_pct > 15 %} is-warn{% endif %}">{{ ukat_kr }} over {{ ukat_n }} poster</span>
+  </div>
+</div>
+
+<div class="seg bk-tabs" id="bk-tabs" role="group" aria-label="Vis">
+  <button type="button" data-tab="oversigt" aria-pressed="true">Oversigt</button>
+  <button type="button" data-tab="kategorier" aria-pressed="false">Kategorier <i>{{ cats|length }}</i></button>
+  <button type="button" data-tab="bevaegelser" aria-pressed="false">Bevægelser <i>{{ n_tx_all }}</i></button>
+  <button type="button" data-tab="faste" aria-pressed="false">Faste</button>
+</div>
+
+{# ---- 1. oversigt -------------------------------------------------- #}
+<div class="bk-pane" data-pane="oversigt">
+  <section class="pn" style="padding:18px 20px; gap:14px">
+    <div class="pn-h" style="padding:0 0 4px">
+      <span class="pn-t">Forbrug hen over måneden</span>
+      <span class="pn-src">dag {{ day_now }} af {{ days_in_month }}</span>
+    </div>
+    {% if curve.plan %}
+    <p class="bk-lede">
+      Du ligger <b class="{{ 'f-coral' if curve.plan.behind else 'f-aqua' }}">{{ curve.plan.diff_kr }} kr</b>
+      {{ 'bag' if curve.plan.behind else 'foran' }} planen i dag.
+      <span>Brugt {{ curve.spent_kr }} mod forventet {{ curve.plan.expected_kr }}.</span>
+    </p>
+    {% else %}
+    <p class="bk-lede">
+      Brugt <b>{{ curve.spent_kr }}</b> indtil nu.
+      <span>Der er ingen planlinje, fordi budgettet er tomt. Et budget på
+        nul ville gøre hver måned til en katastrofe, så kurven står alene.</span>
+    </p>
+    {% endif %}
+    {% include "_bk_curve.html" %}
+  </section>
+
+  <section class="pn" style="padding:18px 20px; gap:14px; margin-top:16px">
+    <div class="pn-h" style="padding:0 0 4px">
+      <span class="pn-t">Største kategorier</span>
+      <span class="pn-src">denne måned</span>
+    </div>
+    <div class="bk-rings">
+      {% for c in cats[:6] %}
+      <div class="bk-ring">
+        {# A ring is share of the largest category, not of a budget:
+           there is no per-category budget to be over. #}
+        <svg viewBox="0 0 44 44" aria-hidden="true">
+          <circle cx="22" cy="22" r="18" class="bk-ring-bg" />
+          <circle cx="22" cy="22" r="18" stroke="{{ c.farve }}"
+                  class="bk-ring-fg"
+                  stroke-dasharray="{{ (c.pct * 1.131)|round(1) }} 113.1" />
+        </svg>
+        <span class="bk-ring-n clip">{{ c.navn }}</span>
+        <span class="bk-ring-v mono tnum">{{ c.kr }}</span>
+        <span class="bk-ring-p mono">{{ c.pct }}%</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+{# ---- 2. kategorier ------------------------------------------------- #}
+<div class="bk-pane" data-pane="kategorier" hidden>
+  {% for g in groups %}
+  <section class="pn" style="padding:16px 20px; gap:10px; margin-bottom:12px">
+    <div class="pn-h" style="padding:0 0 2px">
+      <span class="pn-t" style="font-size:14px">{{ g.navn }}</span>
+      <span class="pn-src">{{ g.n }} poster &middot; {{ g.pct }}%</span>
+      <span class="pn-act mono tnum" style="font-size:14px">{{ g.kr }}</span>
+    </div>
+    {% for c in g.kategorier %}
+    <div class="bk-cat">
+      <i class="bk-dot" style="background:{{ c.farve }}"></i>
+      <span class="clip">{{ c.navn }}</span>
+      {% if c.fast %}<span class="pill line">fast</span>{% endif %}
+      <div class="bk-bar"><i style="width:{{ c.pct }}%; background:{{ c.farve }}"></i></div>
+      <span class="mono tnum bk-amt">{{ c.kr }}</span>
+      <span class="mono bk-n">{{ c.n }}</span>
+    </div>
+    {% endfor %}
+  </section>
+  {% endfor %}
+  {% if not groups %}<p class="empty">Ingen udgifter i perioden.</p>{% endif %}
+</div>
+
+{# ---- 3. bevaegelser ------------------------------------------------- #}
+<div class="bk-pane" data-pane="bevaegelser" hidden>
+  <div class="bk-bar2">
+    <input type="search" id="bk-q" class="jb-q" autocomplete="off"
+           placeholder="Søg i tekst, modpart og kategori" aria-label="Søg i bevægelser" />
+    <button type="button" class="pill line" id="bk-only-unknown"
+            aria-pressed="false">Kun ukategoriserede <i>{{ unknown_rows|length }}</i></button>
+  </div>
+  <p class="jb-count" id="bk-count" aria-live="polite"></p>
+  <section class="pn" style="padding:0; overflow:hidden">
+    <div class="jb-wrap">
+      <table class="jb bk-tx">
+        <thead>
+          <tr>
+            <th>Dato</th><th>Tekst</th><th>Kategori</th>
+            <th class="num">Beløb</th><th>Hvorfor</th>
+          </tr>
+        </thead>
+        <tbody id="bk-rows">
+          {% for r in rows %}
+          <tr data-hay="{{ (r.text ~ ' ' ~ r.counterparty ~ ' ' ~ r.cat.navn)|lower }}"
+              data-unknown="{{ 0 if r.cat.matched else 1 }}">
+            <td class="mono bk-d">{{ r.date }}</td>
+            <td class="bk-t">
+              <span class="clip">{{ r.text or r.counterparty or "(ingen tekst)" }}</span>
+              {% if r.counterparty and r.text %}<span class="bk-cp clip">{{ r.counterparty }}</span>{% endif %}
+            </td>
+            <td>
+              <span class="bk-chip" style="--c:{{ r.cat.farve }}">
+                <i></i>{{ r.cat.navn }}</span>
+            </td>
+            <td class="num mono tnum {{ 'f-aqua' if r.amount_oere > 0 else '' }}">{{ r.amount_kr }}</td>
+            <td class="bk-why mono">{{ r.cat.why }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <p class="jb-empty" id="bk-empty" hidden>Ingen bevægelser matcher.</p>
+
+  <div class="lg-note" style="margin-top:18px">
+    <h2>Sådan retter du en forkert kategori</h2>
+    <p>Kolonnen <b>Hvorfor</b> peger på den linje i
+      <code class="mono">config/kategoriregler.yml</code> der vandt.
+      Åbn filen, ret eller tilføj en linje, hent siden igen. Det er
+      hele løkken - der er ikke noget der skal trænes op.</p>
+    <p>Reglerne læses oppefra og ned, og den første der rammer vinder.
+      Skal noget specifikt slå noget bredt, skal det stå over.</p>
+    <p class="f-gul">Ingen model rører den fil. En kategorisering skal
+      kunne forklares med «den ramte linje 23», ikke med «modellen mente».
+      Claude må gerne læse de ukategoriserede og foreslå en linje -
+      men det er dig der skriver den ind.</p>
+  </div>
+</div>
+
+{# ---- 4. faste -------------------------------------------------------- #}
+<div class="bk-pane" data-pane="faste" hidden>
+  <section class="pn" style="padding:18px 20px; gap:12px">
+    <div class="pn-h" style="padding:0 0 4px">
+      <span class="pn-t">Faste udgifter</span>
+      <span class="pn-src">{{ fast_kr }} &middot; {{ fast_pct }}% af forbruget</span>
+    </div>
+    {% for c in cats if c.fast %}
+    <div class="bk-cat">
+      <i class="bk-dot" style="background:{{ c.farve }}"></i>
+      <span class="clip">{{ c.navn }}</span>
+      <div class="bk-bar"><i style="width:{{ c.pct }}%; background:{{ c.farve }}"></i></div>
+      <span class="mono tnum bk-amt">{{ c.kr }}</span>
+      <span class="mono bk-n">{{ c.n }}</span>
+    </div>
+    {% else %}
+    <p class="empty">Ingen faste udgifter fundet i perioden.</p>
+    {% endfor %}
+    <p class="ai2-foot" style="margin:0">
+      «Fast» er et flag på kategorien i
+      <code class="mono">config/udgiftskategorier.yml</code>, altså en
+      <b>erklæring</b> og ikke en opdagelse. Rigtig
+      gentagelsesgenkendelse kræver flere måneders historik, og
+      open banking henter 30 dage, så der er højst én. Det er derfor
+      siden siger hvilken af de to det er.</p>
+  </section>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block script_extra %}
+<script>
+  // Tabs and filtering only set `hidden`. Nothing navigates, nothing
+  // re-renders, the scroll position never moves.
+  (function () {
+    var tabs = document.getElementById("bk-tabs");
+    if (tabs) {
+      var panes = [].slice.call(document.querySelectorAll(".bk-pane"));
+      tabs.querySelectorAll("button").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var want = b.getAttribute("data-tab");
+          tabs.querySelectorAll("button").forEach(function (o) {
+            o.setAttribute("aria-pressed", o === b ? "true" : "false");
+          });
+          panes.forEach(function (p) {
+            p.hidden = p.getAttribute("data-pane") !== want;
+          });
+        });
+      });
+    }
+
+    var q = document.getElementById("bk-q");
+    if (!q) return;
+    var rows = [].slice.call(document.querySelectorAll("#bk-rows tr"));
+    var count = document.getElementById("bk-count");
+    var empty = document.getElementById("bk-empty");
+    var onlyUnknown = document.getElementById("bk-only-unknown");
+    var unknownOnly = false;
+
+    function apply() {
+      var needle = q.value.trim().toLowerCase();
+      var shown = 0;
+      rows.forEach(function (r) {
+        var okText = !needle || r.getAttribute("data-hay").indexOf(needle) !== -1;
+        var okU = !unknownOnly || r.getAttribute("data-unknown") === "1";
+        var show = okText && okU;
+        r.hidden = !show;
+        if (show) shown++;
+      });
+      empty.hidden = shown !== 0;
+      count.textContent = shown === rows.length
+        ? rows.length + " bevægelser"
+        : shown + " af " + rows.length + " bevægelser";
+    }
+
+    q.addEventListener("input", apply);
+    onlyUnknown.addEventListener("click", function () {
+      unknownOnly = !unknownOnly;
+      onlyUnknown.setAttribute("aria-pressed", unknownOnly ? "true" : "false");
+      apply();
+    });
+    apply();
+  })();
+</script>
+{% endblock %}

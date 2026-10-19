@@ -6,7 +6,11 @@
       hx-post="{% if is_edit %}/widgets/budget/entries/{{ entry.id }}/edit{% else %}/widgets/budget/entries{% endif %}"
       hx-target="#budget-list"
       hx-swap="innerHTML"
-      hx-on::after-request="if(event.detail.successful){this.closest('#budget-add-pane').innerHTML='<button type=\'button\' class=\'budget-add-btn\' hx-get=\'/widgets/budget/entries/new/form\' hx-target=\'#budget-add-pane\' hx-swap=\'innerHTML\'>+ Add entry</button>'; htmx.process(this.closest('#budget-add-pane'));}">
+      hx-on::after-request="if(event.detail.successful){this.closest('#budget-add-pane').innerHTML='<button type=\'button\' class=\'budget-add-btn\' hx-get=\'/widgets/budget/entries/new/form?view={{ view | default('legacy') }}\' hx-target=\'#budget-add-pane\' hx-swap=\'innerHTML\'>+ Add entry</button>'; htmx.process(this.closest('#budget-add-pane'));}">
+
+  {# Carries the page this form was opened from, so the swap comes back
+     in the matching markup instead of the legacy one. #}
+  <input type="hidden" name="view" value="{{ view | default('legacy') }}" />
 
   <h3 class="budget-form-title">{% if is_edit %}Edit entry #{{ entry.id }}{% else %}New entry{% endif %}</h3>
 
@@ -33,6 +37,21 @@
       <label>Amount (DKK)</label>
       <input type="text" name="amount" required placeholder="e.g. 1250,00"
              value="{{ entry.amount if is_edit else '' }}" />
+    </div>
+
+    {# Owner. The empty option is the household pot and posts "", which
+       db_budget._norm_owner turns back into NULL. It is first and it is
+       the default, because a joint budget is the common case and every
+       entry that predates this field is already shared. #}
+    <div class="budget-form-field">
+      <label>Owner</label>
+      <select name="owner">
+        <option value="" {% if not is_edit or not entry.owner %}selected{% endif %}>Fælles (shared)</option>
+        {% for p in people %}
+        <option value="{{ p.slug }}"
+          {% if is_edit and entry.owner == p.slug %}selected{% endif %}>{{ p.name }}</option>
+        {% endfor %}
+      </select>
     </div>
 
     <div class="budget-form-field">
@@ -66,9 +85,9 @@
   <div class="budget-form-actions">
     <button type="submit" class="budget-save-btn">{% if is_edit %}Save changes{% else %}Add entry{% endif %}</button>
     <button type="button" class="budget-cancel-btn"
-            hx-get="/widgets/budget/list"
+            hx-get="/widgets/budget/list?view={{ view | default('legacy') }}"
             hx-target="#budget-list"
             hx-swap="innerHTML"
-            hx-on::after-request="this.closest('#budget-add-pane').innerHTML='<button type=\'button\' class=\'budget-add-btn\' hx-get=\'/widgets/budget/entries/new/form\' hx-target=\'#budget-add-pane\' hx-swap=\'innerHTML\'>+ Add entry</button>'; htmx.process(this.closest('#budget-add-pane'));">cancel</button>
+            hx-on::after-request="this.closest('#budget-add-pane').innerHTML='<button type=\'button\' class=\'budget-add-btn\' hx-get=\'/widgets/budget/entries/new/form?view={{ view | default('legacy') }}\' hx-target=\'#budget-add-pane\' hx-swap=\'innerHTML\'>+ Add entry</button>'; htmx.process(this.closest('#budget-add-pane'));">cancel</button>
   </div>
 </form>

@@ -1,0 +1,957 @@
+{
+  "key": "2026-10-15",
+  "title": "Beta Development Notes - 15 October",
+  "posted": "2026-10-16T00:15:00-07:00",
+  "posted_label": "16 Oct, 00:15 (US forums)",
+  "build": "1.60.1.70425",
+  "previous": "2026-10-08",
+  "headline": "The 15 October update reworks the racials of all nine races and every class",
+  "timeline": [
+    {
+      "date": "2026-09-17",
+      "label": "Beta opens"
+    },
+    {
+      "date": "2026-10-01",
+      "label": "Level cap 30, Excavation Site"
+    },
+    {
+      "date": "2026-10-08",
+      "label": "Dalaran dungeon, +20% XP"
+    },
+    {
+      "date": "2026-10-15",
+      "label": "This update"
+    },
+    {
+      "date": "2026-10-21",
+      "label": "Stress Test, 19:00 CEST"
+    },
+    {
+      "date": "2026-11-04",
+      "label": "Launch"
+    }
+  ],
+  "milestones": [
+    {
+      "date": "2026-10-21",
+      "label": "Stress Test"
+    },
+    {
+      "date": "2026-11-04",
+      "label": "Launch"
+    }
+  ],
+  "fixes": [
+    {
+      "icon": "spell_shadow_twilight",
+      "name": "Bright fog",
+      "kind": "fix",
+      "text": "Fog no longer renders extra bright at lower shadow settings."
+    },
+    {
+      "icon": "achievement_reputation_kirintor",
+      "name": "Kirin Tor reputation",
+      "kind": "fix",
+      "text": "Horde players can no longer gain Kirin Tor reputation."
+    },
+    {
+      "icon": "spell_nature_regenerate",
+      "name": "Creature regeneration",
+      "kind": "fix",
+      "text": "Creatures regenerate health when out of combat again."
+    },
+    {
+      "icon": "inv_torch_lit",
+      "name": "Night Watchman's Torch",
+      "kind": "fix",
+      "text": "Horde characters no longer hold the Night Watchman's Torch."
+    },
+    {
+      "icon": "inv_drink_07",
+      "name": "Drink tooltips",
+      "kind": "fix",
+      "text": "Tooltips show the correct total Mana regeneration."
+    },
+    {
+      "icon": "inv_misc_book_09",
+      "name": "New player tutorial",
+      "kind": "new",
+      "text": "A new tutorial guides players who are new to the game."
+    },
+    {
+      "icon": "spell_holy_holybolt",
+      "name": "Bloom Intensity",
+      "kind": "new",
+      "text": "New slider in the Advanced graphics settings."
+    },
+    {
+      "icon": "inv_wand_07",
+      "name": "Wands and Auto Shot",
+      "kind": "change",
+      "text": "Both now need 0.5 seconds standing still before they fire."
+    }
+  ],
+  "races": [
+    {
+      "icon": "achievement_character_human_male",
+      "name": "Human",
+      "faction": "alliance",
+      "abilities": [
+        {
+          "icon": "ability_criticalstrike",
+          "name": "Ruthless",
+          "kind": "new",
+          "text": "Replaces Sword Specialization. +2% critical strike chance."
+        }
+      ]
+    },
+    {
+      "icon": "achievement_character_dwarf_male",
+      "name": "Dwarf",
+      "faction": "alliance",
+      "abilities": [
+        {
+          "icon": "spell_nature_earthquake",
+          "name": "Earth Fury",
+          "kind": "new",
+          "text": "Replaces Mace Specialization. +2% critical damage and healing."
+        },
+        {
+          "icon": "racial_dwarf_findtreasure",
+          "name": "Find Treasure",
+          "kind": "buff",
+          "text": "Chance to find extra items in most chests."
+        }
+      ]
+    },
+    {
+      "icon": "achievement_character_nightelf_male",
+      "name": "Night Elf",
+      "faction": "alliance",
+      "abilities": [
+        {
+          "icon": "spell_nature_spiritwolf",
+          "name": "Quickness",
+          "kind": "buff",
+          "text": "Movement speed now stacks with other speed increases."
+        },
+        {
+          "icon": "spell_nature_wispsplode",
+          "name": "Wisp Form",
+          "kind": "fix",
+          "text": "Shields no longer show in Wisp Form."
+        }
+      ]
+    },
+    {
+      "icon": "achievement_character_gnome_male",
+      "name": "Gnome",
+      "faction": "alliance",
+      "abilities": [
+        {
+          "icon": "inv_gizmo_02",
+          "name": "Eureka!",
+          "kind": "change",
+          "text": "An 8 second buff with no charges. Benefits Power Word: Shield. Not usable in stealth."
+        }
+      ]
+    },
+    {
+      "icon": "achievement_character_bloodelf_female",
+      "name": "Skyborne",
+      "faction": "alliance",
+      "abilities": [
+        {
+          "icon": "spell_nature_windfury",
+          "name": "Wind Blessed",
+          "kind": "buff",
+          "text": "Haste up to 3%."
+        },
+        {
+          "icon": "spell_magic_featherfall",
+          "name": "Walk on Air",
+          "kind": "buff",
+          "text": "Cooldown down to 90 seconds."
+        },
+        {
+          "icon": "spell_nature_cyclone",
+          "name": "Skysight and Read Leyline",
+          "kind": "buff",
+          "text": "Castable while moving. More Elemental Convergences and Leylines spawn."
+        }
+      ]
+    },
+    {
+      "icon": "achievement_character_orc_male",
+      "name": "Orc",
+      "faction": "horde",
+      "abilities": [
+        {
+          "icon": "racial_orc_berserkerstrength",
+          "name": "Savage",
+          "kind": "new",
+          "text": "Replaces Axe Specialization. +1% crit chance. Blood Fury cooldown up to 3 minutes."
+        },
+        {
+          "icon": "spell_holy_removecurse",
+          "name": "Shatter Curse",
+          "kind": "change",
+          "text": "Dispels Curses and Banes. Magic damage reduction down to 5%."
+        }
+      ]
+    },
+    {
+      "icon": "achievement_character_undead_male",
+      "name": "Undead",
+      "faction": "horde",
+      "abilities": [
+        {
+          "icon": "spell_shadow_deathcoil",
+          "name": "Touch of the Dead",
+          "kind": "change",
+          "text": "30% proc chance for casters, 20% for Paladins, Rogues and Warriors. 25 sec cooldown."
+        },
+        {
+          "icon": "spell_shadow_raisedead",
+          "name": "Will of the Forsaken",
+          "kind": "nerf",
+          "text": "Cannot be used while under Scatter Shot."
+        }
+      ]
+    },
+    {
+      "icon": "achievement_character_tauren_male",
+      "name": "Tauren",
+      "faction": "horde",
+      "abilities": [
+        {
+          "icon": "spell_nature_unyeildingstamina",
+          "name": "Endurance",
+          "kind": "buff",
+          "text": "+2% critical damage and healing."
+        },
+        {
+          "icon": "ability_warstomp",
+          "name": "War Stomp",
+          "kind": "buff",
+          "text": "Cooldown down to 90 seconds."
+        },
+        {
+          "icon": "ability_mount_kodo_01",
+          "name": "Plainsrunning",
+          "kind": "buff",
+          "text": "+3% mounted speed. Cultivation cooldown down to 15 minutes."
+        }
+      ]
+    },
+    {
+      "icon": "achievement_character_troll_male",
+      "name": "Troll",
+      "faction": "horde",
+      "abilities": [
+        {
+          "icon": "spell_nature_regenerate",
+          "name": "Regeneration",
+          "kind": "buff",
+          "text": "Health regeneration bonus up to 20%."
+        }
+      ]
+    }
+  ],
+  "classes": [
+    {
+      "name": "Druid",
+      "color": "#FF7C0A",
+      "icon": "classicon_druid",
+      "lede": "Raid-wide Moonkin Aura and Leader of the Pack, plus fixes for stacking HoTs.",
+      "spells": [
+        {
+          "icon": "spell_nature_rejuvenation",
+          "name": "Rejuvenation",
+          "kind": "fix",
+          "text": "Rejuvenation from several Druids no longer conflicts.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_nature_faeriefire",
+          "name": "Faerie Fire",
+          "kind": "buff",
+          "text": "Generates threat in bear forms. No longer procs Omen of Clarity in animal forms.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_shadow_vampiricaura",
+          "name": "Shred",
+          "kind": "change",
+          "text": "Rank 1 is learned at level 20.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_nature_moonglow",
+          "name": "Moonkin Aura",
+          "kind": "change",
+          "text": "Raises spell crit only, now raid-wide.",
+          "spec": "Balance"
+        },
+        {
+          "icon": "spell_nature_insectswarm",
+          "name": "Insect Swarm",
+          "kind": "fix",
+          "text": "Several Druids' Insect Swarm no longer stack the debuff.",
+          "spec": "Balance"
+        },
+        {
+          "icon": "spell_nature_unyeildingstamina",
+          "name": "Leader of the Pack",
+          "kind": "buff",
+          "text": "Raises melee and ranged crit only, now raid-wide.",
+          "spec": "Feral"
+        },
+        {
+          "icon": "spell_holy_blessingofstamina",
+          "name": "Furor",
+          "kind": "buff",
+          "text": "Energy is kept when you shift between forms.",
+          "spec": "Feral"
+        }
+      ]
+    },
+    {
+      "name": "Hunter",
+      "color": "#AAD372",
+      "icon": "classicon_hunter",
+      "lede": "Auto Shot needs you to stand still, traps scale with Attack Power and pets get Expertise.",
+      "spells": [
+        {
+          "icon": "ability_whirlwind",
+          "name": "Auto Shot",
+          "kind": "change",
+          "text": "Needs 0.5 sec standing still. Now fires during spell casts.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_fire_flameshock",
+          "name": "Fire traps",
+          "kind": "buff",
+          "text": "Scale with Attack Power. One Fire Trap and one Ice Trap can be active at once.",
+          "spec": ""
+        },
+        {
+          "icon": "ability_hunter_beasttaming",
+          "name": "Pets",
+          "kind": "buff",
+          "text": "Pets benefit from Expertise. Critical strike inheritance fixed.",
+          "spec": ""
+        },
+        {
+          "icon": "ability_druid_rake",
+          "name": "Dismember (pet)",
+          "kind": "change",
+          "text": "25% healing reduction, 6 sec, 15 sec cooldown.",
+          "spec": "Pet"
+        },
+        {
+          "icon": "spell_nature_purge",
+          "name": "Sonic Blast (pet)",
+          "kind": "change",
+          "text": "30% cast slow, 20 sec, 60 sec cooldown.",
+          "spec": "Pet"
+        },
+        {
+          "icon": "ability_trueshot",
+          "name": "Trueshot Aura",
+          "kind": "buff",
+          "text": "Now raid-wide.",
+          "spec": "Marksmanship"
+        },
+        {
+          "icon": "ability_hunter_snipershot",
+          "name": "Sniper Shot",
+          "kind": "buff",
+          "text": "Benefits from talents.",
+          "spec": "Marksmanship"
+        },
+        {
+          "icon": "ability_kick",
+          "name": "Strider Kick",
+          "kind": "buff",
+          "text": "Usable while disarmed.",
+          "spec": "Survival"
+        },
+        {
+          "icon": "ability_hunter_resourcefulness",
+          "name": "Resourcefulness",
+          "kind": "change",
+          "text": "Only affects Strider Kick and melee and ranged crits.",
+          "spec": "Survival"
+        }
+      ]
+    },
+    {
+      "name": "Mage",
+      "color": "#3FC7EB",
+      "icon": "classicon_mage",
+      "lede": "A new level 24 spell, a reworked Arcane tree and stronger Frost against frozen targets.",
+      "spells": [
+        {
+          "icon": "spell_frost_frostbolt02",
+          "name": "Frost Blast",
+          "kind": "new",
+          "text": "New spell at level 24. Deals damage and slows movement by 40%.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_arcane_blast",
+          "name": "Arcane Blast",
+          "kind": "change",
+          "text": "1.5 sec cast. Grants 15% of Intellect as spell damage.",
+          "spec": "Arcane"
+        },
+        {
+          "icon": "spell_arcane_starfire",
+          "name": "Arcane Wrath",
+          "kind": "new",
+          "text": "New 16-point talent. Damage close to Fireball, 3.5 sec cast.",
+          "spec": "Arcane"
+        },
+        {
+          "icon": "ability_mage_missilebarrage",
+          "name": "Missile Barrage",
+          "kind": "change",
+          "text": "Now a 2-point talent in the first row.",
+          "spec": "Arcane"
+        },
+        {
+          "icon": "spell_fire_fireball",
+          "name": "Improved Fire Blast",
+          "kind": "change",
+          "text": "Wake of Fire reverted. +8/15 yards range.",
+          "spec": "Fire"
+        },
+        {
+          "icon": "spell_nature_wispheal",
+          "name": "Critical Mass",
+          "kind": "buff",
+          "text": "Up to 5 points for 10% crit.",
+          "spec": "Fire"
+        },
+        {
+          "icon": "spell_fire_immolation",
+          "name": "Fire Power",
+          "kind": "change",
+          "text": "3 points: 1/2/3% per Fire effect.",
+          "spec": "Fire"
+        },
+        {
+          "icon": "spell_frost_frostblast",
+          "name": "Ice Lance",
+          "kind": "buff",
+          "text": "200% more damage against frozen targets.",
+          "spec": "Frost"
+        },
+        {
+          "icon": "spell_frost_glacier",
+          "name": "Cone of Cold",
+          "kind": "buff",
+          "text": "Extra 10% slow and 3 sec on the first 4 targets.",
+          "spec": "Frost"
+        },
+        {
+          "icon": "spell_frost_chillingblast",
+          "name": "Winter's Chill",
+          "kind": "change",
+          "text": "Increases Cone of Cold damage by 40%.",
+          "spec": "Frost"
+        }
+      ]
+    },
+    {
+      "name": "Paladin",
+      "color": "#F48CBA",
+      "icon": "classicon_paladin",
+      "lede": "Salvation splits in two, and Reckoning can store charges.",
+      "spells": [
+        {
+          "icon": "spell_holy_sealofsalvation",
+          "name": "Salvation",
+          "kind": "change",
+          "text": "Blessing of Salvation replaced by Salvation and Mass Salvation.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_holy_innerfire",
+          "name": "Consecration",
+          "kind": "change",
+          "text": "Spell power coefficient 0.042.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_holy_sealoffury",
+          "name": "Righteous Fury",
+          "kind": "change",
+          "text": "Threat set to 90%. Seal of Fury no longer overwritten by Power Word: Shield.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_holy_righteousfury",
+          "name": "Judgement",
+          "kind": "fix",
+          "text": "Coefficients corrected. Seal of Righteousness spell damage fixed.",
+          "spec": ""
+        },
+        {
+          "icon": "inv_shield_06",
+          "name": "Shield Specialization",
+          "kind": "buff",
+          "text": "Restores 4% Mana, 3 sec cooldown.",
+          "spec": "Protection"
+        },
+        {
+          "icon": "spell_holy_blessingofstrength",
+          "name": "Reckoning",
+          "kind": "buff",
+          "text": "Stores up to 4 charges.",
+          "spec": "Protection"
+        },
+        {
+          "icon": "spell_holy_holysmite",
+          "name": "Champion of the Light",
+          "kind": "change",
+          "text": "10/20/30% of Intellect. Sanctified Judgement no longer causes threat.",
+          "spec": "Retribution"
+        }
+      ]
+    },
+    {
+      "name": "Priest",
+      "color": "#FFFFFF",
+      "icon": "classicon_priest",
+      "lede": "Shorter shadow cooldowns and a new Shadow talent.",
+      "spells": [
+        {
+          "icon": "spell_shadow_blackplague",
+          "name": "Devouring Plague",
+          "kind": "change",
+          "text": "24 sec cooldown.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_shadow_demonicfortitude",
+          "name": "Shadow Word: Death",
+          "kind": "change",
+          "text": "18 sec cooldown. Benefits from Shadowform.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_holy_renew",
+          "name": "Renew",
+          "kind": "fix",
+          "text": "Renew from several Priests no longer conflicts.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_holy_searinglight",
+          "name": "Holy Fire",
+          "kind": "fix",
+          "text": "Rank scaling fixed.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_holy_mindvision",
+          "name": "Mind Vision",
+          "kind": "fix",
+          "text": "No longer interrupts drinking.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_nature_enchantarmor",
+          "name": "Mental Strength",
+          "kind": "change",
+          "text": "Grants 2/4/6/8/10% Intellect.",
+          "spec": "Discipline"
+        },
+        {
+          "icon": "spell_shadow_shadowward",
+          "name": "Dark Inspiration",
+          "kind": "new",
+          "text": "New Row 4 talent.",
+          "spec": "Shadow"
+        },
+        {
+          "icon": "spell_shadow_unsummonbuilding",
+          "name": "Vampiric Embrace",
+          "kind": "buff",
+          "text": "Cannot be resisted. 30 sec cooldown.",
+          "spec": "Shadow"
+        },
+        {
+          "icon": "spell_shadow_siphonmana",
+          "name": "Mind Flay",
+          "kind": "buff",
+          "text": "Damage scaling improved.",
+          "spec": "Shadow"
+        }
+      ]
+    },
+    {
+      "name": "Rogue",
+      "color": "#FFF468",
+      "icon": "classicon_rogue",
+      "lede": "Small fixes, and an exploit is closed.",
+      "spells": [
+        {
+          "icon": "ability_poisons",
+          "name": "Poisons",
+          "kind": "fix",
+          "text": "No longer activate against targets that are attacking you.",
+          "spec": ""
+        },
+        {
+          "icon": "ability_sap",
+          "name": "Sap",
+          "kind": "fix",
+          "text": "No longer triggers weapon procs.",
+          "spec": ""
+        },
+        {
+          "icon": "inv_sword_04",
+          "name": "Specialization swap",
+          "kind": "fix",
+          "text": "Exploit closed.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_ice_lament",
+          "name": "Cold Blood",
+          "kind": "fix",
+          "text": "Consumed correctly by Mutilate crits.",
+          "spec": "Assassination"
+        }
+      ]
+    },
+    {
+      "name": "Shaman",
+      "color": "#0070DD",
+      "icon": "classicon_shaman",
+      "lede": "Cheaper Chain Lightning and a reorganized Elemental tree.",
+      "spells": [
+        {
+          "icon": "spell_nature_chainlightning",
+          "name": "Chain Lightning",
+          "kind": "buff",
+          "text": "Mana cost down about 35%.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_fire_sealoffire",
+          "name": "Fire Nova",
+          "kind": "change",
+          "text": "Spell power coefficient 0.143.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_nature_invisibilitytotem",
+          "name": "Grace of Air",
+          "kind": "buff",
+          "text": "No longer excludes Windfury or Flametongue.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_nature_groundingtotem",
+          "name": "Grounding Totem",
+          "kind": "nerf",
+          "text": "Destroyed after redirecting a spell.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_nature_wispheal",
+          "name": "Elemental Mastery",
+          "kind": "new",
+          "text": "Returns as the 31-point talent.",
+          "spec": "Elemental"
+        },
+        {
+          "icon": "spell_shaman_lavaburst",
+          "name": "Lava Burst",
+          "kind": "change",
+          "text": "Moves to row 5 as a 21-point talent.",
+          "spec": "Elemental"
+        },
+        {
+          "icon": "ability_shaman_stormstrike",
+          "name": "Stormstrike",
+          "kind": "change",
+          "text": "Costs 8% of base mana.",
+          "spec": "Enhancement"
+        },
+        {
+          "icon": "spell_frost_summonwaterelemental",
+          "name": "Mana Tide Totem",
+          "kind": "new",
+          "text": "New rank at level 38.",
+          "spec": "Restoration"
+        },
+        {
+          "icon": "ability_shaman_watershield",
+          "name": "Water Shield",
+          "kind": "buff",
+          "text": "Triggers on any spell crit.",
+          "spec": "Restoration"
+        }
+      ]
+    },
+    {
+      "name": "Warlock",
+      "color": "#8788EE",
+      "icon": "classicon_warlock",
+      "lede": "Range talents replace Malediction.",
+      "spells": [
+        {
+          "icon": "spell_shadow_summonsuccubus",
+          "name": "Summon Incubus",
+          "kind": "fix",
+          "text": "Soul Shard cost fixed.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_shadow_unholystrength",
+          "name": "Curse of Recklessness",
+          "kind": "fix",
+          "text": "Several debuffs no longer stack.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_shadow_callofbone",
+          "name": "Grim Reach",
+          "kind": "new",
+          "text": "Replaces Malediction. +10/20% range.",
+          "spec": "Affliction"
+        },
+        {
+          "icon": "spell_shadow_shadowworddominate",
+          "name": "Shadow Mastery",
+          "kind": "change",
+          "text": "2/4/6/8/10%.",
+          "spec": "Affliction"
+        },
+        {
+          "icon": "spell_shadow_corpseexplode",
+          "name": "Destructive Reach",
+          "kind": "change",
+          "text": "+10/20% range.",
+          "spec": "Destruction"
+        }
+      ]
+    },
+    {
+      "name": "Warrior",
+      "color": "#C69B6D",
+      "icon": "classicon_warrior",
+      "lede": "Battle Shout covers the raid, and Slam no longer suffers pushback.",
+      "spells": [
+        {
+          "icon": "ability_warrior_battleshout",
+          "name": "Battle Shout",
+          "kind": "buff",
+          "text": "Now raid-wide.",
+          "spec": ""
+        },
+        {
+          "icon": "ability_warrior_decisivestrike",
+          "name": "Slam",
+          "kind": "buff",
+          "text": "No longer subject to spell pushback.",
+          "spec": ""
+        },
+        {
+          "icon": "ability_meleedamage",
+          "name": "Overpower",
+          "kind": "fix",
+          "text": "Works against lower-level enemies.",
+          "spec": ""
+        },
+        {
+          "icon": "ability_racial_bloodrage",
+          "name": "Lingering Rage",
+          "kind": "fix",
+          "text": "Stops after combat ends.",
+          "spec": "Fury"
+        },
+        {
+          "icon": "spell_nature_ancestralguardian",
+          "name": "Improved Berserker Rage",
+          "kind": "buff",
+          "text": "Removes movement-impairing effects.",
+          "spec": "Fury"
+        }
+      ]
+    }
+  ],
+  "quests": [
+    {
+      "icon": "spell_arcane_teleportdalaran",
+      "zone": "Dalaran",
+      "text": "Horde are attacked on sight. The questline no longer grants unrestricted access."
+    },
+    {
+      "icon": "spell_arcane_teleportstormwind",
+      "zone": "Stormwind",
+      "text": "\"The Attack!\" is no longer an escort quest and can be shared."
+    },
+    {
+      "icon": "inv_misc_map_01",
+      "zone": "Wetlands",
+      "text": "Respawn rates increased and evened out."
+    },
+    {
+      "icon": "inv_misc_note_01",
+      "zone": "Darkshore",
+      "text": "\"For Love Eternal\" is always available. Furbolg camp credit fixed. Cenarion Moondust reusable in \"Body and Heart\"."
+    },
+    {
+      "icon": "ability_hunter_pet_bear",
+      "zone": "Ashenvale",
+      "text": "More Bloodtooth Guards during \"Raene's Cleansing\"."
+    },
+    {
+      "icon": "ability_mount_kodo_01",
+      "zone": "Mulgore",
+      "text": "Novice Warriors no longer flag you for PvP."
+    },
+    {
+      "icon": "spell_nature_cyclone",
+      "zone": "Zephras Isle",
+      "text": "Halaan's Gift anchor scrying fixed."
+    }
+  ],
+  "gear": [
+    {
+      "icon": "inv_mushroom_11",
+      "name": "Mystic Mushroom",
+      "text": "Now increases Spirit."
+    },
+    {
+      "icon": "inv_enchant_essencemagiclarge",
+      "name": "Enchant: Insight",
+      "text": "Now increases Spirit."
+    },
+    {
+      "icon": "inv_scroll_03",
+      "name": "Scrolls",
+      "text": "Now trigger the global cooldown."
+    },
+    {
+      "icon": "inv_potion_15",
+      "name": "Draught of Predatory Senses",
+      "text": "Shares the Combat Potion cooldown."
+    },
+    {
+      "icon": "inv_misc_coin_01",
+      "name": "Profession vendor items",
+      "text": "Prices reduced."
+    },
+    {
+      "icon": "inv_misc_coin_02",
+      "name": "Bartering (Legacy)",
+      "text": "Training and repair discount fixed."
+    },
+    {
+      "icon": "spell_holy_resurrection",
+      "name": "Quick and the Dead (Legacy)",
+      "text": "Affects more Priest spells."
+    },
+    {
+      "icon": "inv_bannerpvp_02",
+      "name": "Battleground Marks of Honor",
+      "text": "Now stack to 30."
+    }
+  ],
+  "interface": [
+    {
+      "icon": "inv_misc_enggizmos_27",
+      "name": "Swing timer",
+      "kind": "new",
+      "text": "Shown on the gamepad reticle."
+    },
+    {
+      "icon": "spell_holy_holybolt",
+      "name": "Press and Hold Casting",
+      "kind": "new",
+      "text": "Now works with gamepad."
+    },
+    {
+      "icon": "inv_misc_note_01",
+      "name": "Quest rewards on gamepad",
+      "kind": "fix",
+      "text": "Reward choice and quest giver turn-in fixed."
+    },
+    {
+      "icon": "inv_misc_coin_02",
+      "name": "Auction House",
+      "kind": "new",
+      "text": "Equippable level column added. Suffix stats display fixed."
+    },
+    {
+      "icon": "inv_misc_pocketwatch_01",
+      "name": "Cooldown Manager",
+      "kind": "change",
+      "text": "All ranks of a spell count as one entry."
+    },
+    {
+      "icon": "inv_misc_book_11",
+      "name": "Scrolling Combat Text",
+      "kind": "new",
+      "text": "New options. Level-up stat messages are back."
+    },
+    {
+      "icon": "spell_arcane_portalironforge",
+      "name": "Who List",
+      "kind": "buff",
+      "text": "Supports subzones. Show All Level Ranges works."
+    },
+    {
+      "icon": "inv_misc_map_01",
+      "name": "Refresh world prompt",
+      "kind": "fix",
+      "text": "Blocked while in combat."
+    }
+  ],
+  "actionbar": [
+    "spell_frost_frostbolt02",
+    "spell_arcane_blast",
+    "spell_nature_chainlightning",
+    "ability_warrior_battleshout",
+    "spell_holy_renew",
+    "ability_trueshot",
+    "spell_nature_moonglow",
+    "spell_shadow_blackplague",
+    "ability_warstomp",
+    "spell_shaman_lavaburst",
+    "spell_frost_glacier",
+    "ability_sap"
+  ],
+  "sources": [
+    {
+      "label": "Blizzard forums: WoW Forever Beta Development Notes, updated 15 October",
+      "url": "https://us.forums.blizzard.com/en/wow/t/wow-forever-beta-development-notes-%E2%80%93-updated-october-15/2360696/6"
+    },
+    {
+      "label": "Blizzard forums: WoW Forever Stress Test October 21 (moved from 19 October)",
+      "url": "https://us.forums.blizzard.com/en/wow/t/wow-forever-stress-test-october-21/2383617"
+    },
+    {
+      "label": "The Forever Era: patch notes tracker (build numbers)",
+      "url": "https://theforeverera.com/en/patch-notes/"
+    },
+    {
+      "label": "wow.gg: changes from 8 October",
+      "url": "https://wow.gg/guides/wow-forever-update-8-10-2026"
+    }
+  ],
+  "transcribed": "2026-10-16",
+  "transcribed_by": "Claude (hand transcription of the forum post)",
+  "corrections": [
+    "2026-10-17: Blizzard moved the Stress Test from 19 to 21 October (19:00 CEST). Characters are wiped afterwards and the beta reopens, so the earlier '21 Oct beta ends' date was dropped as unconfirmed."
+  ]
+}

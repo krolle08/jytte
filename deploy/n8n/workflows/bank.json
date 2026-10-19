@@ -1,0 +1,492 @@
+{
+  "id": "jytteBankFetch01",
+  "name": "bank",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "errorWorkflow": "jytteBankFetch01"
+  },
+  "pinData": {},
+  "nodes": [
+    {
+      "id": "trigger-schedule",
+      "name": "Every 6 hours",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -640,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "7 */6 * * *"
+            }
+          ]
+        }
+      },
+      "notes": "Four runs a day, not every 15 minutes like mail. The free Bank Account Data tier meters calls per account per day, so polling harder gets the account throttled rather than the balance fresher. Minute 7 keeps it off the top of the hour where every other cron fires."
+    },
+    {
+      "id": "config",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -430,
+        0
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "requisition_id",
+              "value": "={{ $env.BANK_REQUISITION_ID }}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "lookback_days",
+              "value": "={{ Number($env.BANK_LOOKBACK_DAYS || 30) }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "notes": "Non-secret shaping only. BANK_REQUISITION_ID identifies the consent you completed in the browser; it is not a credential and cannot be used without the secret pair, which lives in n8n's credential store."
+    },
+    {
+      "id": "get-token",
+      "name": "Get access token",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -210,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bankaccountdata.gocardless.com/api/v2/token/new/",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({}) }}",
+        "options": {}
+      },
+      "credentials": {
+        "httpCustomAuth": {
+          "id": "gocardless-bad",
+          "name": "GoCardless Bank Account Data (secret_id + secret_key)"
+        }
+      },
+      "notes": "The credential injects {\"body\":{\"secret_id\":\"...\",\"secret_key\":\"...\"}} into this POST, so the pair never appears in this file. Minting a fresh 24h access token on every run is deliberate: at four runs a day the refresh-token dance buys nothing and would mean persisting a second secret somewhere. Repoint this node at your own credential; the id here is a placeholder."
+    },
+    {
+      "id": "fetch-requisition",
+      "name": "Fetch requisition",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        10,
+        0
+      ],
+      "alwaysOutputData": true,
+      "parameters": {
+        "method": "GET",
+        "url": "=https://bankaccountdata.gocardless.com/api/v2/requisitions/{{ $('Config').first().json.requisition_id }}/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Get access token').first().json.access }}"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "notes": "Returns the account ids the consent covers. An expired consent answers 200 with an empty accounts array, not an error - handled in 'Split accounts'."
+    },
+    {
+      "id": "split-accounts",
+      "name": "Split accounts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        230,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Fan the requisition's account ids out to one item each, so the three\n// per-account GETs below run once per account.\n//\n// 'Fetch requisition' has alwaysOutputData on. A requisition whose\n// consent has expired returns an empty `accounts` array rather than an\n// error, and without the guard below the branch would die here and\n// Jytte would keep showing the last balance forever with no banner.\n// Emitting a marker item instead lets Normalize report it honestly.\n\nconst req = $input.first().json || {};\nconst ids = Array.isArray(req.accounts) ? req.accounts : [];\n\nif (ids.length === 0) {\n  return [{ json: { account_id: null, consent_status: req.status || 'unknown' } }];\n}\n\nreturn ids.map((id) => ({ json: { account_id: id, consent_status: req.status || 'LN' } }));\n"
+      }
+    },
+    {
+      "id": "fetch-details",
+      "name": "Fetch details",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        450,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "GET",
+        "url": "=https://bankaccountdata.gocardless.com/api/v2/accounts/{{ $json.account_id }}/details/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Get access token').first().json.access }}"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "notes": "onError continues so one account that the bank refuses does not take the other accounts' balances down with it."
+    },
+    {
+      "id": "fetch-balances",
+      "name": "Fetch balances",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        670,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "GET",
+        "url": "=https://bankaccountdata.gocardless.com/api/v2/accounts/{{ $('Split accounts').item.json.account_id }}/balances/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Get access token').first().json.access }}"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "notes": "The account id comes from 'Split accounts' through pairedItem, because the previous node replaced $json with the details response."
+    },
+    {
+      "id": "fetch-transactions",
+      "name": "Fetch transactions",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        890,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "GET",
+        "url": "=https://bankaccountdata.gocardless.com/api/v2/accounts/{{ $('Split accounts').item.json.account_id }}/transactions/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Get access token').first().json.access }}"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "normalize",
+      "name": "Normalize accounts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1110,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Normalize GoCardless Bank Account Data into the Jytte `bank` payload.\n//\n// Input : three parallel per-account node outputs, each one item per\n//         account in the SAME order, because every one of them ran once\n//         per item coming out of 'Split accounts'. That is why they are\n//         zipped by index below rather than joined on a key - there is\n//         no shared key in the responses to join on.\n// Output: exactly one item, the body POSTed to /widgets/bank/state.\n\nconst cfg = $('Config').first().json;\nconst lookbackDays = Number(cfg.lookback_days) || 30;\n\nconst details = $('Fetch details').all();\nconst balances = $('Fetch balances').all();\nconst txPages = $('Fetch transactions').all();\n\n// MONEY RULE (project rule 1): integer minor units, never float.\n// parseFloat('123.45') * 100 is 12344.999999999998, so the round is not\n// cosmetic - without it every other amount lands a oere low.\nconst toOere = (s) => {\n  const n = parseFloat(String(s == null ? '0' : s).replace(',', '.'));\n  return isNaN(n) ? 0 : Math.round(n * 100);\n};\n\n// Hand-rolled rather than toLocaleString: an n8n image built with\n// small-icu silently falls back to en-US and every amount would render\n// with the separators swapped.\nconst kr = (oere) => {\n  const neg = oere < 0;\n  const whole = String(Math.floor(Math.abs(oere) / 100));\n  const cents = String(Math.abs(oere) % 100).padStart(2, '0');\n  const grouped = whole.replace(/\\B(?=(\\d{3})+(?!\\d))/g, '.');\n  return (neg ? '-' : '') + grouped + ',' + cents;\n};\n\nconst pickBalance = (payload) => {\n  // Preference order matters: interimAvailable is what the bank app\n  // shows you, closingBooked is yesterday's end-of-day. Showing the\n  // second as if it were the first is how a budget page ends up\n  // disagreeing with the phone.\n  const list = (payload && payload.balances) || [];\n  const order = ['interimAvailable', 'expected', 'closingBooked', 'forwardAvailable'];\n  for (const want of order) {\n    const hit = list.find((b) => b.balanceType === want);\n    if (hit) return hit;\n  }\n  return list[0] || null;\n};\n\nconst today = new Date();\nconst cutoff = new Date(today.getTime() - lookbackDays * 86400000)\n  .toISOString()\n  .slice(0, 10);\n\nconst accounts = [];\nconst transactions = [];\nlet oldestBalanceDate = null;\n\nfor (let i = 0; i < details.length; i++) {\n  const d = (details[i] && details[i].json && details[i].json.account) || {};\n  const bal = pickBalance(balances[i] && balances[i].json);\n  const acctId =\n    $('Split accounts').all()[i] &&\n    $('Split accounts').all()[i].json.account_id;\n\n  if (!acctId) continue;\n\n  const iban = String(d.iban || '');\n  const balOere = bal ? toOere(bal.balanceAmount && bal.balanceAmount.amount) : 0;\n  const refDate = (bal && (bal.referenceDate || bal.lastChangeDateTime)) || null;\n  if (refDate && (!oldestBalanceDate || refDate < oldestBalanceDate)) {\n    oldestBalanceDate = String(refDate).slice(0, 10);\n  }\n\n  accounts.push({\n    id: acctId,\n    // name is what the owner called the account; product is the bank's\n    // own label. Either beats printing a UUID at the user.\n    name: d.name || d.product || d.details || 'Konto',\n    bank: d.ownerName || '',\n    // LAST FOUR ONLY. A full IBAN in a cached widget payload is an\n    // account number sitting in a database that renders HTML. Same\n    // reasoning as calendar.json sending attendee names, not addresses.\n    iban_tail: iban ? iban.slice(-4) : '',\n    currency: (bal && bal.balanceAmount && bal.balanceAmount.currency) || d.currency || 'DKK',\n    balance_oere: balOere,\n    balance_kr: kr(balOere),\n    balance_at: refDate ? String(refDate).slice(0, 10) : null,\n    balance_type: (bal && bal.balanceType) || null,\n  });\n\n  const page = (txPages[i] && txPages[i].json && txPages[i].json.transactions) || {};\n  const booked = Array.isArray(page.booked) ? page.booked : [];\n  const pending = Array.isArray(page.pending) ? page.pending : [];\n\n  for (const t of booked.concat(pending)) {\n    const date = String(t.bookingDate || t.valueDate || '').slice(0, 10);\n    if (date && date < cutoff) continue;\n    const amtOere = toOere(t.transactionAmount && t.transactionAmount.amount);\n    transactions.push({\n      id: t.transactionId || t.internalTransactionId || `${acctId}-${date}-${amtOere}`,\n      account_id: acctId,\n      date: date || null,\n      text:\n        t.remittanceInformationUnstructured ||\n        (Array.isArray(t.remittanceInformationUnstructuredArray)\n          ? t.remittanceInformationUnstructuredArray.join(' ')\n          : '') ||\n        t.additionalInformation ||\n        '',\n      counterparty: t.creditorName || t.debtorName || '',\n      amount_oere: amtOere,\n      amount_kr: kr(amtOere),\n      currency: (t.transactionAmount && t.transactionAmount.currency) || 'DKK',\n      kind: amtOere < 0 ? 'out' : 'in',\n      pending: pending.indexOf(t) !== -1,\n    });\n  }\n}\n\ntransactions.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));\n\nconst sum = (f) => transactions.filter(f).reduce((n, t) => n + t.amount_oere, 0);\nconst balanceTotal = accounts.reduce((n, a) => n + a.balance_oere, 0);\nconst inOere = sum((t) => t.amount_oere > 0);\nconst outOere = sum((t) => t.amount_oere < 0);\n\n// Consent runs out after 90 days and the BANK starts refusing, not n8n.\n// The workflow stays green, the numbers quietly stop moving. Age of the\n// newest balance is the only signal that catches that.\nlet staleDays = 0;\nif (oldestBalanceDate) {\n  staleDays = Math.max(\n    0,\n    Math.round((Date.parse(today.toISOString().slice(0, 10)) - Date.parse(oldestBalanceDate)) / 86400000)\n  );\n}\n\nconst consent = $('Split accounts').first().json.consent_status;\nconst ready = accounts.length > 0;\n\nreturn [\n  {\n    json: {\n      ready: ready,\n      source: 'n8n',\n      provider: 'gocardless-bank-account-data',\n      reason: ready\n        ? null\n        : `samtykket giver ingen konti (status ${consent}) - gennemfoer bank-linket igen`,\n      fetched_at: new Date().toISOString(),\n      lookback_days: lookbackDays,\n      consent_status: consent,\n      stale_days: staleDays,\n      totals: {\n        accounts: accounts.length,\n        balance_oere: balanceTotal,\n        balance_kr: kr(balanceTotal),\n        in_30d_oere: inOere,\n        in_30d_kr: kr(inOere),\n        out_30d_oere: outOere,\n        out_30d_kr: kr(outOere),\n      },\n      accounts: accounts,\n      transactions: transactions,\n      summary:\n        'bank: ' + kr(balanceTotal) + ' kr paa ' + accounts.length + ' konti',\n    },\n  },\n];\n"
+      }
+    },
+    {
+      "id": "post-state",
+      "name": "POST -> Jytte /state",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1330,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.JYTTE_BASE_URL}}/widgets/bank/state",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Jytte-Internal-Secret",
+              "value": "={{$env.JYTTE_INTERNAL_SECRET}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "error-trigger",
+      "name": "On any error",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -430,
+        240
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "shape-error",
+      "name": "Shape error payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -210,
+        240
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "code",
+              "value": "={{$json.execution && $json.execution.error && ($json.execution.error.httpCode || $json.execution.error.name) || 'unknown'}}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "message",
+              "value": "={{$json.execution && $json.execution.error && ($json.execution.error.message || JSON.stringify($json.execution.error)) || 'unknown'}}",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "execution_id",
+              "value": "={{$json.execution && $json.execution.id}}",
+              "type": "string"
+            },
+            {
+              "id": "4",
+              "name": "workflow_id",
+              "value": "={{$json.workflow && $json.workflow.id}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "post-error",
+      "name": "POST -> Jytte /error",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        10,
+        240
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.JYTTE_BASE_URL}}/widgets/bank/error",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Jytte-Internal-Secret",
+              "value": "={{$env.JYTTE_INTERNAL_SECRET}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Every 6 hours": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Get access token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get access token": {
+      "main": [
+        [
+          {
+            "node": "Fetch requisition",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch requisition": {
+      "main": [
+        [
+          {
+            "node": "Split accounts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split accounts": {
+      "main": [
+        [
+          {
+            "node": "Fetch details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch details": {
+      "main": [
+        [
+          {
+            "node": "Fetch balances",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch balances": {
+      "main": [
+        [
+          {
+            "node": "Fetch transactions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch transactions": {
+      "main": [
+        [
+          {
+            "node": "Normalize accounts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize accounts": {
+      "main": [
+        [
+          {
+            "node": "POST -> Jytte /state",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On any error": {
+      "main": [
+        [
+          {
+            "node": "Shape error payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shape error payload": {
+      "main": [
+        [
+          {
+            "node": "POST -> Jytte /error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "notes": "Open-banking fetch for the `bank` widget, via GoCardless Bank Account Data (the former Nordigen free AIS tier). CREDENTIAL RULE: the secret_id/secret_key pair lives only in n8n's encrypted credential store. Jytte holds no bank credential and has no Python client - the widget is source: n8n. Before activating: create the consent in a browser once (see app/widgets/bank/CLAUDE.md), put the resulting requisition id in BANK_REQUISITION_ID, add the httpCustomAuth credential and repoint 'Get access token' at it. The consent expires after 90 days by default and must be redone - stale_days in the payload is what surfaces that."
+  }
+}

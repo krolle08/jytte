@@ -1,0 +1,127 @@
+# Workflows that are not n8n JSON and not vault runbooks, so the scanner
+# cannot find them on its own: host tasks, Claude Code hooks and standing
+# agent rules. scripts/scan_ai.py reads this file and puts each flow on
+# /workflows next to the n8n flows and the vault runbooks.
+#
+# A flow that hands off to (or is read by) an n8n workflow names it under
+# `n8n:`. The scanner writes that into the description, so the page shows
+# where the host side ends and n8n takes over.
+#
+# Node kinds: trigger | tool | gate (stops and asks you) | agent | skill.
+# A node that names an existing agent or skill is linked to it by the
+# scanner; a gate keeps its kind.
+#
+# Edges: [from, to] or [from, to, label]. No edges means the nodes run in
+# the order listed.
+
+vault-daily-refresh:
+  n: vault daily refresh
+  eng: host
+  run: dagligt 06:00
+  theme: vault
+  project: LLM-Wiki
+  source: C:/Obsidian/Nichlas/LLM-Wiki/scripts/refresh_views.py
+  n8n: [vault-refresh]
+  desc: >-
+    Windows Task Scheduler koerer refresh_views.py paa hosten kl. 06:00. Den
+    genbygger alle genererede views og skriver refresh-status.json. n8n laeser
+    filen kl. 06:30 og sender den til vault-kortet. Lukker aldrig et
+    spoergsmaal og filer aldrig en note.
+  nodes:
+    - {id: sched, k: trigger, w: "Task Scheduler 06:00", y: "Windows-opgave installeret med install_refresh_task.ps1. Springer over hvis git holder .git/index.lock."}
+    - {id: graph, k: tool, w: "build_graph", y: ".graph/nodes.csv, edges.csv, graph-stats.json"}
+    - {id: projects, k: tool, w: "build_projects_view", y: "Projects/ task-joins og _index.json"}
+    - {id: boards, k: tool, w: "build_workstream", y: "Et arbejdsbord pr. workstream i CONFIG"}
+    - {id: questions, k: tool, w: "build_open_questions", y: "wiki/views/open-questions.md: alle aabne spoergsmaal pr. sub-wiki, plus #ingest-koeen"}
+    - {id: validate, k: tool, w: "validate_wiki", y: "Skema-tjek, read-only. Fejler aldrig koerslen."}
+    - {id: status, k: tool, w: "refresh-status.json", y: "LLM-Wiki/.graph/refresh-status.json. Kontrakten med n8n."}
+    - {id: n8n, k: trigger, w: "n8n vault-refresh 06:30", y: "Laeser filen fra et read-only mount, markerer den stale efter 26 timer, POST til Jytte."}
+    - {id: card, k: tool, w: "Jytte vault-kort", y: "Status, validator, graf og antal aabne spoergsmaal."}
+
+librarian-question-close:
+  n: spoergsmaal lukkes
+  eng: Claude
+  run: manuel
+  theme: vault
+  project: LLM-Wiki
+  source: C:/Obsidian/Nichlas/LLM-Wiki/scripts/close_task_questions.py
+  desc: >-
+    Librarian Step 5.6. Et spoergsmaal hvis task er done foreslaas lukket,
+    men intet lukkes uden dit OK linje for linje (besluttet 2026-10-17).
+  nodes:
+    - {id: done, k: trigger, w: "Task sat til done", y: "Eller flyttet til Tasks/Finish/ af Step 5.5"}
+    - {id: list, k: tool, w: "close_task_questions.py", y: "Lister checkbokse bundet til en done task. Skriver intet."}
+    - {id: read, k: tool, w: "Laes taskens Noter og Solution", y: "Librarian foreslaar Svar, Luk uden svar eller Hold aaben pr. linje"}
+    - {id: ask, k: gate, w: "Du vaelger pr. spoergsmaal", y: "Svar / Luk uden svar / Hold aaben. Spoerges samlet for hele batchen."}
+    - {id: svar, k: tool, w: "Svar skrives paa linjen", y: "- [x] <spoergsmaal> Svar: <svar> ([[task]])"}
+    - {id: close, k: tool, w: "--approve <side>:<linje>", y: "- [x] <spoergsmaal> [Automatically closed] ([[task]]). --reopen fortryder."}
+    - {id: keep, k: tool, w: "Hold aaben", y: "Linjen roeres ikke"}
+    - {id: log, k: tool, w: "log.md", y: "De lukkede linjer skrives i librarian-loggen"}
+  e:
+    - [done, list]
+    - [list, read]
+    - [read, ask]
+    - [ask, svar, Svar]
+    - [ask, close, Luk]
+    - [ask, keep, Hold]
+    - [svar, log]
+    - [close, log]
+
+librarian-ingest-pickup:
+  n: "#ingest-noter"
+  eng: Claude
+  run: hver librarian-session
+  theme: vault
+  project: LLM-Wiki
+  source: C:/Obsidian/Nichlas/LLM-Wiki/scripts/ingest_queue.py
+  desc: >-
+    Librarian Step 0.6. En linje i en note eller daglig note med #ingest er en
+    kilde du har parkeret. Librarian foreslaar, du vaelger, og linjen faar et
+    block-id naar den er filet.
+  nodes:
+    - {id: tag, k: trigger, w: "Du skriver #ingest paa en linje", y: "Valgfrit #project/x eller #subproject/x for at styre hvor den ender"}
+    - {id: list, k: tool, w: "ingest_queue.py list", y: "Linjer med foreslaaet sub-wiki og work unit"}
+    - {id: ask, k: gate, w: "Du vaelger", y: "alle / numre / ingen / senere"}
+    - {id: file, k: tool, w: "Filet paa siden", y: "Fakta som dateret saetning med citat, spoergsmaal under Aabne spoergsmaal, arbejde som foreslaaet task"}
+    - {id: mark, k: tool, w: "ingest_queue.py mark", y: "#ingest bliver til #ingested [[side]] plus ^ing-YYYYMMDD-N. Afviser hvis linjen er aendret."}
+    - {id: later, k: tool, w: "Bliver i koeen", y: "Vises i Ingest-koe paa open-questions.md og som tag paa vault-kortet"}
+  e:
+    - [tag, list]
+    - [list, ask]
+    - [ask, file, valgt]
+    - [ask, later, senere]
+    - [file, mark]
+
+taskkeeper-morning-brief:
+  n: morgen-brief
+  eng: hook
+  run: foerste session hver dag
+  theme: tasks
+  project: Obsidian
+  source: C:/Users/NichlasMadsen/.claude/settings.json
+  desc: >-
+    SessionStart-hook i Claude Code. Foerste session paa dagen flytter
+    done-tasks til Tasks/Finish/ og starter TaskKeeper, som giver dagens brief
+    foer svaret paa det du skrev.
+  nodes:
+    - {id: start, k: trigger, w: "Foerste session i dag", y: "SessionStart-hook DailyTaskBrief"}
+    - {id: sweep, k: tool, w: "done-tasks til Finish/", y: "Hooken flytter tasks med status: done"}
+    - {id: keeper, k: agent, w: "TaskKeeper", y: "Laeser aabne tasks via task-notes list-open"}
+    - {id: brief, k: tool, w: "Brief i chatten", y: "Fokus, overskredne, denne uge, P1, dataproblemer"}
+
+debrief-after-changes:
+  n: debrief efter aendringer
+  eng: Claude
+  run: efter hver tur der aendrer filer
+  theme: review
+  project: claude
+  source: C:/Users/NichlasMadsen/.claude/agents/Debrief.md
+  desc: >-
+    Regel i den globale CLAUDE.md (FERC-test fra 2026-10-15). En tur der
+    aendrede filer slutter med en Debrief-side, saa du reviewer bagefter i
+    stedet for at godkende hvert trin.
+  nodes:
+    - {id: change, k: trigger, w: "Tur der aendrede filer", y: "Springes over for read-only ture og dikterede en-fils-rettelser"}
+    - {id: brief, k: tool, w: "Brief til Debrief", y: "Anmodningen citeret, projektrødder, beslutninger, verifikation, aabne punkter"}
+    - {id: agent, k: agent, w: "Debrief", y: "Publicerer en artifact med FERC-kort"}
+    - {id: review, k: gate, w: "Du laeser Waiting for you", y: "Agentens beslutninger er adskilt fra dem der venter paa dig"}

@@ -16,14 +16,84 @@ services:
       TZ: "Europe/Copenhagen"
       JYTTE_DATA_DIR: "/data"
       JYTTE_TASKS_PATH: "/data/obsidian-tasks"
+      # The librarian-generated Projects/ view. The projects widget
+      # reads <root>/_index.json, nothing else.
+      JYTTE_PROJECTS_PATH: "/data/obsidian-projects"
+      # Output of scripts/scan_ai.py. Only this one directory is mounted,
+      # never ~/.claude itself - settings.json there holds env values.
+      JYTTE_AI_SCAN_PATH: "/data/ai-scan"
+      # Engagement sub-wikis, kept for context (which customer a project
+      # came out of). Not the source of the projects list.
+      JYTTE_WIKI_PROJECTS_PATH: "/data/llm-wiki-projects"
       JYTTE_DB_PATH: "/data/jytte.db"
+      # Nordnet CSV exports. Nordnet has no API a private customer can
+      # reach, so the portfolio arrives as a file you drop in a folder;
+      # the newest *.csv wins. See app/widgets/stocks/CLAUDE.md.
+      JYTTE_NORDNET_DIR: "/data/nordnet"
+      # The committed n8n workflow JSONs, read by /jobs. Same files
+      # n8n imports from, mounted at a different path so neither
+      # container depends on the other's layout.
+      JYTTE_N8N_WORKFLOWS_PATH: "/jytte/n8n-workflows"
       JYTTE_NEWS_FEEDS: "https://news.ycombinator.com/rss"
       JYTTE_CLAUDE_MODEL: "claude-haiku-4-5-20251001"
+      # Local model for analyzers that should not need a paid key.
+      # Ollama runs on the Windows host (the Docker VM is too small for
+      # a 7B model). See app/local_llm.py.
+      OLLAMA_URL: "http://host.docker.internal:11434"
+      JYTTE_LOCAL_MODEL: "qwen2.5:7b"
     volumes:
       - jytte-data:/data
       - type: bind
         source: C:\Obsidian\Nichlas\Tasks
         target: /data/obsidian-tasks
+      # READ-ONLY on purpose. Both of these are authored elsewhere -
+      # Projects/ by the llm-wiki-librarian, the sub-wikis in Obsidian.
+      # Jytte renders them and never writes.
+      - type: bind
+        source: C:\Obsidian\Nichlas\Projects
+        target: /data/obsidian-projects
+        read_only: true
+      - type: bind
+        source: ./.ai-scan
+        target: /data/ai-scan
+        read_only: true
+      - type: bind
+        source: C:\Obsidian\Nichlas\LLM-Wiki\projects
+        target: /data/llm-wiki-projects
+        read_only: true
+      # Overlap decisions for /ai. Mounted rather than only baked in, so
+      # ticking a pair off in the YAML shows up on a page refresh instead
+      # of needing a rebuild. Read-only: the human edits it, Jytte reads it.
+      - type: bind
+        source: ./config
+        target: /jytte/config
+        read_only: true
+      # Where you drop the Nordnet export. READ-ONLY: the widget parses
+      # the file and never writes back, and the folder is gitignored
+      # because a portfolio is personal data and this repo is not.
+      - type: bind
+        source: ./data/nordnet
+        target: /data/nordnet
+        read_only: true
+      # Course certificates for the /poc/certifikater wall. Bind-mounted
+      # rather than baked in so dropping a new one in needs no rebuild,
+      # and READ-ONLY because the page only ever displays them.
+      - type: bind
+        source: ./assets/certificates
+        target: /jytte/assets/certificates
+        read_only: true
+      # The n8n workflow JSONs for the /jobs table. The same directory
+      # n8n mounts at /workflows, but READ-ONLY and under a different
+      # path: Jytte lists the jobs and must never be able to change
+      # what n8n imports. Nothing here is a credential - n8n keeps
+      # those in its own encrypted store, which is deliberately NOT
+      # mounted anywhere near a process that renders HTML.
+      - type: bind
+        source: ./deploy/n8n/workflows
+        target: /jytte/n8n-workflows
+        read_only: true
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
 
   n8n:
@@ -47,8 +117,18 @@ services:
       # Allow workflow expressions to read this container's env vars.
       # See deploy/n8n/README.md for the security trade-off.
       N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
+      # The only directory the Read/Write Files node may touch. Used by
+      # workflow `vault-refresh` to read the host's daily refresh status.
+      N8N_RESTRICT_FILE_ACCESS_TO: "/vault-status"
     volumes:
       - n8n-data:/home/node/.n8n
+      # READ-ONLY. refresh-status.json is written on the host by
+      # LLM-Wiki/scripts/refresh_views.py (Task Scheduler, 06:00). n8n
+      # reads it at 06:30 for the `vault` widget and never writes.
+      - type: bind
+        source: C:\Obsidian\Nichlas\LLM-Wiki\.graph
+        target: /vault-status
+        read_only: true
       - ./deploy/n8n/workflows:/workflows:ro
       - ./deploy/n8n/init.sh:/docker-entrypoint-init.d/init.sh:ro
     depends_on:
@@ -56,6 +136,33 @@ services:
     restart: unless-stopped
     entrypoint: ["/bin/sh", "-c"]
     command: ["/docker-entrypoint-init.d/init.sh & exec tini -- /docker-entrypoint.sh"]
+
+  # ------------------------------------------------------------------
+  # Cloudflare tunnel, for the bank consent redirect only.
+  #
+  # Behind a `tunnel` profile so it never starts by accident: Jytte has
+  # no login, and a tunnel over the whole app would publish the
+  # dashboard. deploy/cloudflared/config.yml answers /bank/callback and
+  # 404s everything else, which is the control that makes this safe.
+  #
+  #   docker compose --profile tunnel up -d cloudflared
+  #
+  # Setup steps, all yours, are at the top of that config file.
+  # ------------------------------------------------------------------
+  cloudflared:
+    image: cloudflare/cloudflared:2026.9.1
+    container_name: jytte-cloudflared
+    profiles: ["tunnel"]
+    command: ["tunnel", "--config", "/etc/cloudflared/config.yml",
+              "run", "${CLOUDFLARE_TUNNEL_ID}"]
+    volumes:
+      - ./deploy/cloudflared/config.yml:/etc/cloudflared/config.yml:ro
+      # Created by `cloudflared tunnel create`. Gitignored: it is the
+      # tunnel's private credential.
+      - ./deploy/cloudflared/credentials.json:/etc/cloudflared/credentials.json:ro
+    depends_on:
+      - jytte
+    restart: unless-stopped
 
 volumes:
   jytte-data:

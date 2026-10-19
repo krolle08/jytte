@@ -1,0 +1,38 @@
+/* Vendored web fonts - latin subset, variable woff2.
+
+   Why local: fonts.googleapis.com served a render-blocking stylesheet
+   and then a second round trip to fonts.gstatic.com on every page load.
+   That, plus htmx from unpkg, was the perceived page lag - the server
+   itself answers in 5 to 19 ms. The target deployment is Tailscale-only,
+   so the app must render with no egress at all.
+
+   Three files, not nine: Google ships all three families as variable
+   fonts, so every weight of a family is the same bytes. One rule per
+   family with a weight range lets the browser interpolate.
+
+   Latin covers U+0000-00FF, so ae, oe and aa are included.
+   Regenerate with scratchpad/vendor_fonts.py + dedupe_fonts.py. */
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/static/vendor/fonts/Inter-var.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Space Grotesk';
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url('/static/vendor/fonts/SpaceGrotesk-var.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url('/static/vendor/fonts/JetBrainsMono-var.woff2') format('woff2');
+}

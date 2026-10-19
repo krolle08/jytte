@@ -1,0 +1,51 @@
+{# Elpris card. The dashboard version of /el: the three numbers that
+   decide whether to start the dishwasher now or at 13:45.
+
+   Prices here are RAW SPOT unless config/el.yml has been filled in,
+   and the footer says which. See app/widgets/elpris/CLAUDE.md. #}
+{% set d = data %}
+{% if not d.ready %}
+<p class="empty">{{ d.reason or "Ingen elpriser hentet endnu." }}</p>
+{% else %}
+<div class="col" style="gap:10px">
+  <div style="display:flex; align-items:baseline; gap:8px; flex-wrap:wrap">
+    <span class="mono tnum" style="font-size:26px; color:var(--{{ d.now.tone }})">{{ d.now.kr }}</span>
+    <span style="font-size:12px; color:var(--muted)">øre/kWh lige nu</span>
+    <span class="pill {{ d.now.tone }}">{{ d.now.level }}</span>
+  </div>
+
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px">
+    <div class="col" style="gap:2px">
+      <span class="eyebrow">Billigst i dag</span>
+      <span class="mono tnum f-aqua" style="font-size:14px">{{ d.today.cheapest.kr }}</span>
+      <span class="mono" style="font-size:11px; color:var(--faint)">kl. {{ d.today.cheapest.hhmm }}</span>
+    </div>
+    <div class="col" style="gap:2px">
+      <span class="eyebrow">Dyrest i dag</span>
+      <span class="mono tnum f-coral" style="font-size:14px">{{ d.today.dearest.kr }}</span>
+      <span class="mono" style="font-size:11px; color:var(--faint)">kl. {{ d.today.dearest.hhmm }}</span>
+    </div>
+  </div>
+
+  {# 96 quarter-hour points. One hairline each, coloured by where it
+     sits in the day's own spread. #}
+  <div style="display:flex; align-items:flex-end; gap:1px; height:34px">
+    {% for p in d.today.points %}
+    <i style="flex:1 1 0; min-width:0; border-radius:1px;
+              height:{{ 10 + (p.pct * 0.9)|round|int }}%;
+              background:var(--{{ p.tone }}); opacity:.85"
+       title="{{ p.hhmm }} {{ p.kr }} øre"></i>
+    {% endfor %}
+  </div>
+
+  <div style="display:flex; justify-content:space-between">
+    <span class="mono" style="font-size:10px; color:var(--fainter)">00</span>
+    <span class="mono" style="font-size:10px; color:var(--fainter)">12</span>
+    <span class="mono" style="font-size:10px; color:var(--fainter)">24</span>
+  </div>
+
+  <a class="pill line" href="/el" style="align-self:flex-start">Hele siden</a>
+  <span class="mono" style="font-size:10.5px; color:var(--fainter)">
+    {{ d.area }} &middot; rå spotpris, uden tarif og moms</span>
+</div>
+{% endif %}

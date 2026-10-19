@@ -1,0 +1,19 @@
+name: bank
+title: Bank
+# source: n8n - the open-banking read lives in
+# deploy/n8n/workflows/bank.json and arrives via
+# POST /widgets/bank/state. Same contract as `email` and `calendar`:
+# the aggregator credential sits in n8n's encrypted store, never in
+# Jytte, never in an agent's reach. Setting this also makes
+# POST /widgets/bank/refresh a no-op, so a dashboard refresh click
+# cannot clobber the pushed payload with the not-ready stub.
+source: n8n
+# Irrelevant while source=n8n. The real cadence is the workflow's
+# Schedule Trigger, and it is deliberately slow: the free open-banking
+# tier counts calls per account per day, so polling hard gets the
+# account throttled, not fresher. See CLAUDE.md here.
+refresh_minutes: null
+client_refresh_seconds: 300
+claude_analyzer: false
+expose_mcp: false
+watcher: false

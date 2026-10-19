@@ -1,0 +1,47 @@
+{# One day of quarter-hour prices as bars.
+
+   Included twice, for today and for tomorrow, with `today` rebound by
+   the caller. Both days share one scale and one Y axis (computed in
+   elview.build), so a cheaper tomorrow shows as shorter bars instead
+   of being normalised away into looking identical.
+
+   Bar height is `p.bar`, a percentage of `axis.top`, and the colour is
+   `p.tone`, which is the point's position in ITS OWN day's spread.
+   Height compares across days, colour compares within one.
+
+   The Y axis and the bars are scaled to the same `axis.top`. Rounding
+   the top label up without rescaling the bars would leave the chart
+   disagreeing with its own numbers, which is worse than no axis. #}
+<div class="el-chart">
+  <div class="el-plot">
+    <div class="el-y">
+      {% for t in axis.ticks %}
+      <span class="mono" style="bottom:{{ t.pct }}%">{{ t.kr }}</span>
+      {% endfor %}
+    </div>
+    <div class="el-panel">
+      {% for t in axis.ticks if t.line %}
+      <i class="el-grid" style="bottom:{{ t.pct }}%"></i>
+      {% endfor %}
+      <div class="el-bars">
+        {% for p in today.points %}
+        <i class="el-bar tone-{{ p.tone }}{% if now and p.at == now_at %} is-now{% endif %}"
+           style="height:{{ p.bar }}%"
+           title="{{ p.hhmm }} &middot; {{ p.kr }} øre spot{% if not raw_spot %}, {{ (p.total_x100 / 100)|round(2) }} øre i alt{% endif %}"></i>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="el-axis">
+    <span class="el-unit mono">øre</span>
+    {% for h in ['00', '03', '06', '09', '12', '15', '18', '21', '24'] %}
+    <span class="mono">{{ h }}</span>
+    {% endfor %}
+  </div>
+  <div class="el-legend">
+    <span><i class="tone-aqua"></i>billig</span>
+    <span><i class="tone-gul"></i>middel</span>
+    <span><i class="tone-coral"></i>dyr</span>
+    <span class="el-legend-r mono">{{ today.min_kr }} - {{ today.max_kr }} øre</span>
+  </div>
+</div>

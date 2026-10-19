@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+{% block title %}Jytte{% endblock %}
+
+{% block content %}
+{#
+  Today view - roadmap step 0, ported from docs/home-monitor/poc.
+
+  Panel order and content follow the PoC: daily brief, then calendar /
+  mail / vault tasks, then pull requests / pipelines, then the taskboard.
+  Dark only, per home-monitor/CLAUDE.md.
+
+  Every panel names the source it reads from in its header, the way the
+  PoC does, so it is obvious at a glance what is live and what is mocked.
+
+  Composition is app/frontpage.py. Categorization of tasks stays in
+  app/widgets/tasks/buckets.py.
+#}
+<section class="hm" hx-ext="sse" sse-connect="/events">
+
+  {# ── DAILY BRIEF ─────────────────────────────────────────────── #}
+  <section class="hm-panel hm-brief">
+    <header class="hm-head">
+      <h2>Dagens brief</h2>
+      <span class="hm-src">genereret af TaskKeeper-reglerne</span>
+    </header>
+    <div class="hm-body">
+      <p class="hm-lead">{{ brief.lead }}</p>
+      <div class="hm-brief-cols">
+        <div>
+          <h3>Kræver dig først</h3>
+          {% for row in brief.first %}
+          <p class="hm-brow"><span class="hm-kind">{{ row.kind }}</span>{{ row.text }}</p>
+          {% else %}<p class="muted small">Ingenting presser.</p>{% endfor %}
+        </div>
+        <div>
+          <h3>Din dag</h3>
+          {% for row in brief.day %}
+          <p class="hm-brow"><span class="hm-time">{{ row.time }}</span>{{ row.text }}</p>
+          {% else %}<p class="muted small">Ingen møder.</p>{% endfor %}
+        </div>
+        <div>
+          <h3>Åbent arbejde</h3>
+          {% for row in brief.open %}
+          <p class="hm-brow"><span class="hm-kind">{{ row.kind }}</span>{{ row.text }}</p>
+          {% else %}<p class="muted small">Intet åbent.</p>{% endfor %}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {# ── CALENDAR | MAIL | VAULT TASKS ────────────────────────────── #}
+  <div class="hm-row-3">
+
+    <section class="hm-panel">
+      <header class="hm-head">
+        <h2>Kalender</h2>
+        {% if not cal.ready %}<span class="hm-mock">mangler kilde</span>{% endif %}
+        <span class="hm-src">Graph /me/calendarView</span>
+      </header>
+      <div class="hm-body hm-scroll">
+        {% if not cal.ready %}
+          <p class="muted small">{{ cal.reason or 'afventer n8n' }}</p>
+          <p class="muted small">Kalenderen hentes af n8n-flowet <code>calendar</code>. Det er skrevet, men inaktivt indtil Entra-registreringen har <code>Calendars.Read</code>.</p>
+        {% elif not cal.events %}
+          <p class="muted small">Ingen møder i dag.</p>
+        {% else %}
+          {% for e in cal.events %}
+          <div class="hm-cal{% if e.cancelled %} is-off{% endif %}">
+            <span class="hm-cal-t">{{ '--:--' if e.all_day else (e.start[11:16] if e.start else '') }}</span>
+            <span class="hm-cal-bar"></span>
+            <span class="hm-cal-main">
+              <span class="hm-cal-title">{{ e.subject }}</span>
+              <span class="hm-cal-sub">
+                {{ e.location or ('Teams' if e.online else '') }}
+                {%- if e.attendee_count %} · {{ e.attendee_count }} deltagere{% endif %}
+              </span>
+            </span>
+            {% if e.join_url %}
+              <a class="hm-link" href="{{ e.join_url }}" target="_blank" rel="noopener">Join i Teams ↗</a>
+            {% elif e.web_link %}
+              <a class="hm-link" href="{{ e.web_link }}" target="_blank" rel="noopener">Åbn i Outlook ↗</a>
+            {% endif %}
+          </div>
+          {% if cal.gap_after.get(e.id) %}
+            <p class="hm-gap">{{ cal.gap_after[e.id] }} fri</p>
+          {% endif %}
+          {% endfor %}
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="hm-panel">
+      <header class="hm-head">
+        <h2>Mail</h2>
+        <span class="hm-src">Graph /me/messages</span>
+        <span class="hm-count">{{ mail.counts.unread or 0 }} ulæste</span>
+      </header>
+      <div class="hm-body hm-scroll">
+        {% if not mail.ready %}
+          <p class="muted small">{{ mail.reason or 'afventer n8n' }}</p>
+        {% else %}
+          {% if mail.important %}
+          <p class="hm-sub">Vigtig · {{ mail.important|length }}</p>
+          {% for m in mail.important %}{% include "_hm_mail_row.html" %}{% endfor %}
+          {% endif %}
+          {% if mail.other %}
+          <p class="hm-sub">Øvrig · {{ mail.other|length }}</p>
+          {% for m in mail.other %}{% include "_hm_mail_row.html" %}{% endfor %}
+          {% endif %}
+          {% if not mail.important and not mail.other %}
+          <p class="muted small">Indbakken er tom i vinduet.</p>
+          {% endif %}
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="hm-panel">
+      <header class="hm-head">
+        <h2>Vault-opgaver</h2>
+        <span class="hm-src">Obsidian Tasks/</span>
+        <span class="hm-count">{{ tasks.total_open }} åbne</span>
+      </header>
+      <div class="hm-body hm-scroll">
+        {% for box in task_boxes %}
+          {% set rows = tasks.buckets[box.bucket] %}
+          {% if rows %}
+          <p class="hm-sub">{{ box.title }} · {{ rows|length }}</p>
+          {% for t in rows %}
+          <div class="hm-task{% if t.overdue_days %} is-late{% endif %}">
+            <button class="hm-check" title="markér som færdig"
+                    hx-post="/widgets/tasks/quick-done"
+                    hx-vals='{"path": "{{ t.path|e }}"}'
+                    hx-swap="none"></button>
+            <span class="hm-task-main"
+                  hx-get="/widgets/tasks/detail?path={{ t.path|urlencode }}"
+                  hx-target="#drawer" hx-swap="innerHTML" onclick="openDrawer()">
+              <span class="hm-task-title">{{ t.title }}</span>
+              <span class="hm-task-sub">
+                {% if t.wiki_project %}{{ t.wiki_project }}{% endif %}
+                {%- if t.project %} · {{ t.project }}{% endif %}
+                {%- if t.overdue_days %} · {{ t.overdue_days }} d over{% elif t.due_date %} · {{ t.due_date }}{% endif %}
+              </span>
+            </span>
+          </div>
+          {% endfor %}
+          {% endif %}
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+
+  {# ── PULL REQUESTS | PIPELINES ────────────────────────────────── #}
+  <div class="hm-row-2">
+    <section class="hm-panel">
+      <header class="hm-head">
+        <h2>Pull requests</h2>
+        <span class="hm-src">Azure DevOps /git/pullrequests</span>
+        <span class="hm-count">{{ ado.prs|length }}</span>
+      </header>
+      <div class="hm-body hm-scroll">
+        {% for pr in ado.prs %}
+        <a class="hm-pr" href="{{ pr.web_url }}" target="_blank" rel="noopener">
+          <span class="hm-pr-main">
+            <span class="hm-pr-title">{{ pr.title }}</span>
+            <span class="hm-pr-sub">{{ pr.creator }} · {{ pr.repo }} · {{ pr.inst }}</span>
+          </span>
+          <span class="hm-pill {{ pr.state_class }}">{{ pr.state_label }}</span>
+        </a>
+        {% else %}
+        <p class="muted small">{{ ado.prs_note }}</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="hm-panel">
+      <header class="hm-head">
+        <h2>Pipelines</h2>
+        <span class="hm-src">Azure DevOps /build/builds</span>
+        <span class="hm-count">{{ ado.runs|length }}</span>
+      </header>
+      <div class="hm-body hm-scroll">
+        {% for r in ado.runs %}
+        <a class="hm-pr" href="{{ r.web_url }}" target="_blank" rel="noopener">
+          <span class="hm-pr-main">
+            <span class="hm-pr-title">{{ r.pipeline }}</span>
+            <span class="hm-pr-sub">{{ r.branch }} · {{ r.when }} · {{ r.inst }}</span>
+          </span>
+          <span class="hm-pill {{ r.state_class }}">{{ r.state_label }}</span>
+        </a>
+        {% else %}
+        <p class="muted small">{{ ado.runs_note }}</p>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+
+  {# ── TASKBOARD ────────────────────────────────────────────────── #}
+  <section class="hm-panel">
+    <header class="hm-head">
+      <h2>Taskboard{% if ado.iteration %}, {{ ado.iteration }}{% endif %}</h2>
+      <span class="hm-src">Azure DevOps /wit/wiql</span>
+      <span class="hm-count">{{ ado.board_total }}</span>
+    </header>
+    <div class="hm-body">
+      {% if ado.board %}
+      <div class="hm-board">
+        {% for col in ado.board %}
+        <div class="hm-col">
+          <p class="hm-col-h">{{ col.name }}<span>{{ col.cards|length }}</span></p>
+          {% for it in col.cards %}
+          <a class="hm-card" href="{{ it.web_url }}" target="_blank" rel="noopener">
+            <span class="hm-card-id">#{{ it.id }}</span>
+            <span class="hm-card-t">{{ it.title }}</span>
+          </a>
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="muted small">{{ ado.board_note }}</p>
+      {% endif %}
+    </div>
+  </section>
+
+  <p class="hm-foot">
+    Panel-overskrifterne navngiver kilden. {{ ado.err_note }}
+  </p>
+</section>
+
+{% include "_drawer.html" %}
+{% endblock %}

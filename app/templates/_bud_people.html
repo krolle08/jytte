@@ -1,0 +1,43 @@
+{# Per-person columns. Its own partial so the transfer input can swap it
+   over HTMX without reloading the page and losing your scroll. #}
+<div class="bud-people" id="bud-people">
+    {% for c in owner_cols %}
+    <div class="bud-person{% if c.key == 'shared' %} is-shared{% endif %}">
+      <div class="bud-person-h">
+        <span class="bud-person-n">{{ c.name }}</span>
+        <span class="bud-person-c">{{ c.count }} poster</span>
+      </div>
+      <div class="bud-person-net{% if c.net_monthly_cents < 0 %} is-neg{% endif %}">
+        {{ c.net_monthly }}
+      </div>
+      <div class="bud-person-rows">
+        <span>Indtægt</span><b class="mono tnum">{{ c.income_monthly }}</b>
+        <span>Udgift</span><b class="mono tnum">{{ c.expense_monthly }}</b>
+        <span>Pr. år</span><b class="mono tnum">{{ c.net_annual }}</b>
+      </div>
+
+      {% if c.key != 'shared' %}
+      {# What this person moves to the joint account. Shows up as an
+         expense here and as income on Fælles, so the household total
+         is unchanged by it. #}
+      <form class="bud-xfer"
+            hx-post="/widgets/budget/people/{{ c.key }}/transfer"
+            hx-target="#bud-people" hx-swap="outerHTML">
+        <label for="xfer-{{ c.key }}">Overfører til fælles</label>
+        <span class="bud-xfer-in">
+          <input id="xfer-{{ c.key }}" type="text" name="amount" inputmode="decimal"
+                 value="{{ c.transfer }}" placeholder="0,00" />
+          <button type="submit" title="Gem">Gem</button>
+        </span>
+      </form>
+      {% else %}
+      <div class="bud-xfer-sum">
+        <span>Modtaget</span><b class="mono tnum">{{ transfers_in }}</b>
+        <span class="{{ 'is-ok' if shared_covered else 'is-short' }}">
+          {{ 'Fælles går i nul' if shared_covered else 'Mangler ' ~ shared_gap }}
+        </span>
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>

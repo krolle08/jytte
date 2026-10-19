@@ -1,0 +1,57 @@
+{# Dashboard card for the vault widget. Payload is pushed by the n8n
+   workflow `vault-refresh` (deploy/n8n/workflows/vault-refresh.json), shape:
+
+     ready, state (ok|warn|failed|skipped), stale, age_hours, generated_at,
+     duration_s, failed_steps[{name, exit, tail[]}], workstreams_changed[],
+     validator{errors, warnings}, graph{wiki_pages, edges_typed, orphans,
+     broken_links}, open_questions{totals{tasks, questions, actions,
+     pages, d_pages}, by_wiki{<wiki>: same keys}, ingest_queue} | null,
+     reason?
+
+   Stale/error chrome is NOT this template's job - freshness_banner.html
+   renders it from state.consecutive_failures / state.last_error. #}
+{% set data = state.data or {} %}
+{% if not data.get('ready') %}
+<p class="muted">{{ data.get('reason') or 'vault refresh not reported yet' }}</p>
+{% else %}
+{% set v = data.get('validator') or {} %}
+{% set g = data.get('graph') or {} %}
+<p>
+  <span class="tag">{{ data.get('state') }}</span>
+  {% if data.get('stale') %}<span class="tag">stale: {{ data.get('age_hours') }}h</span>{% endif %}
+  <span class="muted small">last run <span data-ts="{{ data.get('generated_at') }}">{{ (data.get('generated_at') or '')[:16] }}</span>
+  {%- if data.get('duration_s') is not none %} :: {{ data.get('duration_s') }}s{% endif %}</span>
+</p>
+{% if data.get('reason') %}<p class="muted small">{{ data.get('reason') }}</p>{% endif %}
+<p class="small">
+  validator <strong>{{ v.get('errors', '?') }}</strong> errors / {{ v.get('warnings', '?') }} warnings
+  {% if g %}:: {{ g.get('wiki_pages') }} pages, {{ g.get('orphans') }} orphans, {{ g.get('broken_links') }} broken links{% endif %}
+</p>
+{% set oq = data.get('open_questions') %}
+{% if oq %}
+{% set t = oq.get('totals') or {} %}
+<p class="small">
+  <strong>{{ t.get('questions', '?') }}</strong> open questions, {{ t.get('actions', '?') }} actions
+  on {{ t.get('pages', '?') }} pages :: {{ t.get('tasks', '?') }} question tasks
+  {% if oq.get('ingest_queue') %}:: <span class="tag">{{ oq.get('ingest_queue') }} #ingest waiting</span>{% endif %}
+</p>
+<p class="muted small">
+  {% for w, c in (oq.get('by_wiki') or {}).items() %}{{ w }} {{ c.get('questions') }}{% if not loop.last %} · {% endif %}{% endfor %}
+  {% if t.get('d_pages') %} :: {{ t.get('d_pages') }} on D-tier pages{% endif %}
+  :: details in wiki/views/open-questions.md
+</p>
+{% endif %}
+{% set changed = data.get('workstreams_changed') or [] %}
+{% if changed %}
+<p class="muted small">updated workstream boards:</p>
+<ul class="small">
+  {% for p in changed %}<li>{{ p.split('/')[-1][:-3] }}</li>{% endfor %}
+</ul>
+{% else %}
+<p class="muted small">no workstream board changed</p>
+{% endif %}
+{% for s in data.get('failed_steps') or [] %}
+<p class="small"><strong>{{ s.get('name') }}</strong> exit {{ s.get('exit') }}: <code>{{ (s.get('tail') or [''])[-1] }}</code></p>
+{% endfor %}
+{% endif %}
+{% if state.updated_at %}<p class="ts">pushed <span data-ts="{{ state.updated_at }}">{{ state.updated_at[:16] }}</span></p>{% endif %}

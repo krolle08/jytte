@@ -1,0 +1,8 @@
+Course certificates go here (PNG, JPG, PDF).
+
+The files themselves are gitignored: this repo is public and a
+certificate carries a full name. The folder is tracked so the
+docker-compose bind mount has a target in a fresh clone.
+
+Filename convention, read by app/poc/certificates.py:
+  Certificate-<Title>-<Holder>.png

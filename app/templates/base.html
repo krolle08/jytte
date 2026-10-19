@@ -4,14 +4,21 @@
   <meta charset="utf-8" />
   <title>{% block title %}Jytte{% endblock %}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  {# Nothing in this head reaches the public internet. The old version
+     pulled a render-blocking stylesheet from fonts.googleapis.com, the
+     font files from fonts.gstatic.com, and htmx from unpkg.com - which
+     is why the page felt slow and why no click did anything for a
+     while, even though the server answers in 5 to 19 ms. The target
+     deployment is Tailscale-only, so it has to work with no egress.
+     Vendored copies live in app/static/vendor/, versions pinned in the
+     filenames. #}
+  <link rel="preload" href="/static/vendor/fonts/Inter-var.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="/static/vendor/fonts.css" />
   <link rel="stylesheet" href="/static/styles.css" />
-  <script src="https://unpkg.com/htmx.org@2.0.3" defer></script>
-  <script src="https://unpkg.com/htmx-ext-sse@2.2.2" defer></script>
+  <script src="/static/vendor/htmx-2.0.3.min.js" defer></script>
+  <script src="/static/vendor/htmx-ext-sse-2.2.2.js" defer></script>
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
   <div class="scanlines" aria-hidden="true"></div>
 
   <header class="topbar">
@@ -21,10 +28,14 @@
       <span class="brand-sub">personal jarvis</span>
     </div>
     <nav class="tabs" aria-label="primary">
-      <a class="tab {% if active_tab == 'dashboard' %}tab-active{% endif %}" href="/">Dashboard</a>
-      <a class="tab {% if active_tab == 'ado' %}tab-active{% endif %}" href="/ado">Azure DevOps</a>
-      <a class="tab {% if active_tab == 'news' %}tab-active{% endif %}" href="/news">News</a>
-      <a class="tab {% if active_tab == 'budget' %}tab-active{% endif %}" href="/budget">Budget</a>
+      <a class="tab" href="/" title="Tilbage til det nye design">&larr; Nyt design</a>
+      <a class="tab {% if active_tab == 'today' %}tab-active{% endif %}" href="/legacy/today">Today</a>
+      <a class="tab {% if active_tab == 'dashboard' %}tab-active{% endif %}" href="/legacy/dashboard">Boxes</a>
+      <a class="tab {% if active_tab == 'ai' %}tab-active{% endif %}" href="/legacy/ai">AI-arkitektur</a>
+      <a class="tab {% if active_tab == 'projects' %}tab-active{% endif %}" href="/legacy/projects">Projects</a>
+      <a class="tab {% if active_tab == 'ado' %}tab-active{% endif %}" href="/legacy/ado">Azure DevOps</a>
+      <a class="tab {% if active_tab == 'news' %}tab-active{% endif %}" href="/legacy/news">News</a>
+      <a class="tab {% if active_tab == 'budget' %}tab-active{% endif %}" href="/legacy/budget">Budget</a>
     </nav>
     <div class="status">
       <span class="status-val" id="clock">--:--:--</span>
@@ -75,7 +86,13 @@
           const local = `${fmt(d.getHours())}:${fmt(d.getMinutes())}`;
           const dateBit = `${d.getFullYear()}-${fmt(d.getMonth() + 1)}-${fmt(d.getDate())}`;
           const deltaSec = (Date.now() - d.getTime()) / 1000;
-          el.textContent = `updated ${dateBit} ${local} (${relTail(deltaSec)})`;
+          // Default prefix is "updated", which is right for a widget's
+          // own freshness stamp but wrong for a row timestamp such as
+          // a mail's received time. data-ts-label="" drops the prefix;
+          // data-ts-label="received" sets a different one.
+          const label = el.getAttribute('data-ts-label');
+          const prefix = label === null ? 'updated ' : (label ? label + ' ' : '');
+          el.textContent = `${prefix}${dateBit} ${local} (${relTail(deltaSec)})`;
         });
       }
       paintTimestamps();

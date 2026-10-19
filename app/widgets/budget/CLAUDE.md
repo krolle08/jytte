@@ -8,13 +8,35 @@ budget_categories(id, slug, name, kind, sort_order, created_at)
   slug:        stable id used in URLs (e.g. 'car', 'mortgage')
 
 budget_entries(id, category_id, name, amount_cents, currency,
-               recurrence, due_day, due_date, active, notes,
+               recurrence, due_day, due_date, active, notes, owner,
                created_at, updated_at)
   amount_cents: INTEGER minor units. NEVER FLOAT.
   recurrence:   'monthly' | 'yearly' | 'one-off'
   due_day:      1..31     - only when recurrence='monthly'
   due_date:     ISO date  - only when recurrence in {'yearly','one-off'}
+  owner:        budget_people.slug, or NULL for a shared household entry
+
+budget_people(id, slug, name, sort_order, created_at)
+  Seeded with two rows ('me', 'partner'). Rename freely; entries point
+  at the slug, so only the slug is load-bearing.
 ```
+
+## Per-person model
+
+An entry belongs to **exactly one** of three buckets: person A, person B,
+or the household. That is why `owner` is a nullable column rather than a
+join table, and why NULL means shared instead of unassigned. Every row
+that existed before the column did became shared, which is the right
+default for a joint budget.
+
+`update_entry()` takes `set_owner: bool` alongside `owner`, because None
+is a real value here: without the flag, moving an entry back to shared
+would be indistinguishable from not touching the field.
+
+`summarise_by_owner(entries, people)` returns one column per person plus
+shared, each built by the same `summarise()` the household strip uses, so
+a column total and the page total can never be computed two ways. The
+columns reconcile: verified 41.801 + 37.821 - 15.300 = 64.322.
 
 ## Money rule
 
@@ -69,11 +91,24 @@ the new row is INSERTed OR IGNOREd by slug, so existing entries are
 untouched. Removing a category requires a DB migration script - do not
 just delete the seed row.
 
+## Adding a category changes a colour, so think before reordering
+
+`/budget` draws an expense rose: a spider grid with one coloured wedge
+per category (`app/budget_viz.py`). A category's colour comes from its
+**position** in the list `list_categories()` returns, which is
+`sort_order` then name. That is deliberate - keying the colour to the
+amount would make two months impossible to compare at a glance.
+
+The consequence: inserting a category in the middle of the
+`sort_order` sequence re-colours every category after it. Append with
+a high `sort_order` instead, the way `other-expense` (900) already
+does, and nothing moves.
+
 ## Out of scope (v1)
 
 - Actuals tracking (recording real transactions)
 - Multi-currency conversion
 - Bank-statement import
-- Charts / graphs
 
-Documented as v2 in `features.md` F7.
+Charts are no longer out of scope: the expense rose shipped
+2026-10-16. The rest is documented as v2 in `features.md` F7.

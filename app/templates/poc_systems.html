@@ -1,0 +1,143 @@
+{% extends "shell.html" %}
+{% block title %}Systemmonitor :: POC :: Jytte{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="/static/jy_poc.css" />{% endblock %}
+
+{% block content %}
+{# POC: a patient-monitoring layout over Jytte's own systems.
+
+   Every number here comes from state that already existed:
+   widget_state.last_success_at, consecutive_failures, last_error, plus
+   two live probes (n8n healthz, mount presence). Nothing is refreshed
+   to render this page - the point is to report on the fetchers, not to
+   become one.
+
+   Where Jytte cannot know a thing, the page prints "ukendt" instead of
+   a number. The biggest case is cadence for n8n-pushed widgets; see
+   app/poc/systems.py and the blocking list on /poc. #}
+
+<div class="poc-band">
+  <span class="pill gul">{{ poc.st.label }}</span>
+  <span class="poc-band-t"><b>Dette er en POC.</b> {{ poc.st.meaning }}</span>
+  <span class="poc-band-x"><a href="/poc">{{ poc.blocking|length }} udestående &rarr;</a></span>
+</div>
+
+<div class="hd">
+  <div class="hd-id">
+    <span class="eyebrow plain">Systemmonitor &middot; personlige og forretningssystemer</span>
+    <h1 class="pg">Stuegang</h1>
+  </div>
+  <div class="hd-right">
+    <span class="pn-src" data-ts="{{ now }}">{{ now[:16] }}</span>
+  </div>
+</div>
+
+{% set c = counts %}
+<div class="strip poc-ward" style="margin-top:20px">
+  <div>
+    <span class="eyebrow">Kræver handling</span>
+    <span class="v{% if needs_attention %} is-crit{% endif %}">{{ needs_attention }}</span>
+    <span class="s">af {{ total }} systemer</span>
+  </div>
+  <div>
+    <span class="eyebrow">Kritisk</span>
+    <span class="v{% if c.kritisk %} is-crit{% endif %}">{{ c.kritisk }}</span>
+    <span class="s{% if c.kritisk %} is-bad{% endif %}">fejler eller er standset</span>
+  </div>
+  <div>
+    <span class="eyebrow">Observation</span>
+    <span class="v{% if c.observation %} is-warn{% endif %}">{{ c.observation }}</span>
+    <span class="s{% if c.observation %} is-warn{% endif %}">bagud eller enkeltfejl</span>
+  </div>
+  <div>
+    <span class="eyebrow">Ukendt</span>
+    <span class="v">{{ c.ukendt }}</span>
+    <span class="s">kadence kan ikke vurderes</span>
+  </div>
+</div>
+
+{% if alerts %}
+<section class="pn" style="margin-top:22px">
+  <div class="pn-h">
+    <span class="pn-t">Alarmer</span>
+    <span class="pn-sub">værste først</span>
+    <span class="pn-act"><span class="pn-src">{{ alerts|length }} af {{ total }}</span></span>
+  </div>
+  <div class="poc-alerts">
+    {% for a in alerts %}
+    <div class="poc-alert" data-level="{{ a.level }}">
+      <span class="edge" aria-hidden="true"></span>
+      <span class="poc-alert-n">{{ a.name }}</span>
+      <span class="poc-alert-w">{{ a.why }}</span>
+      <span class="poc-alert-k">{{ a.group }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% else %}
+<section class="pn pn-pad" style="margin-top:22px">
+  <p class="empty">Ingen alarmer. Alle systemer leverer som forventet.</p>
+</section>
+{% endif %}
+
+{% for g in groups %}
+<div class="poc-group">
+  <div class="poc-group-h">
+    <span class="poc-group-n">{{ g.label }}</span>
+    <span class="pn-src">{{ g.systems|length }} systemer</span>
+    {% if g.bad %}<span class="pill coral">{{ g.bad }} kritisk</span>{% endif %}
+  </div>
+
+  <div class="poc-beds">
+    {% for s in g.systems %}
+    <article class="poc-bed" data-level="{{ s.level }}">
+      <div class="poc-bed-h">
+        <span class="dot" style="background: var(--{{ s.dot }})" aria-hidden="true"></span>
+        <span class="poc-bed-n" title="{{ s.name }}">{{ s.name }}</span>
+        <span class="poc-bed-src">{{ s.source }}</span>
+      </div>
+
+      {# Cadence, read right to left: the rightmost slot is now. A red
+         slot is one expected interval that passed without a reading.
+         This is not history - widget_runs is empty, see /poc. #}
+      <div class="poc-pulse" aria-hidden="true">
+        {% for p in s.pulse %}<i data-s="{{ p.state }}"></i>{% endfor %}
+      </div>
+
+      <div class="poc-vitals">
+        <span class="poc-vital">
+          <span>Alder</span>
+          <b class="{{ 'is-crit' if s.level == 'kritisk' else ('is-warn' if s.level == 'observation' else '') }}">{{ s.age }}</b>
+        </span>
+        <span class="poc-vital">
+          <span>Forventet</span>
+          <b>{{ s.expected or 'ukendt' }}</b>
+        </span>
+        <span class="poc-vital">
+          <span>Fejl i træk</span>
+          <b class="{{ 'is-crit' if s.failures >= 3 else ('is-warn' if s.failures else '') }}">{{ s.failures }}</b>
+        </span>
+      </div>
+
+      <p class="poc-why">{{ s.why }}</p>
+      {% if s.error %}<p class="poc-err">{{ s.error }}</p>{% endif %}
+    </article>
+    {% endfor %}
+  </div>
+</div>
+{% endfor %}
+
+<div class="lg-note" style="margin-top:28px">
+  <h2>Hvad siden ikke kan</h2>
+  <p>Pulsbjælken er ikke historik. <code class="mono">widget_runs</code> er
+    tom, så det eneste ærlige den kan vise er hvor mange forventede slag
+    der er gået siden sidste gode aflæsning. En rigtig kurve kræver at
+    kørslerne bliver gemt.</p>
+  <p>For widgets med <code class="mono">source: n8n</code> står kadencen i
+    workflow-JSON'en inde i n8n-containeren. Jytte kan ikke læse den, så
+    de står som <b>ukendt</b> frem for at få et gættet interval. Et gæt
+    ville få en standset push til at se sund ud, hvilket er præcis den
+    fejl denne side findes for at fange.</p>
+  <p class="f-faint" style="font-size:12px">Hele listen over udestående
+    står på <a href="/poc">/poc</a>.</p>
+</div>
+{% endblock %}

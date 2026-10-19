@@ -39,7 +39,161 @@ class Category:
     max_items: int = 24
 
 
+# Shared by every feed in the GTA category. Long forms only: _keep() is a
+# substring match, so "gta" alone would match inside unrelated words.
+GTA_KEYWORDS: tuple[str, ...] = (
+    "grand theft auto", "gta 6", "gta vi", "gta6", "gta online",
+    "rockstar games", "rockstar north",
+)
+
+
 CATEGORIES: list[Category] = [
+    Category(
+        slug="games",
+        title="Spil",
+        max_items=20,
+        feeds=[
+            # Broad, high-volume, reliable RSS. Eurogamer and RPS are
+            # editorial; IGN and GameSpot carry the announcements first.
+            FeedSource(url="https://www.eurogamer.net/feed", name="Eurogamer"),
+            FeedSource(url="https://www.rockpapershotgun.com/feed", name="Rock Paper Shotgun"),
+            FeedSource(url="https://feeds.ign.com/ign/games-all", name="IGN"),
+            FeedSource(url="https://www.gamespot.com/feeds/news/", name="GameSpot"),
+            FeedSource(url="https://www.pcgamer.com/rss/", name="PC Gamer"),
+            FeedSource(url="https://www.polygon.com/rss/index.xml", name="Polygon"),
+            # Danish coverage, so the category is not all English.
+            FeedSource(url="https://www.gamereactor.dk/rss/rss.php?texttype=news",
+                       name="Gamereactor DK"),
+        ],
+    ),
+    Category(
+        slug="games-releases",
+        title="Nye og opdaterede spil",
+        max_items=20,
+        feeds=[
+            # Gematsu is the best single source for release dates and
+            # Japanese announcements; the rest are keyword-filtered down
+            # to launch and patch news only.
+            FeedSource(url="https://www.gematsu.com/feed", name="Gematsu"),
+            FeedSource(url="https://www.nintendolife.com/feeds/latest", name="Nintendo Life"),
+            FeedSource(url="https://www.pushsquare.com/feeds/latest", name="Push Square"),
+            FeedSource(
+                url="https://www.eurogamer.net/feed", name="Eurogamer",
+                keywords=("release date", "out now", "launches", "launch",
+                          "released", "early access", "patch", "update",
+                          "version 1.", "dlc", "expansion", "udkommer"),
+            ),
+            FeedSource(
+                url="https://feeds.ign.com/ign/games-all", name="IGN",
+                keywords=("release date", "out now", "launches", "launch",
+                          "released", "early access", "patch", "update",
+                          "dlc", "expansion"),
+            ),
+            FeedSource(
+                url="https://www.pcgamer.com/rss/", name="PC Gamer",
+                keywords=("release date", "out now", "launch", "released",
+                          "early access", "patch", "update", "dlc", "mod"),
+            ),
+        ],
+    ),
+    Category(
+        slug="blizzard",
+        title="Blizzard og WoW",
+        max_items=20,
+        feeds=[
+            # Dedicated and unfiltered: these are Blizzard-only outlets,
+            # so a keyword filter would only throw away good items.
+            # Verified live 2026-10-12: both return 200 with real
+            # editorial items.
+            FeedSource(url="https://www.wowhead.com/news/rss/all", name="Wowhead"),
+            FeedSource(url="https://blizzardwatch.com/feed/", name="Blizzard Watch"),
+            # MMO-Champion is deliberately NOT here. Its only reachable
+            # feed (external.php?type=RSS2) is the FORUM, not the news
+            # section: it returned thread titles like "Since qhen
+            # timewalking cache is giving tier token?" and worse, and it
+            # drowned the real news by volume. rss.php and /feed both 403,
+            # and the newcontent variant returns zero items. Checked
+            # 2026-10-12.
+            # Blizzard's own newsroom has no working RSS: news.blizzard.com
+            # /en-us/rss and /en-gb/rss both 404, and icy-veins.com/feed
+            # returns 403 to anything that is not a browser. So the big
+            # announcements are picked up from the broad gaming feeds
+            # instead, narrowed to Blizzard titles.
+            FeedSource(url="https://feeds.ign.com/ign/games-all", name="IGN",
+                       keywords=("blizzard", "world of warcraft", "warcraft",
+                                 "diablo", "overwatch", "hearthstone", "starcraft")),
+            FeedSource(url="https://www.pcgamer.com/rss/", name="PC Gamer",
+                       keywords=("blizzard", "world of warcraft", "warcraft",
+                                 "diablo", "overwatch", "hearthstone", "starcraft")),
+            FeedSource(url="https://www.eurogamer.net/feed", name="Eurogamer",
+                       keywords=("blizzard", "world of warcraft", "warcraft",
+                                 "diablo", "overwatch", "hearthstone", "starcraft")),
+        ],
+    ),
+    Category(
+        slug="gta",
+        title="GTA",
+        max_items=20,
+        feeds=[
+            # No dedicated feed exists: rockstargames.com/newswire.rss and
+            # /newswire/feed both 404 as of 2026-10-12. GTA 6 coverage lands
+            # in every major outlet anyway, so this is broad feeds narrowed
+            # by keyword.
+            #
+            # Keywords are deliberately long. _keep() does a case-insensitive
+            # SUBSTRING match, so a bare "gta" would hit inside unrelated
+            # words and a bare "rockstar" would pull in energy drinks and
+            # music writing. "grand theft auto" and "rockstar games" do not.
+            FeedSource(url="https://feeds.ign.com/ign/games-all", name="IGN",
+                       keywords=GTA_KEYWORDS),
+            FeedSource(url="https://www.pcgamer.com/rss/", name="PC Gamer",
+                       keywords=GTA_KEYWORDS),
+            FeedSource(url="https://www.eurogamer.net/feed", name="Eurogamer",
+                       keywords=GTA_KEYWORDS),
+            FeedSource(url="https://www.rockpapershotgun.com/feed",
+                       name="Rock Paper Shotgun", keywords=GTA_KEYWORDS),
+            FeedSource(url="https://www.gamespot.com/feeds/news/", name="GameSpot",
+                       keywords=GTA_KEYWORDS),
+            FeedSource(url="https://www.polygon.com/rss/index.xml", name="Polygon",
+                       keywords=GTA_KEYWORDS),
+            FeedSource(url="https://www.gamereactor.dk/rss/rss.php?texttype=news",
+                       name="Gamereactor DK", keywords=GTA_KEYWORDS),
+        ],
+    ),
+    Category(
+        slug="games-hype",
+        title="Hype og annonceringer",
+        max_items=18,
+        feeds=[
+            FeedSource(
+                url="https://www.eurogamer.net/feed", name="Eurogamer",
+                keywords=("announced", "announce", "reveal", "revealed",
+                          "trailer", "upcoming", "preview", "hands-on",
+                          "delayed", "delay", "teaser", "annonceret"),
+            ),
+            FeedSource(
+                url="https://feeds.ign.com/ign/games-all", name="IGN",
+                keywords=("announced", "announce", "reveal", "revealed",
+                          "trailer", "upcoming", "preview", "first look",
+                          "delayed", "delay", "teaser"),
+            ),
+            FeedSource(
+                url="https://www.rockpapershotgun.com/feed", name="Rock Paper Shotgun",
+                keywords=("announced", "reveal", "trailer", "upcoming",
+                          "preview", "hands-on", "delayed"),
+            ),
+            FeedSource(
+                url="https://www.gematsu.com/feed", name="Gematsu",
+                keywords=("announced", "reveal", "trailer", "teaser",
+                          "delayed", "upcoming"),
+            ),
+            FeedSource(
+                url="https://www.polygon.com/rss/index.xml", name="Polygon",
+                keywords=("announced", "reveal", "trailer", "upcoming",
+                          "preview", "delayed"),
+            ),
+        ],
+    ),
     Category(
         slug="world-cup",
         title="World Cup",

@@ -1,0 +1,22 @@
+{# Shared slide-in drawer. Any page whose rows carry
+   hx-target="#drawer" must include this partial - that means
+   `frontpage.html`, `ado_tab.html`, and anything embedding
+   `_ado_instances.html`. #}
+<aside id="drawer" class="drawer" aria-hidden="true"></aside>
+<div id="drawer-backdrop" class="drawer-backdrop" onclick="closeDrawer()"></div>
+
+<script>
+function openDrawer() {
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drawer-backdrop').classList.add('open');
+  document.getElementById('drawer').setAttribute('aria-hidden', 'false');
+  document.body.classList.add('drawer-open');
+}
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('drawer-backdrop').classList.remove('open');
+  document.getElementById('drawer').setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('drawer-open');
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+</script>

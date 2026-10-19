@@ -1,0 +1,99 @@
+{% extends "shell.html" %}
+{% block title %}Certifikater :: POC :: Jytte{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="/static/jy_poc.css" />{% endblock %}
+
+{% block content %}
+{# POC: the credentials wall. Course certificates read off
+   assets/certificates/, which is bind-mounted read-only.
+
+   NOT X.509. See app/poc/certificates.py - these are the certificates
+   you earn, not the ones that expire on a load balancer. The two share
+   no fields and should never share a page. #}
+
+<div class="poc-band">
+  <span class="pill gul">{{ poc.st.label }}</span>
+  <span class="poc-band-t"><b>Dette er en POC.</b> {{ poc.st.meaning }}</span>
+  <span class="poc-band-x"><a href="/poc">{{ poc.blocking|length }} udestående &rarr;</a></span>
+</div>
+
+<div class="hd">
+  <div class="hd-id">
+    <span class="eyebrow plain">Kurser og credentials &middot; ikke TLS</span>
+    <h1 class="pg">Certifikater</h1>
+  </div>
+  {% if ready %}
+  <div class="hd-right">
+    <span class="pn-src">{{ counts.total }} i {{ folder }}</span>
+  </div>
+  {% endif %}
+</div>
+
+{% if not ready %}
+<div class="lg-note">
+  <h2>Mappen kan ikke læses</h2>
+  <p>{{ reason }}</p>
+  <p>Den ligger på værten som <code class="mono">assets/certificates/</code>
+    og bliver monteret read-only ind i containeren. Mangler mounten, er
+    det den der skal rettes - ikke filerne.</p>
+</div>
+{% elif not certs %}
+<div class="lg-note">
+  <h2>Ingen certifikater endnu</h2>
+  <p>Læg en PNG, JPG eller PDF i <code class="mono">assets/certificates/</code>.
+    Følger filnavnet mønsteret
+    <code class="mono">Certificate-&lt;Titel&gt;-&lt;Navn&gt;</code>, bliver
+    titlen læst ud af navnet. Gør det ikke, vises filnavnet som det er.</p>
+</div>
+{% else %}
+
+<div class="poc-certs">
+  {% for c in certs %}
+  <article class="poc-cert">
+    <a class="poc-cert-img" href="{{ c.url }}" target="_blank" rel="noopener noreferrer"
+       title="Åbn {{ c.file }} i fuld størrelse">
+      {% if c.kind == 'billede' %}
+      <img src="{{ c.url }}" alt="{{ c.title }}" loading="lazy" />
+      {% else %}
+      <span class="poc-cert-doc mono">{{ c.suffix|upper }}</span>
+      {% endif %}
+    </a>
+    <div class="poc-cert-b">
+      <div class="poc-cert-h">
+        <span class="poc-cert-t">{{ c.title }}</span>
+        {% if not c.parsed %}
+        {# Honest rather than tidy: the filename did not follow the
+           convention, so what is shown is the filename. #}
+        <span class="pill line" title="Filnavnet følger ikke mønsteret">filnavn</span>
+        {% endif %}
+      </div>
+      <div class="poc-cert-m">
+        {% if c.holder %}<span>{{ c.holder }}</span>{% endif %}
+        {% if c.year %}<span class="mono">{{ c.year }}</span>{% endif %}
+        <span class="mono">{{ c.suffix }} &middot; {{ c.size_kb }} kB</span>
+      </div>
+    </div>
+  </article>
+  {% endfor %}
+</div>
+
+{% if unsupported %}
+<section class="pn pn-pad" style="margin-top:18px">
+  <div class="pn-h"><span class="pn-t">Ignoreret</span></div>
+  <p class="poc-why">Filtyper siden ikke viser:
+    {% for u in unsupported %}<code class="mono">{{ u }}</code>{% if not loop.last %}, {% endif %}{% endfor %}</p>
+</section>
+{% endif %}
+{% endif %}
+
+<div class="lg-head" style="margin-top:26px">
+  <div class="lg-note">
+    <h2>Hvorfor dette ikke er X.509</h2>
+    <p>"Certifikater" plus "overvågning" læses som PKI af enhver der
+      kommer til senere. Det her er kursusbeviser: de udløber ikke, de
+      har ingen udsteder-kæde, og de skal findes frem - ikke overvåges.</p>
+    <p>Kommer der TLS-certifikater ind, skal de have deres egen side.
+      Andre felter, anden fejltilstand, anden hastesag. De to deler ingen
+      kode, og at presse dem sammen ville gøre begge dårligere.</p>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends "shell.html" %}
+{% block title %}News :: Jytte{% endblock %}
+
+{% block content %}
+{# Mock 1g, with the card wireframe from the legacy page: image on top,
+   title, summary, then source and date on a footer line.
+
+   The mock's gul "Morning digest" box is an AI-written summary. Nothing
+   writes one, and project rule 4 keeps AI out of the fetch path, so the
+   box is absent rather than faked. The per-item "Relevant to your work"
+   flag has no source either. #}
+
+<div class="hd">
+  <div class="hd-id">
+    <span class="eyebrow">News{% if ready %} &middot; {{ total }} artikler i {{ channels|length }} kanaler{% endif %}</span>
+    <h1 class="pg">{{ cat_title or "Nyheder" }}</h1>
+  </div>
+  {% if ready %}
+  <div class="hd-right">
+    <span class="sync">
+      <span class="dot" style="background:var(--aqua)"></span>
+      {% if fetched_at %}<span data-ts="{{ fetched_at }}">{{ fetched_at[:16] }}</span>{% endif %}
+    </span>
+  </div>
+  {% endif %}
+</div>
+
+{% if not ready %}
+<div class="lg-note">
+  <h2>Ingen nyheder i cache</h2>
+  <p>{{ reason }}</p>
+  <div class="row-act"><a class="btn ghost" href="/legacy/news">Aabn den gamle side</a></div>
+</div>
+{% else %}
+
+<div class="jy-news">
+  <aside class="jy-chans">
+    {% for grp in groups %}
+    <span class="eyebrow{% if not loop.first %} plain{% endif %}"
+          style="padding:{{ '0 0 8px' if loop.first else '14px 0 8px' }}">{{ grp.label }}</span>
+    {% for c in grp.chans %}
+    <a class="jy-chan{% if c.slug == cat %} is-sel{% endif %}" href="{{ c.href }}">
+      <span class="dot" style="background: var(--{{ c.tone }})"></span>
+      <span class="clip">{{ c.name }}</span><b class="mono">{{ c.n }}</b>
+    </a>
+    {% endfor %}
+    {% endfor %}
+  </aside>
+
+  <div class="jy-cards">
+    {% for n in rows %}
+    <a class="jy-card" href="{{ n.link }}" target="_blank" rel="noopener">
+      {% if n.image %}
+      {# loading=lazy matters: a category can hold 20 photos. #}
+      <span class="jy-card-img">
+        <img src="{{ n.image }}" alt="" loading="lazy" referrerpolicy="no-referrer" />
+      </span>
+      {% endif %}
+      <span class="jy-card-body">
+        <span class="jy-card-t">{{ n.title }}</span>
+        {% if n.summary %}<span class="jy-card-s">{{ n.summary }}</span>{% endif %}
+        <span class="jy-card-f">
+          <span class="jy-card-src">{{ n.src }}</span>
+          <span class="jy-card-date mono" data-ts="{{ n.published }}">{{ (n.published or '')[:10] }}</span>
+        </span>
+      </span>
+    </a>
+    {% endfor %}
+    {% if not rows %}<p class="empty">Ingen artikler i denne kanal.</p>{% endif %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

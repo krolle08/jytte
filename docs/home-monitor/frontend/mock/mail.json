@@ -1,0 +1,59 @@
+[
+  {
+    "t": "08:12",
+    "from": "Dagrofa IT",
+    "subj": "RKE2 upgrade window, 14 Oct",
+    "tag": "Dagrofa",
+    "unread": 1,
+    "cats": [],
+    "web": "https://outlook.office.com/mail/id/MOCK-mail-1"
+  },
+  {
+    "t": "07:40",
+    "from": "Azure DevOps",
+    "subj": "Pipeline mobile-ios-release failed",
+    "tag": "Build",
+    "unread": 1,
+    "cats": [],
+    "web": "https://outlook.office.com/mail/id/MOCK-mail-2"
+  },
+  {
+    "t": "Sat",
+    "from": "Lars",
+    "subj": "AI testing offering, draft v2",
+    "tag": "Trustworks",
+    "unread": 1,
+    "cats": [],
+    "web": "https://outlook.office.com/mail/id/MOCK-mail-3"
+  },
+  {
+    "t": "Sat",
+    "from": "Maria",
+    "subj": "Review request: Flutter 3.35 upgrade",
+    "tag": "Mobile",
+    "unread": 0,
+    "cats": [],
+    "web": "https://outlook.office.com/mail/id/MOCK-mail-4"
+  },
+  {
+    "t": "Sat",
+    "from": "Computerworld",
+    "subj": "Follow-up from the festival",
+    "tag": "Network",
+    "unread": 0,
+    "cats": [],
+    "web": "https://outlook.office.com/mail/id/MOCK-mail-5"
+  },
+  {
+    "t": "Fri",
+    "from": "FÃ¸devarestyrelsen",
+    "subj": "Meeting request: architecture workshop",
+    "tag": "Lead",
+    "unread": 0,
+    "cats": [
+      "Important"
+    ],
+    "web": "https://outlook.office.com/mail/id/MOCK-mail-6",
+    "teams": "https://teams.microsoft.com/l/meetup-join/MOCK-fvst-workshop"
+  }
+]

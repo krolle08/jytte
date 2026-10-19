@@ -1,0 +1,144 @@
+{% extends "shell.html" %}
+{% block title %}Constellation :: Jytte{% endblock %}
+
+{% block content %}
+{# Mock 1c, with the layout solved against the real data.
+
+   The handoff's single ring at radius 240 put 14 agents 107px apart
+   while the longest label is 158px wide. Agents now sit in CATEGORY
+   SECTORS on two alternating radii, so position carries meaning and
+   the closest pair is 127px apart against a 119px clipped label. See
+   the geometry note in aiview.py.
+
+   Skill labels are off until their agent is hovered: there is no
+   arrangement in which 44 labels are readable at once.
+
+   The mock docks the detail panel. Per the three rules in CLAUDE.md it
+   is the slide-in instead: hover opens, click pins, Esc closes, and
+   the field pans so the panel never covers the node under the
+   pointer. #}
+
+<div class="hd">
+  <div class="hd-id">
+    <span class="eyebrow">AI &middot; Constellation</span>
+    <h1 class="pg">Agents og skills</h1>
+  </div>
+  <div class="hd-right">
+    {% if ready %}
+    <span class="pn-src">{{ nodes|length }} agents &middot; {{ orbit|length }} skills</span>
+    <div class="seg" role="group" aria-label="Kontekst">
+      {% for c in contexts %}
+      <a class="jy-ctx" href="?ctx={{ c.key }}{% if sel %}&amp;sel={{ sel }}{% endif %}"
+         aria-pressed="{{ 'true' if c.key == ctx else 'false' }}">{{ c.label }}</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% if not ready %}
+<div class="lg-note">
+  <h2>Ingen scanning indlæst</h2>
+  <p>Kør <code class="mono">python scripts/scan_ai.py</code> på hosten og genindlæs.</p>
+</div>
+{% else %}
+
+<div class="jy-sky-wrap">
+  <div class="jy-sky" id="jy-sky" tabindex="0"
+       aria-label="Agent-felt. Træk for at flytte, rul for at zoome, dobbeltklik for at tilpasse.">
+    <div class="jy-sky-inner" id="jy-sky-inner" style="width:{{ w }}px; height:{{ h }}px">
+
+      <svg width="{{ w }}" height="{{ h }}" class="jy-sky-svg" aria-hidden="true">
+        {# hub to agent. data-agent so hovering an agent can light its
+           own edge and dim the rest. #}
+        {% for e in edges %}
+        <line class="jy-edge" data-agent="{{ e.agent }}"
+              x1="{{ e.x1 }}" y1="{{ e.y1 }}" x2="{{ e.x2 }}" y2="{{ e.y2 }}" />
+        {% endfor %}
+        {# agent to its own skills #}
+        {% for o in orbit %}
+        <line class="jy-edge jy-edge-skill" data-agent="{{ o.agent }}"
+              x1="{{ o.ax }}" y1="{{ o.ay }}" x2="{{ o.x }}" y2="{{ o.y }}" />
+        {% endfor %}
+      </svg>
+
+      {# category names, parked outside the outer ring #}
+      {% for s in sectors %}
+      <div class="jy-sector" style="left:{{ s.x }}px; top:{{ s.y }}px">
+        <span>{{ s.name }}</span><i>{{ s.n }}</i>
+      </div>
+      {% endfor %}
+
+      {# orchestrator #}
+      <div class="jy-hub" style="left:{{ cx }}px; top:{{ cy }}px">
+        <span style="font-size:12px; font-weight:600">orchestrator</span>
+        <span class="mono" style="font-size:10px">CLAUDE.md</span>
+      </div>
+
+      {# skills first, so an agent disc always sits above its own moons #}
+      {% for o in orbit %}
+      <button class="jy-skill{% if o.flag %} is-flag{% endif %}{% if o.missing %} is-missing{% endif %}{% if o.shared %} is-shared{% endif %}"
+              data-skill="{{ o.id }}" data-owner="{{ o.agent }}"
+              style="left:{{ o.x }}px; top:{{ o.y }}px; --r:{{ o.r }}px"
+              title="{{ o.id }}{% if o.missing %} (erklæret, ikke fundet){% endif %}{% if o.shared %} (delt){% endif %}">
+        <span class="jy-skill-dot" aria-hidden="true"></span>
+        <span class="jy-skill-l mono">{{ o.label }}</span>
+      </button>
+      {% endfor %}
+
+      {# agents #}
+      {% for n in nodes %}
+      <button class="jy-agent{% if n.selected %} is-sel{% endif %}{% if n.cold %} is-cold{% endif %}{% if n.drift %} is-drift{% endif %}{% if n.flag %} is-flag{% endif %}{% if n.below %} lbl-below{% else %} lbl-above{% endif %}"
+              data-agent="{{ n.id }}" style="left:{{ n.x }}px; top:{{ n.y }}px"
+              title="{{ n.id }} &middot; {{ n.runs }} kørsler{% if n.nskills %} &middot; {{ n.nskills }} skills{% endif %}">
+        <span class="jy-agent-disc" aria-hidden="true">
+          {% if n.runs %}<i class="jy-agent-n">{{ n.runs }}</i>{% endif %}
+        </span>
+        <span class="jy-agent-l mono">{{ n.label }}</span>
+      </button>
+      {% endfor %}
+    </div>
+
+    <div class="jy-zoom">
+      <button id="jy-zin" title="Zoom ind (+)">+</button>
+      <button id="jy-zout" title="Zoom ud (-)">&minus;</button>
+      <button id="jy-zfit" title="Tilpas (0 eller dobbeltklik)">fit</button>
+    </div>
+
+    <div class="jy-leg">
+      <span><i class="l-agent"></i>Agent &middot; tal = kørsler</span>
+      <span><i class="l-skill"></i>Skill &middot; størrelse = kørsler</span>
+      <span><i class="l-flag"></i>Overlap</span>
+      <span><i class="l-cold"></i>Aldrig kørt</span>
+      <span class="f-faint">træk · rul for zoom · dobbeltklik tilpasser</span>
+    </div>
+  </div>
+
+  {# The mock draws a dashed line per shared skill. With 8 of them
+     across a pannable field that is noise, so they are listed - same
+     information, readable, and each one opens the panel. #}
+  {% if crossed %}
+  <section class="pn" data-card="shared" style="padding:16px 18px">
+    <div class="pn-h" style="padding:0 0 10px">
+      <span class="pn-t">Delte skills</span>
+      <span class="pn-src">{{ crossed|length }} erklæret af mere end én agent</span>
+    </div>
+    <div class="jy-shared">
+      {% for c in crossed %}
+      <div class="jy-shared-row">
+        <button class="ai2-link mono f-gul" data-skill="{{ c.skill }}">{{ c.skill }}</button>
+        <span class="jp-chips">
+          {% for o in c.owners %}<button class="pill lilac" data-agent="{{ o }}">{{ o }}</button>{% endfor %}
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+</div>
+
+{% include "_jy_panel.html" %}
+<script type="application/json" id="ai-data">{{ payload|tojson }}</script>
+<script src="/static/jy_ai.js" defer></script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,156 @@
+{% extends "shell.html" %}
+{% block title %}WoW Forever :: POC :: Jytte{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="/static/jy_poc.css" />
+<link rel="stylesheet" href="/static/wow/wf.css" />{% endblock %}
+
+{% block content %}
+{# POC: one WoW Forever beta development note as a game-styled
+   walkthrough. Content is the wowforever widget's analyzer note when it
+   is valid and newer, else app/poc/wowforever_notes/<date>.json; see
+   app/poc/wowforever.py.
+   Every panel renders here, server-side. wf.js only toggles `hidden`
+   on the class panels, recounts the countdowns and draws the embers. #}
+
+{% macro ic(url, cls="") %}<span class="wf-ic {{ cls }}"><img src="{{ url }}" alt="" loading="lazy" /></span>{% endmacro %}
+{% macro tag(kind) %}<span class="wf-tag {{ kind }}">{{ {"fix":"Fix","buff":"Buff","nerf":"Nerf","new":"New","change":"Change"}[kind] }}</span>{% endmacro %}
+{% macro tip(e) %}<div class="wf-tip">{{ ic(e.icon_url) }}<div>{% if e.spec %}<span class="wf-spec">{{ e.spec }}</span>{% endif %}<div class="wf-nm">{{ e.name }}{{ tag(e.kind) }}</div><div class="wf-ds">{{ e.text }}</div></div></div>{% endmacro %}
+
+<div class="poc-band">
+  <span class="pill coral">{{ poc.st.label }}</span>
+  <span class="poc-band-t"><b>Dette er en POC.</b> {{ poc.st.meaning }}</span>
+  <span class="poc-band-x"><a href="/poc">{{ poc.blocking|length }} udestående &rarr;</a></span>
+</div>
+
+{% if not ready %}
+<div class="lg-note">
+  <h2>Ingen patch notes at vise</h2>
+  <p>{{ reason }}</p>
+  <p>Læg en note som <code class="mono">app/poc/wowforever_notes/&lt;dato&gt;.json</code>.
+    Den nyeste fil efter navn bliver vist.</p>
+</div>
+{% else %}
+{% set n = note %}
+<div class="wf">
+
+  <header class="wf-hero" id="wf-top">
+    <canvas aria-hidden="true"></canvas>
+    <div class="wf-ring" aria-hidden="true"></div>
+    <div class="wf-hero-in">
+      <div class="wf-crest">Blizzard Entertainment &middot; Beta Development Notes</div>
+      <h1 class="wf-logo">Forever<small>World of Warcraft</small></h1>
+      <p class="wf-sub">{{ n.headline }}</p>
+      <div class="wf-chips">
+        <span class="wf-chip">Posted <b>{{ n.posted_label }}</b></span>
+        <span class="wf-chip">Build <b>{{ n.build }}</b></span>
+        {% for m in n.milestones %}<span class="wf-chip">{{ m.label }} <b>{{ m.date_label }}</b></span>{% endfor %}
+      </div>
+      <a class="wf-enter" href="#wf-timeline">Enter World</a>
+    </div>
+  </header>
+
+  <nav class="wf-jump" aria-label="Afsnit">
+    <a href="#wf-timeline">Timeline</a><a href="#wf-fixes">Fixes</a><a href="#wf-racials">Racials</a>
+    <a href="#wf-classes">Classes</a><a href="#wf-world">World</a><a href="#wf-ui">Interface</a>{% if blue_posts %}<a href="#wf-blue">Blue posts</a>{% endif %}<a href="#wf-next">What's next</a>
+  </nav>
+
+  <section id="wf-timeline">
+    <div class="wf-head"><span class="wf-step">1</span><h2>The road to launch</h2></div>
+    <p class="wf-why">Where this note sits between the beta opening and launch.</p>
+    <div class="wf-frame"><div class="wf-tl" style="--n:{{ n.timeline|length }};--p:{{ n.progress_pct }}%">
+      {% for t in n.timeline %}<div class="{{ t.state }}"><i></i><span><b>{{ t.date_label }}</b>{{ t.label }}</span></div>{% endfor %}
+    </div></div>
+  </section>
+
+  <section id="wf-fixes">
+    <div class="wf-head"><span class="wf-step">2</span><h2>Headline fixes and changes</h2></div>
+    <p class="wf-why">These come first in the notes and affect every character.</p>
+    <div class="wf-tips">{% for e in n.fixes %}{{ tip(e) }}{% endfor %}</div>
+  </section>
+
+  <section id="wf-racials">
+    <div class="wf-head"><span class="wf-step">3</span><h2>Racial overhaul</h2></div>
+    <p class="wf-why">The weapon specializations are gone. Humans, Dwarves and Orcs get flat critical bonuses instead, so a racial no longer pushes you toward one weapon type.</p>
+    <div class="wf-races">
+      {% for r in n.races %}
+      <div class="wf-frame wf-race">
+        <header>{{ ic(r.icon_url, "lg") }}<div><h3>{{ r.name }}</h3><span class="wf-fac {{ r.faction }}">{{ r.faction|capitalize }}</span></div></header>
+        <ul>{% for a in r.abilities %}<li>{{ ic(a.icon_url, "sm") }}<div><div class="wf-nm">{{ a.name }}{{ tag(a.kind) }}</div><div class="wf-ds">{{ a.text }}</div></div></li>{% endfor %}</ul>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section id="wf-classes">
+    <div class="wf-head"><span class="wf-step">4</span><h2>Class changes</h2></div>
+    <p class="wf-why">Pick your class. Moonkin Aura, Leader of the Pack, Trueshot Aura and Battle Shout now affect the whole raid.</p>
+    <div class="wf-cls" role="tablist">
+      {% for c in n.classes %}<button type="button" role="tab" data-c="{{ c.name }}" style="--cc:{{ c.color }}" aria-selected="{{ 'true' if loop.first else 'false' }}">{{ ic(c.icon_url) }}{{ c.name }}</button>{% endfor %}
+    </div>
+    {% for c in n.classes %}
+    <div class="wf-frame wf-book" role="tabpanel" data-c="{{ c.name }}" style="--cc:{{ c.color }}"{% if not loop.first %} hidden{% endif %}>
+      <h3>{{ c.name }}</h3>
+      <p class="wf-lede">{{ c.lede }}</p>
+      <div class="wf-tips">{% for s in c.spells %}{{ tip(s) }}{% endfor %}</div>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section id="wf-world">
+    <div class="wf-head"><span class="wf-step">5</span><h2>Quests, items and PvP</h2></div>
+    <p class="wf-why">Horde players are now attacked on sight in Dalaran, and several old quests are easier.</p>
+    <div class="wf-two">
+      <div class="wf-frame"><h3>Quest log</h3>
+        {% for q in n.quests %}<div class="wf-quest"><span class="wf-mark">!</span>{{ ic(q.icon_url, "sm") }}<div><div class="z">{{ q.zone }}</div><div class="t">{{ q.text }}</div></div></div>{% endfor %}
+      </div>
+      <div class="wf-frame"><h3>Items, Legacy and PvP</h3><div class="wf-gear">
+        {% for g in n.gear %}<div class="wf-item">{{ ic(g.icon_url) }}<div><div class="wf-nm">{{ g.name }}</div><div class="wf-ds">{{ g.text }}</div></div></div>{% endfor %}
+      </div></div>
+    </div>
+  </section>
+
+  <section id="wf-ui">
+    <div class="wf-head"><span class="wf-step">6</span><h2>Gamepad and interface</h2></div>
+    <p class="wf-why">Controller players get a swing timer on the reticle and Press and Hold Casting. The Auction House gets new columns.</p>
+    <div class="wf-abar" aria-hidden="true">
+      {% for url in n.actionbar %}<span class="wf-slot">{{ ic(url) }}<span class="key">{{ "1234567890-="[loop.index0] }}</span></span>{% endfor %}
+    </div>
+    <div class="wf-tips">{% for e in n.interface %}{{ tip(e) }}{% endfor %}</div>
+  </section>
+
+  {% if blue_posts %}
+  <section id="wf-blue">
+    <div class="wf-head"><span class="wf-step">7</span><h2>From the blue tracker</h2></div>
+    <p class="wf-why">Newest Blizzard posts in the WoW Forever forums{% if fetched_at %}, checked <span data-ts="{{ fetched_at }}">{{ fetched_at[:16]|replace("T", " ") }} UTC</span>{% endif %}.</p>
+    <div class="wf-frame">
+      {% for p in blue_posts[:6] %}<div class="wf-quest"><span class="wf-mark">!</span><div><div class="z"><a href="{{ p.url }}" target="_blank" rel="noopener noreferrer">{{ p.title }}</a></div><div class="t">{{ p.excerpt }}</div></div></div>{% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section id="wf-next">
+    <div class="wf-head"><span class="wf-step">{{ 8 if blue_posts else 7 }}</span><h2>What's next</h2></div>
+    <div class="wf-portal">
+      <div class="wf-crest">The gates open soon</div>
+      <div class="wf-count">
+        {% for m in n.milestones %}<div class="wf-cd"><b data-until="{{ m.date }}">{{ m.days_left }}</b><span>days to {{ m.label }}<br>{{ m.date_label }}</span></div>{% endfor %}
+      </div>
+      <ul class="wf-src">
+        {% for s in n.sources %}<li><a href="{{ s.url }}" target="_blank" rel="noopener noreferrer">{{ s.label }}</a></li>{% endfor %}
+      </ul>
+      <p class="wf-foot">
+        {% if provenance == "analyzer" %}Struktureret af {{ n.transcribed_by }} {{ n.transcribed }} fra
+          <a href="{{ source_url }}" target="_blank" rel="noopener noreferrer">forumindlægget</a>. Tjek tal mod kilden før du handler på dem.
+        {% else %}Kilde: <code class="mono">{{ file }}</code>, transskriberet {{ n.transcribed }} af {{ n.transcribed_by }}.{% endif %}
+        Ikoner fra spillets ikonbibliotek via Wowhead, cachet i <code class="mono">app/static/wow/icons</code>.
+        Nye Forever-evner har endnu intet offentligt ikon og bruger det nærmeste eksisterende.
+        {% if missing %}Mangler på disk: {{ missing|join(", ") }}.{% endif %}</p>
+      {% for c in n.corrections or [] %}<p class="wf-foot">Rettelse: {{ c }}</p>{% endfor %}
+      {% if widget_reason %}<p class="wf-foot">Widget: {{ widget_reason }}</p>{% endif %}
+    </div>
+  </section>
+
+</div>
+{% endif %}
+{% endblock %}
+
+{% block script_extra %}<script src="/static/wow/wf.js" defer></script>{% endblock %}

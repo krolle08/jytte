@@ -1,0 +1,18 @@
+name: email
+title: Mail
+# source: n8n - the Microsoft Graph read lives in
+# deploy/n8n/workflows/email.json and arrives via
+# POST /widgets/email/state. Setting this disables the local refresh
+# loop (registry.start) AND makes POST /widgets/email/refresh a no-op,
+# so a dashboard refresh click can never clobber the n8n payload with
+# the not-ready stub from fetch.py.
+source: n8n
+# Irrelevant while source=n8n - the real cadence is the workflow's
+# Schedule Trigger (*/10). Kept explicit so nobody reads the absence
+# as "forgot to set it".
+refresh_minutes: null
+client_refresh_seconds: 120
+claude_analyzer: false
+# No mcp.py yet. Flip to true when the widget grows past the stub.
+expose_mcp: false
+watcher: false

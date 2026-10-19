@@ -43,7 +43,7 @@ Update the front-matter immediately. For bugs, fill `fix.md` fully before touchi
 Run `python.test_command` (pytest) and, when templates/Python changed, `docker compose up -d --build jytte`. Record results in `acceptance.md` / `verification.md`.
 
 ### 8. Review
-Run `/code-review` (or spawn the `code-reviewer` agent) over the diff. Address P0/P1 findings before declaring done. Set `status: review`.
+Run `/code-review` over the diff. Address P0/P1 findings before declaring done. Set `status: review`.
 
 ## Rules
 - Never edit `app/` from `main`. Branch first.

@@ -1,0 +1,10 @@
+name: salary
+title: Løn
+# Nothing to poll: the profile only changes when you edit it or get a
+# new skattekort. Refresh is user-driven.
+refresh_minutes: null
+client_refresh_seconds: 0
+claude_analyzer: false
+expose_mcp: true
+watcher: false
+page_only: true

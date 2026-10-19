@@ -1,0 +1,83 @@
+{# Inner body of one front-page task box.
+
+   Rendered both inside frontpage.html on first paint and standalone by
+   GET /frontpage/box/<slug> when the tasks widget fires SSE.
+
+   Expects:
+     box    - one entry from app.frontpage.TASK_BOXES
+     groups - frames from buckets.group_by_frame(): [{owner, project, rows}]
+     state  - the tasks widget state envelope (freshness banner)
+
+   Framing (owner = customer / Internal / Private, project = the
+   `project:` slug resolved to its llm-wiki page title) is decided in
+   app/widgets/tasks/buckets.py, not here. #}
+{% if state.get('missing') %}
+<p class="muted">tasks widget not loaded</p>
+{% elif not groups %}
+<p class="muted fp-empty">{{ box.empty }}</p>
+{% else %}
+{% for g in groups %}
+<div class="fp-frame">
+  <div class="fp-frame-head">
+    <span class="fp-frame-owner fp-owner-{{ g.owner|lower|replace(' ', '-') }}">{{ g.owner }}</span>
+    <span class="fp-frame-sep">&rsaquo;</span>
+    {% if g.project %}
+      {# The unit of work, from a project/ or subproject/ tag. The
+         namespace is kept visible - it says which level this is. #}
+      <span class="fp-frame-project" title="{{ g.project }}">{{ g.rows[0].project_label }}</span>
+    {% else %}
+      <span class="fp-frame-project fp-frame-noproject"
+            title="no project/ or subproject/ tag on this task">unsorted</span>
+    {% endif %}
+    {% if g.rows[0].wiki_project %}
+      <span class="fp-frame-wiki" title="LLM-Wiki project this task belongs to">{{ g.rows[0].wiki_project }}</span>
+    {% endif %}
+    <span class="fp-frame-count muted small">{{ g.rows|length }}</span>
+  </div>
+
+  <ul class="fp-task-list{% if box.hero %} fp-task-list-hero{% endif %}">
+    {% for t in g.rows %}
+    <li class="fp-task{% if t.overdue_days %} fp-task-overdue{% elif t.due_today %} fp-task-today{% endif %}">
+      <button class="task-quick-done"
+              title="mark done"
+              hx-post="/widgets/tasks/quick-done"
+              hx-vals='{"path": "{{ t.path|e }}"}'
+              hx-swap="none"
+              onclick="event.stopPropagation();">&check;</button>
+      <span class="fp-task-main"
+            hx-get="/widgets/tasks/detail?path={{ t.path|urlencode }}"
+            hx-target="#drawer"
+            hx-swap="innerHTML"
+            onclick="openDrawer()">
+        <span class="fp-task-title">{{ t.title }}</span>
+        <span class="fp-task-meta">
+          {% if t.priority %}<span class="tag prio-{{ t.priority|lower }}">{{ t.priority }}</span>{% endif %}
+          {% if t.overdue_days %}
+            <span class="tag fp-tag-overdue">{{ t.overdue_days }}d overdue</span>
+          {% elif t.due_today %}
+            <span class="tag fp-tag-today">today</span>
+          {% elif t.due_date %}
+            <span class="tag">due {{ t.due_date }}</span>
+          {% endif %}
+          {% if t.due_raw_unparsed %}
+            <span class="tag fp-tag-baddate" title="unparseable due date in frontmatter">?due {{ t.due_raw_unparsed }}</span>
+          {% endif %}
+          {% if t.status and t.status|lower not in ('open', 'todo') %}
+            <span class="tag fp-tag-status">{{ t.status }}</span>
+          {% endif %}
+          {% if t.relates_to_project %}
+            <a class="tag fp-tag-relates{% if not t.relates_known %} fp-tag-relates-missing{% endif %}"
+               href="/projects#project-{{ t.relates_to_project }}"
+               onclick="event.stopPropagation();"
+               {% if not t.relates_known %}title="no project in Projects/ has slug {{ t.relates_to_project }}"{% endif %}>
+              {{ t.relates_title }}{% if not t.relates_known %} ?{% endif %}
+            </a>
+          {% endif %}
+        </span>
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endfor %}
+{% endif %}

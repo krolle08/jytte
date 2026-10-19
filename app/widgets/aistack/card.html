@@ -1,0 +1,25 @@
+{# Boxes card for the AI stack. The real surface is /ai; this is the
+   four numbers worth glancing at, plus the drift count, which is the
+   only one that ever needs acting on. #}
+{% set d = state.data or {} %}
+{% if not d.get("ready") %}
+<p class="ai-card-dead">{{ d.get("reason") or "ingen scanning endnu" }}</p>
+<p class="ai-card-hint">Kør <code>python scripts/scan_ai.py</code> på hosten.</p>
+{% else %}
+{% set s = d.get("stats") or {} %}
+<a class="ai-card" href="/ai">
+  <span class="ai-card-nums">
+    <span class="ai-card-n"><b>{{ d.agents|length }}</b><i>agents</i></span>
+    <span class="ai-card-n"><b>{{ d.skills|length }}</b><i>skills</i></span>
+    <span class="ai-card-n"><b>{{ s.get("workflows", 0) }}</b><i>workflows</i></span>
+    <span class="ai-card-n"><b>{{ s.get("total_runs", 0) }}</b><i>kørsler</i></span>
+  </span>
+  {% if s.get("drifted") %}
+  <span class="ai-card-drift">{{ s.drifted }} kapabiliteter findes i mere end én version</span>
+  {% endif %}
+  <span class="ai-card-when">
+    scannet <span data-ts="{{ d.get('generated_at') }}" data-ts-label="">{{ (d.get("generated_at") or "")[:16] }}</span>
+    &middot; {{ s.get("claude_dirs", 0) }} .claude-mapper
+  </span>
+</a>
+{% endif %}

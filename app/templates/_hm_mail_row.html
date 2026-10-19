@@ -1,0 +1,16 @@
+{# One mail row. Expects `m` from app/widgets/email/highlight.py, with
+   the importance reason attached so the UI can show WHY it is up top -
+   the PoC behaviour that must survive the port. #}
+<div class="hm-mail{% if 'unread' in m.reasons %} is-unread{% endif %}">
+  <span class="hm-mail-main">
+    <span class="hm-mail-top">
+      <span class="hm-mail-from">{{ m.from_name or m.from_address or 'ukendt' }}</span>
+      <span class="hm-mail-when">{{ m.when_label }}</span>
+    </span>
+    <span class="hm-mail-subj">{{ m.subject or '(uden emne)' }}</span>
+    {% if m.why %}<span class="hm-mail-why">{{ m.why }}</span>{% endif %}
+  </span>
+  {% if m.web_link %}
+  <a class="hm-link" href="{{ m.web_link }}" target="_blank" rel="noopener">Åbn i Outlook ↗</a>
+  {% endif %}
+</div>

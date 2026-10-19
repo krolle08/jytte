@@ -1,0 +1,21 @@
+name: elforbrug
+title: Elforbrug
+# source: n8n - the Eloverblik read lives in
+# deploy/n8n/workflows/elforbrug.json and arrives via
+# POST /widgets/elforbrug/state. Same contract as `bank`, `email` and
+# `calendar`: the refresh token sits in n8n's encrypted credential
+# store, never in Jytte, never in an agent's reach.
+#
+# The token can only be created by the account holder, logged in to
+# eloverblik.dk with MitID. This project does not mint credentials,
+# so until that happens the widget reports not-ready and says why.
+source: n8n
+# Irrelevant while source=n8n; the real cadence is the workflow's
+# Schedule Trigger. Metering data lands in DataHub about a day late,
+# so there is nothing to gain from polling faster than daily.
+refresh_minutes: null
+client_refresh_seconds: 900
+claude_analyzer: false
+expose_mcp: false
+watcher: false
+page_only: true

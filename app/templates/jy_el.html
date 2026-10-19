@@ -1,0 +1,202 @@
+{% extends "shell.html" %}
+{% block title %}El :: Jytte{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="/static/jy_el.css" />{% endblock %}
+
+{% block content %}
+{# El: spot price, what it actually costs, and consumption.
+
+   The three tiles are the "Dagens elpriser" row from the reference
+   app, in Jytte's own tokens. Everything below them is the detail
+   that row is a summary of.
+
+   Two honesty rules the page must keep:
+
+   1. If config/el.yml has no tariffs filled in, every number is RAW
+      SPOT and the page says so at the top, not in a footnote. A total
+      that is half the user's grid company and half a guess answers a
+      question nobody asked.
+   2. Consumption is a separate widget with a separate trust boundary.
+      Empty is the honest state until an Eloverblik token exists, and
+      the page prints the four steps to create one rather than just
+      going blank. #}
+
+<div class="hd">
+  <div class="hd-id">
+    <span class="eyebrow plain">
+      {{ area }}{% if leverandoer %} &middot; {{ leverandoer }}{% endif %}
+    </span>
+    <h1 class="pg">El</h1>
+  </div>
+  <div class="hd-right">
+    {% if updated_at %}<span class="pn-src" data-ts="{{ updated_at }}"></span>{% endif %}
+    <a class="btn ghost" href="https://eloverblik.dk" target="_blank" rel="noopener noreferrer">Eloverblik &#8599;</a>
+  </div>
+</div>
+
+{% if not ready %}
+<div class="lg-note">
+  <h2>Ingen elpriser</h2>
+  <p>{{ reason }}</p>
+  <p>Kilden er Energi Data Service, som er åben og ikke kræver nøgle.
+    Svarer den ikke, er det enten netværket eller datasættets navn:
+    <code class="mono">Elspotprices</code> stoppede 2025-09-30 og er
+    afløst af <code class="mono">DayAheadPrices</code>.</p>
+</div>
+{% else %}
+
+{% if raw_spot %}
+<div class="el-warn">
+  <b>Det her er rå spotpris.</b> Hverken nettarif, elafgift eller moms
+  er lagt på - hele siden viser samme tal, så intet sted lover mere
+  end det. Du betaler mere end dette. Udfyld
+  <code class="mono">config/el.yml</code> med satserne fra din
+  Andel-regning, så regner siden totalen inkl. moms.
+  <span class="el-warn-n">0 af {{ tillaeg_total }} tillæg udfyldt</span>
+</div>
+{% else %}
+<div class="el-ok">
+  Alle priser er <b>inkl. {{ filled }} tillæg og {{ moms_pct }}% moms</b>,
+  fra <code class="mono">config/el.yml</code>.
+</div>
+{% endif %}
+
+{# ---- the three tiles ------------------------------------------- #}
+<div class="el-tiles">
+  {% for t in tiles %}
+  <div class="el-tile is-{{ t.icon }}">
+    <span class="el-tile-i" aria-hidden="true">
+      {% if t.icon == 'ned' %}&darr;{% elif t.icon == 'op' %}&uarr;{% else %}&#9679;{% endif %}
+    </span>
+    <span class="eyebrow">{{ t.label }}</span>
+    <span class="el-tile-v mono tnum">{{ t.total_kr }}<i>øre</i></span>
+    <span class="el-tile-s mono">kl. {{ t.hhmm }}
+      {%- if not raw_spot %} &middot; {{ t.total_kwh }} kr/kWh{% endif %}</span>
+  </div>
+  {% endfor %}
+</div>
+
+{# ---- today ------------------------------------------------------ #}
+<section class="pn" data-card="i-dag" style="padding:18px 20px; gap:14px">
+  <div class="pn-h" style="padding:0 0 4px">
+    <span class="pn-t">I dag</span>
+    <span class="pn-src">{{ today.n }} kvarter &middot; spænd {{ today.spread_kr }} øre
+      &middot; snit {{ today.avg_kr }}</span>
+  </div>
+  {% include "_el_chart.html" with context %}
+</section>
+
+{# ---- tomorrow ---------------------------------------------------- #}
+<section class="pn" data-card="i-morgen" style="padding:18px 20px; gap:14px; margin-top:16px">
+  <div class="pn-h" style="padding:0 0 4px">
+    <span class="pn-t">I morgen</span>
+    {% if tomorrow.ready %}
+    <span class="pn-src">{{ tomorrow.n }} kvarter &middot; spænd {{ tomorrow.spread_kr }} øre
+      &middot; snit {{ tomorrow.avg_kr }}</span>
+    {% endif %}
+  </div>
+  {% if tomorrow.ready %}
+  {% with today = tomorrow %}{% include "_el_chart.html" %}{% endwith %}
+  {% else %}
+  <p class="empty">{{ tomorrow.reason }}</p>
+  {% endif %}
+</section>
+
+{# ---- consumption -------------------------------------------------- #}
+<section class="pn" data-card="forbrug" style="padding:18px 20px; gap:14px; margin-top:16px">
+  <div class="pn-h" style="padding:0 0 4px">
+    <span class="pn-t">Forbrug</span>
+    <span class="pn-src">Eloverblik &middot; via n8n</span>
+  </div>
+  {% if forbrug.ready %}
+  <div class="el-use">
+    {% for d in forbrug.days %}
+    <div class="el-use-d" title="{{ d.date }}: {{ d.kwh }} kWh">
+      <i style="height:{{ d.bar }}%"></i>
+      <span class="mono">{{ d.date[-2:] }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  <p class="ai2-foot" style="margin:0">{{ forbrug.total_kwh }} kWh i perioden
+    over {{ forbrug.meters|length }} målepunkt(er).</p>
+  {% else %}
+  <p class="empty">{{ forbrug.reason }}</p>
+  <div class="el-setup">
+    <b>Sådan kobler du forbruget på</b>
+    <ol>
+      <li>Log ind på <a href="https://eloverblik.dk" target="_blank" rel="noopener noreferrer">eloverblik.dk</a> med MitID.</li>
+      <li>Øverst til højre under dit navn: opret et <b>refresh token</b>, som holder et år.</li>
+      <li>Læg det i n8n som en Header Auth-credential ved navn
+        <code class="mono">eloverblik</code>, header
+        <code class="mono">Authorization</code>, værdi
+        <code class="mono">Bearer &lt;token&gt;</code>.</li>
+      <li>Aktivér workflowet <code class="mono">elforbrug</code> på <a href="/jobs">/jobs</a>.</li>
+    </ol>
+    <p class="f-gul">Trin 2 er dit. Jytte opretter aldrig selv en
+      legitimation og vælger aldrig sine egne scopes, heller ikke hvis
+      den bliver bedt om det.</p>
+  </div>
+  {% endif %}
+</section>
+
+{# ---- what makes up the price --------------------------------------- #}
+<section class="pn" data-card="tillaeg" style="padding:18px 20px; gap:12px; margin-top:16px">
+  <div class="pn-h" style="padding:0 0 4px">
+    <span class="pn-t">Hvad prisen består af</span>
+    <span class="pn-src">config/el.yml</span>
+  </div>
+  <table class="el-t">
+    <thead>
+      <tr><th>Led</th><th class="num">øre/kWh</th><th>Hvor tallet står</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><b>Spotpris</b></td>
+        <td class="num mono tnum f-aqua">{{ today.avg_kr }}</td>
+        <td class="el-src">Energi Data Service, døgnets snit. Henter sig selv.</td>
+      </tr>
+      {% for t in cfg.tillaeg %}
+      <tr class="{{ '' if t.set else 'is-blank' }}">
+        <td>{{ t.navn }}</td>
+        <td class="num mono tnum">
+          {%- if t.bands %}{{ t.bands|length }} tidsbånd
+          {%- elif t.oere is not none %}{{ '%.2f'|format(t.oere)|replace('.', ',') }}
+          {%- else %}&ndash;{% endif %}</td>
+        <td class="el-src">{{ t.kilde }}</td>
+      </tr>
+      {% endfor %}
+      <tr>
+        <td>Moms</td>
+        <td class="num mono tnum">{{ moms_pct }}%</td>
+        <td class="el-src">Lægges på summen til sidst.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  {% if abon %}
+  <div class="el-abo">
+    <span class="eyebrow">Faste beløb pr. måned</span>
+    {% for a in abon %}
+    <div class="el-abo-r{{ '' if a.set else ' is-blank' }}">
+      <span>{{ a.navn }}</span>
+      <span class="mono tnum">{% if a.set %}{{ '%.2f'|format(a.kr)|replace('.', ',') }} kr{% else %}&ndash;{% endif %}</span>
+    </div>
+    {% endfor %}
+    {% if abon_sum %}
+    <div class="el-abo-r is-sum"><span>I alt</span><span class="mono tnum">{{ abon_sum }} kr</span></div>
+    {% endif %}
+    <p class="ai2-foot" style="margin:4px 0 0">Abonnementer er ikke pr. kWh
+      og indgår derfor ikke i øre-tallet ovenfor. De står her for sig,
+      så de ikke forsvinder ud af regnestykket.</p>
+  </div>
+  {% endif %}
+</section>
+
+<p class="ai2-foot" style="margin-top:16px">
+  Spotpris fra <a href="{{ source }}" target="_blank" rel="noopener noreferrer">Energi Data Service</a>,
+  prisområde {{ area }}, 15-minutters opløsning. Åben kilde, ingen nøgle.
+  Niveauet billig/middel/dyr er tredjedele af <b>dagens eget spænd</b>,
+  ikke en fast øre-grænse: en fast grænse ville kalde hver time dyr i
+  en kold uge og hver time billig i en blæsende.
+</p>
+{% endif %}
+{% endblock %}

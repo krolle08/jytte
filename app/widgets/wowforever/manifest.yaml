@@ -1,0 +1,13 @@
+name: wowforever
+title: WoW Forever
+# Blizzard posts development notes about once a week and edits the
+# newest post in place for a day or two after. Hourly is plenty, and
+# the analyzer only calls Claude when the post id or its edit time
+# changed, so most refreshes cost one forum request and nothing else.
+refresh_minutes: 60
+claude_analyzer: true
+expose_mcp: false
+watcher: false
+# No credential of any kind: the Blizzard forum JSON is public. That is
+# why this fetches in Python rather than through n8n, the same
+# exception elpris makes. See app/widgets/wowforever/CLAUDE.md.

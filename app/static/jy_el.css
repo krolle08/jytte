@@ -1,0 +1,190 @@
+/* El - spot price, cost and consumption.
+
+   The three tiles are the reference app's "Dagens elpriser" row,
+   rebuilt in Jytte's tokens rather than its pastels: this UI is dark,
+   so the tint carries the meaning and the number carries the weight.
+
+   Own stylesheet; no other page downloads it. */
+
+/* ---- the honesty banners --------------------------------------- */
+.el-warn, .el-ok {
+  margin: 18px 0 0;
+  padding: 11px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-2);
+}
+.el-warn { background: var(--gul-t); border-left: 2px solid var(--gul); }
+.el-ok   { background: var(--aqua-t); border-left: 2px solid var(--aqua); }
+.el-warn b { color: var(--gul); }
+.el-warn-n {
+  display: block; margin-top: 3px;
+  font-family: var(--mono); font-size: 11px; color: var(--faint);
+}
+
+/* ---- the three tiles -------------------------------------------- */
+.el-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 16px 0 20px;
+}
+@media (max-width: 720px) { .el-tiles { grid-template-columns: 1fr; } }
+
+.el-tile {
+  display: flex; flex-direction: column; gap: 5px;
+  padding: 15px 17px;
+  border-radius: 14px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  position: relative;
+  overflow: hidden;
+}
+/* A 2px edge rather than a tinted fill: three filled cards side by
+   side would shout, and only one of them is ever the answer. */
+.el-tile::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px;
+}
+.el-tile.is-ned::before { background: var(--aqua); }
+.el-tile.is-nu::before  { background: var(--gul); }
+.el-tile.is-op::before  { background: var(--coral); }
+
+.el-tile-i {
+  position: absolute; right: 14px; top: 12px;
+  font-size: 15px; line-height: 1;
+}
+.el-tile.is-ned .el-tile-i { color: var(--aqua); }
+.el-tile.is-nu  .el-tile-i { color: var(--gul); font-size: 9px; }
+.el-tile.is-op  .el-tile-i { color: var(--coral); }
+
+.el-tile-v {
+  font-size: 27px; font-weight: 600; letter-spacing: -.02em;
+  color: var(--text); line-height: 1.1;
+}
+.el-tile-v i {
+  font-style: normal; font-size: 12px; font-weight: 400;
+  color: var(--faint); margin-left: 5px;
+}
+.el-tile-s { font-size: 11.5px; color: var(--muted); }
+
+/* ---- the day chart ---------------------------------------------- */
+.el-chart { display: flex; flex-direction: column; gap: 7px; }
+
+/* The Y axis is its own column so the bars keep the full remaining
+   width. One width token, because the hour row underneath has to be
+   indented by exactly the same amount or the labels stop sitting
+   under their bars. */
+.el-chart { --el-y: 36px; }
+
+.el-plot { display: grid; grid-template-columns: var(--el-y) 1fr; }
+
+.el-y { position: relative; height: 128px; }
+.el-y span {
+  position: absolute; right: 7px;
+  transform: translateY(50%);
+  font-size: 10px; line-height: 1; color: var(--fainter);
+  font-variant-numeric: tabular-nums;
+}
+
+.el-panel { position: relative; height: 128px; }
+/* Behind the bars, never over them: a line across a bar reads as a
+   mark on the data rather than on the scale. */
+.el-grid {
+  position: absolute; left: 0; right: 0; height: 1px;
+  background: var(--line-strong);
+}
+
+.el-bars {
+  position: absolute; inset: 0;
+  display: flex; align-items: flex-end; gap: 1px;
+}
+.el-bar {
+  flex: 1 1 0; min-width: 0;
+  border-radius: 2px 2px 0 0;
+  opacity: .82;
+  transition: opacity .1s ease;
+}
+.el-bar:hover { opacity: 1; }
+.el-bar.tone-aqua  { background: var(--aqua); }
+.el-bar.tone-gul   { background: var(--gul); }
+.el-bar.tone-coral { background: var(--coral); }
+/* Right now gets an outline, not a different colour: its colour is
+   already carrying "is this expensive", and overloading it would cost
+   the one thing the chart is for. */
+.el-bar.is-now {
+  opacity: 1;
+  box-shadow: 0 0 0 1px var(--text), 0 0 0 3px var(--bg);
+}
+
+.el-axis {
+  position: relative;
+  display: flex; justify-content: space-between;
+  padding-left: var(--el-y);
+  font-size: 10px; color: var(--fainter);
+}
+/* The unit sits in the gutter the hour row already leaves for the Y
+   labels, out of the flex flow so it cannot shift an hour off its
+   bars. Above the top tick it would collide with it. */
+.el-unit {
+  position: absolute; left: 0; width: var(--el-y);
+  padding-right: 7px; text-align: right;
+  color: var(--faint);
+}
+
+.el-legend {
+  display: flex; align-items: center; gap: 14px;
+  font-size: 11px; color: var(--faint);
+  padding-top: 3px; border-top: 1px solid var(--line-soft);
+}
+.el-legend span { display: flex; align-items: center; gap: 5px; }
+.el-legend i { width: 8px; height: 8px; border-radius: 2px; display: block; }
+.el-legend i.tone-aqua  { background: var(--aqua); }
+.el-legend i.tone-gul   { background: var(--gul); }
+.el-legend i.tone-coral { background: var(--coral); }
+.el-legend .el-legend-r { margin-left: auto; color: var(--fainter); }
+
+/* ---- consumption ------------------------------------------------ */
+.el-use { display: flex; align-items: flex-end; gap: 3px; height: 110px; }
+.el-use-d { flex: 1 1 0; display: flex; flex-direction: column;
+            align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+.el-use-d i { width: 100%; background: var(--lilac); border-radius: 2px 2px 0 0; opacity: .8; }
+.el-use-d span { font-size: 9px; color: var(--fainter); }
+
+.el-setup {
+  border: 1px dashed var(--line-pill);
+  border-radius: 10px;
+  padding: 14px 17px;
+  font-size: 13px; line-height: 1.6; color: var(--text-2);
+}
+.el-setup b { color: var(--text); display: block; margin-bottom: 7px; }
+.el-setup ol { margin: 0 0 8px; padding-left: 20px; }
+.el-setup li { margin-bottom: 4px; }
+.el-setup p { margin: 0; font-size: 12.5px; }
+
+/* ---- the price breakdown table ---------------------------------- */
+.el-t { width: 100%; border-collapse: collapse; font-size: 13px; }
+.el-t th {
+  text-align: left; font-size: 10.5px; font-weight: 600;
+  letter-spacing: .09em; text-transform: uppercase; color: var(--aqua);
+  padding: 0 10px 8px; border-bottom: 1px solid var(--line);
+}
+.el-t th.num, .el-t td.num { text-align: right; }
+.el-t td { padding: 9px 10px; border-bottom: 1px solid var(--line-soft); color: var(--text-2); }
+.el-t tbody tr:last-child td { border-bottom: none; }
+/* A line nobody has looked up yet is dimmed but never hidden: the
+   empty row IS the instruction. */
+.el-t tr.is-blank td { color: var(--fainter); }
+.el-t .el-src { font-size: 11.5px; color: var(--faint); }
+
+.el-abo { display: flex; flex-direction: column; gap: 3px; margin-top: 6px; }
+.el-abo-r {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 12.5px; color: var(--text-2);
+  padding: 5px 0; border-bottom: 1px solid var(--line-soft);
+}
+.el-abo-r.is-blank { color: var(--fainter); }
+.el-abo-r.is-sum {
+  border-bottom: none; border-top: 1px solid var(--line);
+  margin-top: 3px; padding-top: 8px; color: var(--text); font-weight: 600;
+}

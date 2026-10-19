@@ -1,0 +1,28 @@
+[
+  {
+    "t": "09:00",
+    "e": "Dagrofa sync",
+    "s": "Teams, 45 min",
+    "web": "https://outlook.office.com/calendar/item/MOCK-evt-1",
+    "teams": "https://teams.microsoft.com/l/meetup-join/MOCK-dagrofa-sync"
+  },
+  {
+    "t": "11:00",
+    "e": "Intro program: ADR session",
+    "s": "Room 3.12",
+    "web": "https://outlook.office.com/calendar/item/MOCK-evt-2"
+  },
+  {
+    "t": "13:30",
+    "e": "Architect guild",
+    "s": "Teams, 60 min",
+    "web": "https://outlook.office.com/calendar/item/MOCK-evt-3",
+    "teams": "https://teams.microsoft.com/l/meetup-join/MOCK-guild"
+  },
+  {
+    "t": "15:30",
+    "e": "Focus block: ArchForge pipeline",
+    "s": "Blocked",
+    "web": "https://outlook.office.com/calendar/item/MOCK-evt-4"
+  }
+]

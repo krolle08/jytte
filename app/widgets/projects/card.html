@@ -1,0 +1,18 @@
+{# Card for the "More" strip. The real surface is the /projects page. #}
+{% set data = state.data or {} %}
+{% if not data.get('ready') %}
+<p class="muted">projects not scanned yet</p>
+{% else %}
+{% set by_kind = data.get('by_kind') or {} %}
+<p class="proj-card-counts">
+  <span class="proj-count">{{ by_kind.get('ai') | selectattr('closed', 'equalto', false) | list | length }}</span>
+  <span class="muted small">AI</span>
+  <span class="proj-count">{{ by_kind.get('normal') | selectattr('closed', 'equalto', false) | list | length }}</span>
+  <span class="muted small">normal</span>
+</p>
+{% if by_kind.get('unknown') %}
+<p class="muted small">{{ by_kind.get('unknown') | length }} page(s) missing <code>project_kind</code></p>
+{% endif %}
+<p class="muted small"><a href="/projects">open projects &rarr;</a></p>
+{% endif %}
+{% if state.updated_at %}<p class="ts">updated <span data-ts="{{ state.updated_at }}">{{ state.updated_at[:16] }}</span></p>{% endif %}

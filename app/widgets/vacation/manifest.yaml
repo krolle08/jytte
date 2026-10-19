@@ -1,0 +1,12 @@
+name: vacation
+title: Skoleferier
+# The dates are computed, not fetched, so a refresh only matters when
+# the calendar rolls over a holiday boundary. Once an hour is already
+# generous; the payload is identical on every run within a day.
+refresh_minutes: 60
+client_refresh_seconds: 900
+claude_analyzer: false
+expose_mcp: true
+watcher: false
+# Real surface is its own page. No card on /dashboard.
+page_only: true
