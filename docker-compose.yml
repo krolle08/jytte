@@ -155,33 +155,6 @@ services:
     entrypoint: ["/bin/sh", "-c"]
     command: ["/docker-entrypoint-init.d/init.sh & exec tini -- /docker-entrypoint.sh"]
 
-  # ------------------------------------------------------------------
-  # Cloudflare tunnel, for the bank consent redirect only.
-  #
-  # Behind a `tunnel` profile so it never starts by accident: Jytte has
-  # no login, and a tunnel over the whole app would publish the
-  # dashboard. deploy/cloudflared/config.yml answers /bank/callback and
-  # 404s everything else, which is the control that makes this safe.
-  #
-  #   docker compose --profile tunnel up -d cloudflared
-  #
-  # Setup steps, all yours, are at the top of that config file.
-  # ------------------------------------------------------------------
-  cloudflared:
-    image: cloudflare/cloudflared:2026.9.1
-    container_name: jytte-cloudflared
-    profiles: ["tunnel"]
-    command: ["tunnel", "--config", "/etc/cloudflared/config.yml",
-              "run", "${CLOUDFLARE_TUNNEL_ID}"]
-    volumes:
-      - ./deploy/cloudflared/config.yml:/etc/cloudflared/config.yml:ro
-      # Created by `cloudflared tunnel create`. Gitignored: it is the
-      # tunnel's private credential.
-      - ./deploy/cloudflared/credentials.json:/etc/cloudflared/credentials.json:ro
-    depends_on:
-      - jytte
-    restart: unless-stopped
-
 volumes:
   jytte-data:
   n8n-data:
