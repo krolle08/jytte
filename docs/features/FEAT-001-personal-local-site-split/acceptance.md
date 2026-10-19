@@ -120,5 +120,10 @@ Then both return 404, and the bank push does not write widget_state
 - [ ] No em/en dash in user-facing strings
 
 ## Results
-- pytest: pending
-- code-review run: pending
+- pytest (2026-10-19, throwaway container from the branch image): 234 passed after the review fixes, 38 of them in `tests/test_site_split.py`
+- Import smoke: personal 10 widgets, local 8, unset 18; `JYTTE_SITE=persnal` raises naming the allowed values
+- Live local stack (`docker compose up -d --build jytte`): `/health` lists the 8 local widgets; `/` `/ai` `/jobs` `/poc` `/legacy` 200; `/budget` `/bank/callback` `/salary` `/widgets/budget` 404; `/jobs` shows no bank or elforbrug row
+- Temporary personal container on :18080: `/` 302; `/budget` `/bank` `/el` `/salary` `/news` `/vacation` `/stocks` `/legacy` `/legacy/budget` 200; `/ai` `/jobs` `/legacy/today` 404; sidebar links to the peer
+- `docker compose -f docker-compose.personal.yml config` renders, `JYTTE_SITE: personal`, `N8N_IMPORT_ONLY: bank.json elforbrug.json`
+- Not verified: the personal stack on the server itself; `init.sh` filtering (the local n8n was not restarted)
+- code-review (medium): 8 findings. Fixed: pure ASGI gate instead of BaseHTTPMiddleware (SSE /events still 200), peer groups keep GROUPS order (POC'S last), misspelt or missing `site:` loads nowhere with an ERROR, manifest parsed once, Boxes description, personal project name `jytte` so a server that ran the old stack keeps its volumes. Runbook step, not code: the local n8n still holds the bank and elforbrug workflows imported before the split (elforbrug is active), and `N8N_IMPORT_ONLY` cannot remove them. No change: a workflow missing from `site.WORKFLOWS` already fails `test_workflow_lists_partition`

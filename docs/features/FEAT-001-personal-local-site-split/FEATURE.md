@@ -2,7 +2,7 @@
 id: FEAT-001
 slug: personal-local-site-split
 title: Personal and local site split
-status: pending        # pending -> in-progress -> review -> done
+status: review        # pending -> in-progress -> review -> done
 priority: high
 target: python
 depends-on: []

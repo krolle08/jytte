@@ -1,4 +1,5 @@
 name: tasks
+site: local
 title: Tasks
 refresh_minutes: null
 client_refresh_seconds: 60

@@ -38,6 +38,8 @@ import logging
 import os
 from pathlib import Path
 
+from app import site
+
 log = logging.getLogger(__name__)
 
 DIR = Path(os.getenv("JYTTE_N8N_WORKFLOWS_PATH", "/jytte/n8n-workflows"))
@@ -227,6 +229,11 @@ def load(directory: Path | None = None) -> dict:
 
     jobs, broken = [], []
     for p in sorted(d.glob("*.json")):
+        # FEAT-001: the other site's n8n runs the other site's jobs.
+        # A file missing from site.WORKFLOWS is shown, not hidden, so a
+        # new workflow is visible until someone assigns it.
+        if not site.owns(site.workflow_site(p.name)):
+            continue
         try:
             jobs.append(_one(p, base_url))
         except Exception as e:  # noqa: BLE001

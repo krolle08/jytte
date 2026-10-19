@@ -43,7 +43,7 @@ docker compose stop jytte
 docker run --rm -v jytte_jytte-data:/d -v "$PWD":/out alpine cp /d/jytte.db /out/
 scp jytte.db <server>:/opt/jytte/
 # on the server, before the first start of the personal stack:
-docker run --rm -v jytte-personal_jytte-data:/d -v /opt/jytte:/in alpine cp /in/jytte.db /d/
+docker run --rm -v jytte_jytte-data:/d -v /opt/jytte:/in alpine cp /in/jytte.db /d/
 ```
 
 Volume names depend on the compose project name; check with

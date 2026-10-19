@@ -1,4 +1,5 @@
 name: elforbrug
+site: personal
 title: Elforbrug
 # source: n8n - the Eloverblik read lives in
 # deploy/n8n/workflows/elforbrug.json and arrives via

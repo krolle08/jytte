@@ -1,4 +1,5 @@
 name: elpris
+site: personal
 title: Elpriser
 # Day-ahead prices are published once a day, around 13:00 CET, for the
 # whole of tomorrow. Nothing changes in between, so the only reason to

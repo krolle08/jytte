@@ -11,7 +11,7 @@ from typing import Any, Callable
 import yaml
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from app import db, claude, sse
+from app import db, claude, site, sse
 
 log = logging.getLogger(__name__)
 
@@ -143,14 +143,31 @@ class WidgetRegistry:
             if not manifest_path.exists():
                 continue
             try:
-                widget = self._load(entry, manifest_path)
+                manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8")) or {}
+            except Exception as e:
+                log.exception("failed to read manifest %s: %s", entry.name, e)
+                continue
+            # FEAT-001: the other site's widgets are never imported, so
+            # their routers, MCP tools and scheduler jobs do not exist
+            # here either. A missing or misspelt `site:` is an ERROR and
+            # loads nowhere once a site is set: loading it everywhere
+            # would put a personal widget on the work machine.
+            tag = manifest.get("site")
+            if site.current() is not None and tag not in site.SITES:
+                log.error("skipped widget %s: site %r is not one of %s",
+                          entry.name, tag, ", ".join(site.SITES))
+                continue
+            if not site.owns(tag):
+                log.info("skipped widget %s: site %s", entry.name, tag)
+                continue
+            try:
+                widget = self._load(entry, manifest)
                 self.widgets[widget.name] = widget
                 log.info("loaded widget: %s", widget.name)
             except Exception as e:
                 log.exception("failed to load widget %s: %s", entry.name, e)
 
-    def _load(self, folder: Path, manifest_path: Path) -> Widget:
-        manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8")) or {}
+    def _load(self, folder: Path, manifest: dict) -> Widget:
         name = manifest.get("name") or folder.name
         module_root = f"app.widgets.{folder.name}"
 
