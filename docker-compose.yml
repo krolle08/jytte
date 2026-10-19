@@ -94,6 +94,15 @@ services:
         read_only: true
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    # `traefik` is home_server's shared proxy network (created by its
+    # core stack). Nginx Proxy Manager sits on it and forwards the one
+    # public path, /bank/callback, to jytte:8080; its proxy host config
+    # is in deploy/npm/bank-callback.conf. `default` stays so n8n still
+    # reaches Jytte as jytte:8080. On a machine without home_server,
+    # run `docker network create traefik` once.
+    networks:
+      - default
+      - traefik
     restart: unless-stopped
 
   n8n:
@@ -120,6 +129,10 @@ services:
       # The only directory the Read/Write Files node may touch. Used by
       # workflow `vault-refresh` to read the host's daily refresh status.
       N8N_RESTRICT_FILE_ACCESS_TO: "/vault-status"
+      # n8n refuses a login cookie over plain http unless the browser is
+      # on localhost. On the server it is reached as http://server:5678
+      # over Tailscale, which already encrypts the traffic.
+      N8N_SECURE_COOKIE: "false"
     volumes:
       - n8n-data:/home/node/.n8n
       # READ-ONLY. refresh-status.json is written on the host by
@@ -131,6 +144,11 @@ services:
         read_only: true
       - ./deploy/n8n/workflows:/workflows:ro
       - ./deploy/n8n/init.sh:/docker-entrypoint-init.d/init.sh:ro
+    # Same two networks as jytte: `default` to reach jytte:8080,
+    # `traefik` so Nginx Proxy Manager can forward to n8n:5678.
+    networks:
+      - default
+      - traefik
     depends_on:
       - jytte
     restart: unless-stopped
@@ -167,3 +185,7 @@ services:
 volumes:
   jytte-data:
   n8n-data:
+
+networks:
+  traefik:
+    external: true

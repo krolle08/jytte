@@ -225,6 +225,15 @@ is deliberate - `cloudflared tunnel run --token` ignores that file and
 takes its routing from the Cloudflare dashboard, which would move the
 one security control in the setup out of the repository.
 
+**On the home server the tunnel container is not used.** The host runs
+its own cloudflared, which hands the public hostname to Nginx Proxy
+Manager on home_server's `traefik` network. The same control moves
+there: `deploy/npm/bank-callback.conf` answers `/bank/callback` with
+its access log off and 404s everything else. Jytte and n8n are reached
+over Tailscale as `server:8080` and `server:5678`. n8n's public host
+(`deploy/npm/n8n-webhook.conf`) forwards `/webhook/` only; the editor
+holds every credential and stays on the tailnet.
+
 `/jobs` is the **job table** (`app/jobs.py`): every n8n workflow as
 one row - name, its own description, trigger and cadence, step count,
 active or not, and a button straight into n8n. `/workflows` draws one
