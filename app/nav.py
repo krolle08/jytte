@@ -13,7 +13,9 @@ from __future__ import annotations
 
 import logging
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
+
+from app import site
 
 log = logging.getLogger(__name__)
 
@@ -33,17 +35,20 @@ class Item:
 class Group:
     label: str
     items: list[Item] = field(default_factory=list)
+    # FEAT-001: which site serves these pages. None = both (Legacy,
+    # whose index is shared and filtered by legacy_pages()).
+    site: str | None = None
 
 
 # Screen ids are the handoff's: 1a..1i. `migrated=False` means the new
 # design is not built yet and the page says so and links to legacy,
 # rather than pretending.
 GROUPS: tuple[Group, ...] = (
-    Group("Overview", [
+    Group("Overview", site=site.LOCAL, items=[
         Item("home", "Home", "/", migrated=True, legacy_href="/legacy/today",
              blurb="Mail, kalender og opgaver. Mock 1a."),
     ]),
-    Group("AI", [
+    Group("AI", site=site.LOCAL, items=[
         Item("ai", "AI stack", "/ai", migrated=False, legacy_href="/legacy/ai",
              blurb="Stack health, overlap-analyse og skills-tabel. Mock 1b."),
         Item("constellation", "Constellation", "/constellation",
@@ -59,7 +64,7 @@ GROUPS: tuple[Group, ...] = (
         Item("jobs", "Jobs", "/jobs", migrated=True, legacy_href=None,
              blurb="Alle n8n-workflows i én tabel: status, kadence, link til n8n."),
     ]),
-    Group("Work", [
+    Group("Work", site=site.LOCAL, items=[
         Item("projects", "Projects", "/projects", migrated=False,
              legacy_href="/legacy/projects",
              blurb="Kunde, internt og privat i tre kolonner. Mock 1e."),
@@ -72,7 +77,7 @@ GROUPS: tuple[Group, ...] = (
         Item("opslag", "Opslagsværk", "/opslag", migrated=True, legacy_href=None,
              blurb="Værktøjer og begreber værd at slå op igen."),
     ]),
-    Group("Personal", [
+    Group("Personal", site=site.PERSONAL, items=[
         Item("news", "News", "/news", migrated=False, legacy_href="/legacy/news",
              blurb="Kanalliste og morgen-digest. Mock 1g."),
         Item("budget", "Budget", "/budget", migrated=False, legacy_href="/legacy/budget",
@@ -109,7 +114,7 @@ GROUPS: tuple[Group, ...] = (
     # where it sits and what the page says about itself. Keeping the
     # group last, below Legacy, makes "not part of the app yet" a
     # property of the navigation rather than a note in a file.
-    Group("POC'S", [
+    Group("POC'S", site=site.LOCAL, items=[
         Item("poc", "Oversigt", "/poc", migrated=True, legacy_href=None,
              blurb="Hvilke POC'er er WIP, og hvad mangler før PROD."),
         Item("poc-systems", "Systemmonitor", "/poc/systems",
@@ -133,46 +138,63 @@ _UNINDEXED = {"Legacy", "POC'S"}
 # does nothing, and a dead affordance is worse than none.
 _MAX_IDX = 9
 
-# Flat lookup, and the keyboard index the sidebar prints.
-ITEMS: dict[str, Item] = {}
-_idx = 0
-for _g in GROUPS:
-    for _it in _g.items:
-        if _g.label not in _UNINDEXED and _idx < _MAX_IDX:
-            _idx += 1
-            _it = Item(_it.key, _it.label, _it.href, _idx, _it.migrated,
-                       _it.legacy_href, _it.blurb)
-        ITEMS[_it.key] = _it
+# Flat lookup by key, for the active-page header. Every item of both
+# sites, so a key always resolves; indices are per site, in _groups().
+ITEMS: dict[str, Item] = {it.key: it for g in GROUPS for it in g.items}
 
-# Rebuild the groups with indices attached, so the template stays dumb.
-_INDEXED: list[dict] = []
-for _g in GROUPS:
-    # NOT "items": Jinja resolves dict.items to the bound method, so
-    # {{ g.items }} silently yields a builtin instead of the list. The
-    # same trap already cost this project a 500 on the front page.
-    _INDEXED.append({"label": _g.label,
-                     "links": [ITEMS[i.key] for i in _g.items]})
+
+def _groups(this: str | None, peer: str) -> list[dict]:
+    """The sidebar for one site, in GROUPS order so POC'S stays last.
+    Own groups get keyboard indices; the other site's groups become links
+    to `peer` with no index, or are left out when `peer` is blank. The
+    keys count only own items, so they stay 1..9 on both sites."""
+    out: list[dict] = []
+    idx = 0
+    for g in GROUPS:
+        if this is not None and g.site not in (None, this):
+            if peer:
+                out.append({"label": g.label,
+                            "links": [replace(it, href=peer + it.href, idx=0)
+                                      for it in g.items]})
+            continue
+        links = []
+        for it in g.items:
+            if g.label not in _UNINDEXED and idx < _MAX_IDX:
+                idx += 1
+                it = replace(it, idx=idx)
+            links.append(it)
+        # NOT "items": Jinja resolves dict.items to the bound method, so
+        # {{ g.items }} silently yields a builtin instead of the list. The
+        # same trap already cost this project a 500 on the front page.
+        out.append({"label": g.label, "links": links})
+    return out
 
 
 # Pages kept exactly as they were, reachable under /legacy/*. The route
 # column is what app/main.py mounts; `tpl` is rendered with the OLD
 # base.html and styles.css so a legacy page looks like it always did.
 LEGACY_PAGES: tuple[dict, ...] = (
-    {"slug": "today", "title": "Today", "url": "/legacy/today",
+    {"slug": "today", "site": site.LOCAL, "title": "Today", "url": "/legacy/today",
      "desc": "Daily brief, kalender, mail, vault-opgaver, PR'er, pipelines, taskboard."},
-    {"slug": "dashboard", "title": "Boxes", "url": "/legacy/dashboard",
-     "desc": "Widget-gitteret: aistack, budget, football, geomap, news."},
-    {"slug": "ai", "title": "AI-arkitektur", "url": "/legacy/ai",
+    {"slug": "dashboard", "site": site.LOCAL, "title": "Boxes", "url": "/legacy/dashboard",
+     "desc": "Widget-gitteret: de widgets på dette site der ikke har en egen side."},
+    {"slug": "ai", "site": site.LOCAL, "title": "AI-arkitektur", "url": "/legacy/ai",
      "desc": "Agent-konstellation, scope-opsummering, ledger og workflow-canvas."},
-    {"slug": "projects", "title": "Projects", "url": "/legacy/projects",
+    {"slug": "projects", "site": site.LOCAL, "title": "Projects", "url": "/legacy/projects",
      "desc": "AI- og normale projekter fra den genererede Projects/-visning."},
-    {"slug": "ado", "title": "Azure DevOps", "url": "/legacy/ado",
+    {"slug": "ado", "site": site.LOCAL, "title": "Azure DevOps", "url": "/legacy/ado",
      "desc": "Multi-org ADO: PR'er, pipelines og sprintboard, redigerbart."},
-    {"slug": "news", "title": "News", "url": "/legacy/news",
+    {"slug": "news", "site": site.PERSONAL, "title": "News", "url": "/legacy/news",
      "desc": "8-kategori RSS med billeder."},
-    {"slug": "budget", "title": "Budget", "url": "/legacy/budget",
+    {"slug": "budget", "site": site.PERSONAL, "title": "Budget", "url": "/legacy/budget",
      "desc": "Familiebudget med HTMX-CRUD."},
 )
+
+
+def legacy_pages() -> list[dict]:
+    """The /legacy index for this site. A legacy page of the other site
+    answers 404 here, so listing it would be a dead link."""
+    return [p for p in LEGACY_PAGES if site.owns(p["site"])]
 
 
 async def status(registry) -> list[dict]:
@@ -232,6 +254,6 @@ async def context(registry, active: str) -> dict:
         # Jinja, so hunting for it in the markup silently yielded None
         # and the page printed the raw key instead of the label.
         "here": ITEMS.get(active),
-        "groups": _INDEXED,
+        "groups": _groups(site.current(), site.peer_url()),
         "status": await status(registry),
     }

@@ -1,0 +1,134 @@
+# =============================================================================
+# Personal site, for the home server. FEAT-001.
+#
+# Standalone, not an overlay: docker-compose.yml is the local site and
+# carries Windows bind mounts (C:\Obsidian\...) that do not exist on
+# Ubuntu, and an overlay cannot remove a volume. Run it alone:
+#
+#   docker compose -f docker-compose.personal.yml up -d --build
+#
+# Start home_server's core stack first: it creates the `traefik` network
+# that Nginx Proxy Manager uses to reach jytte:8080 and n8n:5678.
+#
+# Reached as:
+#   tailnet / LAN   http://server:8080 (Jytte), http://server:5678 (n8n)
+#   internet        https://jytte.<domain>/bank/callback  (deploy/npm/bank-callback.conf)
+#                   https://n8n.<domain>/webhook/...       (deploy/npm/n8n-webhook.conf)
+#
+# Server .env needs only the personal names: JYTTE_INTERNAL_SECRET,
+# N8N_ENCRYPTION_KEY, JYTTE_BANK_SESSION_WEBHOOK, WEBHOOK_URL,
+# N8N_BASE_URL=http://server:5678, and JYTTE_PEER_URL if the sidebar
+# should link back to the local site. No AZDO_*, mail or calendar keys.
+#
+# One-time data copy, with Jytte stopped on both ends (runbook in
+# docs/features/FEAT-001-personal-local-site-split/notes.md):
+#   local:  docker compose stop jytte
+#           docker run --rm -v jytte_jytte-data:/d -v "$PWD":/out alpine cp /d/jytte.db /out/
+#   server: docker volume create jytte_jytte-data
+#           docker run --rm -v jytte_jytte-data:/d -v /opt/jytte:/in alpine cp /in/jytte.db /d/
+# First run `docker volume ls` on the server: if jytte_jytte-data
+# already exists, the server has data of its own, so decide which copy
+# is newer before overwriting it.
+#
+# Then, in the LOCAL n8n UI, deactivate or delete bank and elforbrug.
+# N8N_IMPORT_ONLY only stops new imports; the copies imported before the
+# split stay in the local n8n and keep pushing to a site that now
+# answers 404 for them.
+#
+# The bank and Eloverblik credentials do not move with the database:
+# n8n keeps them in its own encrypted store. Re-create them in this n8n.
+# =============================================================================
+# Same project name as docker-compose.yml on purpose. If the server
+# already ran the old single stack, this replaces its containers and
+# keeps its volumes (jytte_jytte-data, jytte_n8n-data) instead of
+# colliding on the container names and orphaning the server's data.
+# Never start this file on the work machine: it would replace the
+# local stack.
+name: jytte
+
+services:
+  jytte:
+    build: .
+    container_name: jytte
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      TZ: "Europe/Copenhagen"
+      JYTTE_SITE: "personal"
+      JYTTE_DATA_DIR: "/data"
+      JYTTE_DB_PATH: "/data/jytte.db"
+      JYTTE_NORDNET_DIR: "/data/nordnet"
+      JYTTE_NEWS_FEEDS: "https://news.ycombinator.com/rss"
+      JYTTE_CLAUDE_MODEL: "claude-haiku-4-5-20251001"
+    volumes:
+      - jytte-data:/data
+      # Same reasons as in docker-compose.yml: categories, rules and
+      # el.yml are edited by hand and take effect on the next page load.
+      - type: bind
+        source: ./config
+        target: /jytte/config
+        read_only: true
+      # Drop the Nordnet CSV export here. Gitignored, personal data.
+      - type: bind
+        source: ./data/nordnet
+        target: /data/nordnet
+        read_only: true
+    networks:
+      # `default` so n8n reaches Jytte as jytte:8080; `traefik` so NPM
+      # can forward /bank/callback.
+      - default
+      - traefik
+    restart: unless-stopped
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    ports:
+      - "5678:5678"
+    env_file:
+      - .env
+    environment:
+      TZ: "Europe/Copenhagen"
+      N8N_HOST: "localhost"
+      N8N_PORT: "5678"
+      N8N_PROTOCOL: "http"
+      JYTTE_BASE_URL: "http://jytte:8080"
+      DB_TYPE: "sqlite"
+      GENERIC_TIMEZONE: "Europe/Copenhagen"
+      # See deploy/n8n/README.md for the trade-off.
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
+      # No personal job reads files. Pointing the File node at a path
+      # that is not mounted keeps it unable to read anything.
+      N8N_RESTRICT_FILE_ACCESS_TO: "/vault-status"
+      # n8n refuses a login cookie over plain http unless the browser is
+      # on localhost. Reached as http://server:5678 over Tailscale, which
+      # already encrypts the traffic.
+      N8N_SECURE_COOKIE: "false"
+      # FEAT-001: only the personal site's jobs. Pinned to app/site.py
+      # WORKFLOWS by tests/test_site_split.py.
+      N8N_IMPORT_ONLY: >-
+        bank.json elforbrug.json
+    volumes:
+      - n8n-data:/home/node/.n8n
+      - ./deploy/n8n/workflows:/workflows:ro
+      - ./deploy/n8n/init.sh:/docker-entrypoint-init.d/init.sh:ro
+    networks:
+      # `traefik` so NPM can forward /webhook/ to n8n:5678.
+      - default
+      - traefik
+    depends_on:
+      - jytte
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["/docker-entrypoint-init.d/init.sh & exec tini -- /docker-entrypoint.sh"]
+
+volumes:
+  jytte-data:
+  n8n-data:
+
+networks:
+  # Created by home_server's core stack, not by this file.
+  traefik:
+    external: true

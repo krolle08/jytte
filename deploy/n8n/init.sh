@@ -44,6 +44,15 @@ count=0
 for f in "${WORKFLOWS_DIR}"/*.json; do
     [ -f "$f" ] || continue
     name=$(basename "$f")
+    # FEAT-001: each site's n8n imports only its own jobs. The lists
+    # live in the compose files and are pinned to app/site.py WORKFLOWS
+    # by tests/test_site_split.py. Unset imports everything.
+    if [ -n "${N8N_IMPORT_ONLY}" ]; then
+        case " ${N8N_IMPORT_ONLY} " in
+            *" ${name} "*) ;;
+            *) echo "[init] skipping ${name} (not in N8N_IMPORT_ONLY)"; continue ;;
+        esac
+    fi
     echo "[init] importing ${name}"
     # The `--separate` flag plus `--input=<file>` is the canonical
     # CLI-import form. Returns non-zero on parse errors but not on

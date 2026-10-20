@@ -8,13 +8,13 @@ from pathlib import Path
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from jinja2 import ChoiceLoader, FileSystemLoader
 
 from app import (aiview, bankauth, claude, db, frontpage, jyviews,
-                 mcp_server, nav, sse, today, watchdog)
+                 mcp_server, nav, site, sse, today, watchdog)
 from app.registry import WidgetRegistry
 from app.sse import sse_router
 
@@ -74,6 +74,39 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Jytte", lifespan=lifespan)
+
+
+class SiteGate:
+    """FEAT-001. The other site's pages answer 404 here, in one place,
+    instead of a check in each of thirty handlers. Widget routes need no
+    gate: an unloaded widget has no router and the generic handlers
+    already 404 on an unknown name. `/` is local Home, so the personal
+    site sends it to its own first page instead.
+
+    Plain ASGI, not @app.middleware("http"): that wraps every response in
+    BaseHTTPMiddleware's task group, including the SSE stream on /events
+    and the MCP mount, where disconnects then stop propagating. Here a
+    shared path is handed straight through untouched."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http":
+            path = scope["path"]
+            owner = site.path_site(path)
+            if owner is not None and not site.owns(owner):
+                if path == "/" and site.current() == site.PERSONAL:
+                    resp = RedirectResponse(site.PERSONAL_ROOT, status_code=302)
+                else:
+                    resp = JSONResponse({"detail": "Not Found"}, status_code=404)
+                await resp(scope, receive, send)
+                return
+        await self.app(scope, receive, send)
+
+
+app.add_middleware(SiteGate)
+
 app.mount("/static", StaticFiles(directory=str(BASE / "static")), name="static")
 DOCS_DIR = BASE.parent / "docs"
 if DOCS_DIR.exists():
@@ -335,7 +368,7 @@ async def legacy_index(request: Request):
     """Index of everything built before the redesign. Kept so screens
     can be migrated one at a time without losing anything in between."""
     return await _shell(request, "legacy", "jy_legacy.html",
-                        {"pages": nav.LEGACY_PAGES})
+                        {"pages": nav.legacy_pages()})
 
 
 # ----------------------------------------------------------------------

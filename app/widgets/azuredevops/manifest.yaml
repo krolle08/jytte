@@ -1,4 +1,5 @@
 name: azuredevops
+site: local
 title: Azure DevOps
 refresh_minutes: 5
 client_refresh_seconds: 60

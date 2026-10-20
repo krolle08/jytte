@@ -1,4 +1,5 @@
 name: aistack
+site: local
 title: AI-stack
 # Reads .ai-scan/ai.json, produced on the host by scripts/scan_ai.py.
 # 10 minutes is plenty: the file only changes when the scan is re-run.

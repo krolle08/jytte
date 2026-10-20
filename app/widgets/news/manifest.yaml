@@ -1,4 +1,5 @@
 name: news
+site: personal
 title: News
 refresh_minutes: 30
 client_refresh_seconds: 120

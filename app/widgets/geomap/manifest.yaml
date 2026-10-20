@@ -1,4 +1,5 @@
 name: geomap
+site: personal
 title: World Pulse
 refresh_minutes: 20
 client_refresh_seconds: 600

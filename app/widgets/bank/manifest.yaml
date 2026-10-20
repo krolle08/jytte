@@ -1,4 +1,5 @@
 name: bank
+site: personal
 title: Bank
 # source: n8n - the open-banking read lives in
 # deploy/n8n/workflows/bank.json and arrives via

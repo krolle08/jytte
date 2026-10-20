@@ -1,4 +1,5 @@
 name: projects
+site: local
 title: Projects
 # Vault files change rarely and only when the user edits Obsidian, so a
 # 15-minute poll is plenty. No watcher: unlike `tasks`, the LLM-Wiki

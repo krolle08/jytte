@@ -1,4 +1,5 @@
 name: salary
+site: personal
 title: Løn
 # Nothing to poll: the profile only changes when you edit it or get a
 # new skattekort. Refresh is user-driven.

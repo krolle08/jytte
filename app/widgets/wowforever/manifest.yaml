@@ -1,4 +1,5 @@
 name: wowforever
+site: local
 title: WoW Forever
 # Blizzard posts development notes about once a week and edits the
 # newest post in place for a day or two after. Hourly is plenty, and

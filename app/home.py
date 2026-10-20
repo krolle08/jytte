@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 from datetime import date, datetime, time, timezone
 
-from app import frontpage
+from app import frontpage, site
 from app.widgets.email import highlight as mail_highlight
 
 log = logging.getLogger(__name__)
@@ -191,9 +191,16 @@ async def build(registry, today_: date | None = None) -> dict:
         {"label": "AI-stak", "value": len(ai.get("agents") or {}),
          "sub": f"{(ai.get('stats') or {}).get('drifted', 0)} driftet",
          "tone": "lilac", "href": "/legacy/ai"},
-        {"label": "Budget", "value": "-", "sub": "ikke migreret endnu",
-         "tone": "", "href": "/legacy/budget"},
     ]
+    # FEAT-001: budget lives on the personal site. Running everything,
+    # the tile keeps its legacy link; on the local site it points at the
+    # peer, and without a peer there is nothing to point at.
+    if site.current() is None:
+        tiles.append({"label": "Budget", "value": "-", "sub": "ikke migreret endnu",
+                      "tone": "", "href": "/legacy/budget"})
+    elif site.peer_url():
+        tiles.append({"label": "Budget", "value": "-", "sub": "på serveren",
+                      "tone": "", "href": site.peer_url() + "/budget"})
 
     return {
         "eyebrow": f"{DAYS[now.weekday()]} {now.day}. {MONTHS[now.month - 1]} · {now:%H:%M}",
