@@ -165,6 +165,8 @@
   max-width: 100%; max-height: 100%; object-fit: contain; display: block;
   border-radius: 4px;
 }
+.poc-cert-pdf { display: block; max-width: 100%; max-height: 100%; border-radius: 4px; }
+.poc-cert-pdf[hidden] { display: none; }
 .poc-cert-doc {
   font-size: 22px; letter-spacing: .08em; color: var(--faint);
   border: 1px dashed var(--line-pill); border-radius: 10px; padding: 18px 26px;

@@ -54,6 +54,12 @@
       {% if c.kind == 'billede' %}
       <img src="{{ c.url }}" alt="{{ c.title }}" loading="lazy" />
       {% else %}
+      {# pdf.js draws page 1 onto the canvas, so the card shows the
+         certificate rather than a placeholder. Not an <iframe>: the
+         browser's PDF viewer varies per browser, zooms to its own
+         idea of fit, and is absent in some. The label stays until the
+         page is drawn and is what remains if drawing fails. #}
+      <canvas class="poc-cert-pdf" data-pdf="{{ c.url }}" aria-label="{{ c.title }}" hidden></canvas>
       <span class="poc-cert-doc mono">{{ c.suffix|upper }}</span>
       {% endif %}
     </a>
@@ -96,4 +102,38 @@
       kode, og at presse dem sammen ville gøre begge dårligere.</p>
   </div>
 </div>
+{% endblock %}
+
+{% block script_extra %}
+<script src="/static/vendor/pdfjs-3.11.174-pdf.min.js"></script>
+<script>
+(function () {
+  var lib = window.pdfjsLib;
+  if (!lib) return;
+  lib.GlobalWorkerOptions.workerSrc = "/static/vendor/pdfjs-3.11.174-pdf.worker.min.js";
+  document.querySelectorAll("canvas[data-pdf]").forEach(function (cv) {
+    var box = cv.parentElement;
+    lib.getDocument(cv.dataset.pdf).promise
+      .then(function (doc) { return doc.getPage(1); })
+      .then(function (page) {
+        // Scale to the box at device resolution so text stays sharp.
+        var base = page.getViewport({ scale: 1 });
+        var pad = parseFloat(getComputedStyle(box).paddingLeft) * 2 || 0;
+        var fit = Math.min((box.clientWidth - pad) / base.width, (box.clientHeight - pad) / base.height);
+        var dpr = window.devicePixelRatio || 1;
+        var vp = page.getViewport({ scale: fit * dpr });
+        cv.width = vp.width; cv.height = vp.height;
+        cv.style.width = (vp.width / dpr) + "px";
+        cv.style.height = (vp.height / dpr) + "px";
+        return page.render({ canvasContext: cv.getContext("2d"), viewport: vp }).promise;
+      })
+      .then(function () {
+        cv.hidden = false;
+        var label = box.querySelector(".poc-cert-doc");
+        if (label) label.remove();
+      })
+      .catch(function (e) { console.warn("[certifikater] kunne ikke tegne", cv.dataset.pdf, e); });
+  });
+})();
+</script>
 {% endblock %}
