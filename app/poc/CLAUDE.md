@@ -164,3 +164,16 @@ file; otherwise the hand file. A hand file with a later date always
 wins, so corrections go in as files. The analyzer runs on a local
 model through Ollama on the host (decided 2026-10-17, no paid key);
 when Ollama is down the page keeps the hand note and prints why.
+
+**Same post, hand file wins** (2026-10-21). The analyzer keys its note
+on the post's edit date, so its reading of an already transcribed post
+looked newer and a 7B model's three-item summary replaced the full
+transcription. A hand file now names its `post_id`, and `choose()`
+keeps the file when the live note's `_source.post_id` is the same.
+
+**Launch news lives in `wowforever_news.json`**, not in a note: dates,
+dungeons and raids come from worldofwarcraft.com articles and other
+blue posts, while a note is one forum post. Hand-curated, checked by
+`validate_news()`, rendered as "News from Blizzard". Its dates also go
+into the newest note's `timeline` and `milestones`, which is where the
+countdowns read them.

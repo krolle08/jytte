@@ -26,7 +26,11 @@ option A would have needed a change to code every n8n widget shares.
   thread. Each update is a new staff post; Blizzard edits the newest in
   place, so identity is `post_id` + `updated_at`.
 - `.../groups/blizzard-tracker/posts.json` - every blue post, filtered
-  to `JYTTE_WOW_CATEGORIES` (default `349,347`) and to newsy titles.
+  to `JYTTE_WOW_CATEGORIES` (default `349,347`) and to newsy titles,
+  plus every post by `BlizzardEntertainment`: that account cross-posts
+  the worldofwarcraft.com articles under marketing titles the keyword
+  filter missed (dungeons, raids, name reservation). Same title twice
+  is one entry.
 
 `JYTTE_WOW_NOTES_TOPIC` (default `2360696`) and the categories are env
 vars because **both change at launch on 2026-11-04**, when updates move

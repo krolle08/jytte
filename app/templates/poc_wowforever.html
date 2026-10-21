@@ -50,7 +50,7 @@
 
   <nav class="wf-jump" aria-label="Afsnit">
     <a href="#wf-timeline">Timeline</a><a href="#wf-fixes">Fixes</a><a href="#wf-racials">Racials</a>
-    <a href="#wf-classes">Classes</a><a href="#wf-world">World</a><a href="#wf-ui">Interface</a>{% if blue_posts %}<a href="#wf-blue">Blue posts</a>{% endif %}<a href="#wf-next">What's next</a>
+    <a href="#wf-classes">Classes</a><a href="#wf-world">World</a><a href="#wf-ui">Interface</a>{% if news.posts %}<a href="#wf-news">News</a>{% endif %}{% if blue_posts %}<a href="#wf-blue">Blue posts</a>{% endif %}<a href="#wf-next">What's next</a>
   </nav>
 
   <section id="wf-timeline">
@@ -117,9 +117,37 @@
     <div class="wf-tips">{% for e in n.interface %}{{ tip(e) }}{% endfor %}</div>
   </section>
 
-  {% if blue_posts %}
+  {% set step = namespace(n=6) %}
+  {% if news.posts %}{% set step.n = step.n + 1 %}
+  <section id="wf-news">
+    <div class="wf-head"><span class="wf-step">{{ step.n }}</span><h2>News from Blizzard</h2></div>
+    <p class="wf-why">Launch news outside the development notes, from worldofwarcraft.com and the blue posts. Checked {{ news.updated }}.</p>
+    <div class="wf-tips">
+      {% for p in news.posts %}<a class="wf-tip wf-news" href="{{ p.url }}" target="_blank" rel="noopener noreferrer">{{ ic(p.icon_url) }}<div><span class="wf-spec">{{ p.date_label }} &middot; {{ p.label }}</span><div class="wf-nm">{{ p.title }}</div><div class="wf-ds">{{ p.text }}</div></div></a>{% endfor %}
+    </div>
+    {% if news.raids %}
+    <div class="wf-raids">
+      {% for r in news.raids %}<div class="wf-frame wf-raid"><div class="wf-size"><b>{{ r.size }}</b><span>players</span></div><div><h3>{{ r.name }}</h3><div class="wf-ds">{{ r.bosses }} &middot; {{ r.where }}</div><p>{{ r.text }}</p></div></div>{% endfor %}
+    </div>
+    {% endif %}
+    {% if news.regions %}
+    <div class="wf-two" style="margin-top:16px">
+      {% for region, ds in news.regions %}
+      <div class="wf-frame"><h3>Dungeons, {{ region }}</h3>
+        <table class="wf-dg">
+          <thead><tr><th>Dungeon</th><th>Level</th><th>Where</th></tr></thead>
+          <tbody>{% for d in ds %}<tr><td><b>{{ d.name }}</b>{% if d.access %}<small>{{ d.access }}</small>{% endif %}</td><td class="lv">{{ d.levels }}</td><td>{{ d.where }}</td></tr>{% endfor %}</tbody>
+        </table>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  {% if blue_posts %}{% set step.n = step.n + 1 %}
   <section id="wf-blue">
-    <div class="wf-head"><span class="wf-step">7</span><h2>From the blue tracker</h2></div>
+    <div class="wf-head"><span class="wf-step">{{ step.n }}</span><h2>From the blue tracker</h2></div>
     <p class="wf-why">Newest Blizzard posts in the WoW Forever forums{% if fetched_at %}, checked <span data-ts="{{ fetched_at }}">{{ fetched_at[:16]|replace("T", " ") }} UTC</span>{% endif %}.</p>
     <div class="wf-frame">
       {% for p in blue_posts[:6] %}<div class="wf-quest"><span class="wf-mark">!</span><div><div class="z"><a href="{{ p.url }}" target="_blank" rel="noopener noreferrer">{{ p.title }}</a></div><div class="t">{{ p.excerpt }}</div></div></div>{% endfor %}
@@ -128,7 +156,7 @@
   {% endif %}
 
   <section id="wf-next">
-    <div class="wf-head"><span class="wf-step">{{ 8 if blue_posts else 7 }}</span><h2>What's next</h2></div>
+    <div class="wf-head"><span class="wf-step">{{ step.n + 1 }}</span><h2>What's next</h2></div>
     <div class="wf-portal">
       <div class="wf-crest">The gates open soon</div>
       <div class="wf-count">

@@ -42,6 +42,11 @@ def html_to_text(cooked: str) -> str:
 # the ones that change the game for everybody.
 NEWSY = re.compile(r"development notes|patch notes|hotfix|known issues|maintenance|stress test|launch|roadmap", re.I)
 
+# The account worldofwarcraft.com articles are cross-posted under. Its
+# titles are marketing ("Explore the New Dungeons ..."), so NEWSY misses
+# them, but every one of them is news by definition.
+NEWS_ACCOUNT = "BlizzardEntertainment"
+
 
 FORUM = "https://us.forums.blizzard.com/en/wow"
 
@@ -50,18 +55,26 @@ def pick_blue_posts(posts: list[dict], categories: set[int], limit: int = 10) ->
     """Newsy blue posts in the given categories, one per topic. The
     tracker returns forum-relative urls (/t/slug/id/n), made absolute here."""
     seen: set[int] = set()
+    titles: set[str] = set()
     picked = []
     for p in posts:
         if p.get("category_id") not in categories or p.get("topic_id") in seen:
             continue
-        if not NEWSY.search(p.get("topic_title") or ""):
+        title = p.get("topic_title") or ""
+        if not (NEWSY.search(title) or p.get("username") == NEWS_ACCOUNT):
+            continue
+        # Blizzard sometimes posts the same article twice as two topics.
+        if title.strip().lower() in titles:
             continue
         seen.add(p["topic_id"])
+        titles.add(title.strip().lower())
         picked.append({
             "title": html_to_text(p.get("topic_title", "")),
             "url": (FORUM + p["url"]) if str(p.get("url", "")).startswith("/") else p.get("url", ""),
             "created_at": p.get("created_at", ""),
-            "excerpt": html_to_text(p.get("excerpt", ""))[:280],
+            # Cross-posted articles open with "[<title>]", which only
+            # repeats the heading above it.
+            "excerpt": re.sub(r"^\[[^\]]*\]\s*", "", html_to_text(p.get("excerpt", "")))[:280],
         })
         if len(picked) >= limit:
             break

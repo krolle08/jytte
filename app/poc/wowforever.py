@@ -33,6 +33,10 @@ from pathlib import Path
 log = logging.getLogger(__name__)
 
 NOTES_DIR = Path(__file__).parent / "wowforever_notes"
+# Launch news that is not part of any development note: dates, dungeons,
+# raids. One hand-curated file, because a dev note is one forum post and
+# these come from worldofwarcraft.com articles and other blue posts.
+NEWS_FILE = Path(__file__).parent / "wowforever_news.json"
 ICON_DIR = Path(__file__).resolve().parent.parent / "static" / "wow" / "icons"
 ICON_URL = "/static/wow/icons/{}.jpg"
 FALLBACK_ICON = "inv_misc_questionmark"
@@ -115,6 +119,44 @@ def validate_note(note: dict) -> list[str]:
     if not any(note.get(k) for k in ("fixes", "races", "classes", "quests", "gear", "interface")):
         bad.append("note has no content sections")
     return bad
+
+
+def load_news(path: Path | None = None) -> dict:
+    """The news file, or {} when it is absent or unreadable. The page
+    renders without the section rather than failing."""
+    f = path or NEWS_FILE
+    try:
+        return json.loads(f.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return {}
+    except (OSError, ValueError) as e:
+        log.warning("wowforever: %s could not be read: %s", f.name, e)
+        return {}
+
+
+def validate_news(news: dict) -> list[str]:
+    """Problems with the news file, empty when it can be rendered."""
+    bad: list[str] = []
+    for i, p in enumerate(news.get("posts", [])):
+        for f in ("date", "icon", "title", "text", "url"):
+            if not isinstance(p.get(f), str) or not p.get(f):
+                bad.append(f"posts[{i}].{f} missing")
+        try:
+            date.fromisoformat(str(p.get("date")))
+        except ValueError:
+            bad.append(f"posts[{i}].date is not an ISO date")
+    for i, d in enumerate(news.get("dungeons", [])):
+        for f in ("name", "levels", "region", "where"):
+            if not d.get(f):
+                bad.append(f"dungeons[{i}].{f} missing")
+    for i, r in enumerate(news.get("raids", [])):
+        if not r.get("name") or not isinstance(r.get("size"), int):
+            bad.append(f"raids[{i}] needs name and an integer size")
+    return bad
+
+
+def news_icon_names(news: dict) -> set[str]:
+    return {p["icon"] for p in news.get("posts", []) if p.get("icon")}
 
 
 def available_icons() -> list[str]:
@@ -203,6 +245,13 @@ def choose(file_note: dict | None, live_note: dict | None) -> str:
         return "file"
     if not file_note:
         return "live"
+    # Same forum post: the analyzer's note is a second reading of what
+    # the hand file already transcribed, not a newer update. Its key is
+    # the post's edit date, so without this a 7B model's three-item
+    # summary outranked the full transcription of the same post.
+    pid = file_note.get("post_id")
+    if pid and (live_note.get("_source") or {}).get("post_id") == pid:
+        return "file"
     return "live" if live_note["key"] > file_note["key"] else "file"
 
 
@@ -240,6 +289,17 @@ def build(today: date | None = None, widget_data: dict | None = None) -> dict:
         m["days_left"] = days_left(m["date"], today)
         m["date_label"] = date_label(m["date"])
 
+    news = load_news()
+    if validate_news(news):
+        log.warning("wowforever: news file skipped: %s", validate_news(news)[:3])
+        news = {}
+    news = json.loads(json.dumps(news))
+    for p in news.get("posts", []):
+        p["icon_url"] = _icon(p["icon"])
+        p["date_label"] = date_label(p["date"])
+    news["regions"] = [(reg, [d for d in news.get("dungeons", []) if d["region"] == reg])
+                       for reg in dict.fromkeys(d["region"] for d in news.get("dungeons", []))]
+
     src = raw.get("_source", {})
     return {"ready": True, "reason": "", "note": note,
             "provenance": "analyzer" if pick == "live" else "hand",
@@ -248,4 +308,6 @@ def build(today: date | None = None, widget_data: dict | None = None) -> dict:
             "fetched_at": wd.get("fetched_at", ""),
             "widget_reason": wd.get("reason", "") or wd.get("note_error", ""),
             "blue_posts": wd.get("blue_posts", []),
-            "missing": sorted(missing_icons(raw))}
+            "news": news,
+            "missing": sorted(missing_icons(raw) | {n for n in news_icon_names(news)
+                                                     if not (ICON_DIR / f"{n}.jpg").is_file()})}

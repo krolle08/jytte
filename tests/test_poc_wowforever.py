@@ -101,3 +101,61 @@ def test_pick_blue_posts_filters_and_absolutises():
 def test_extract_json_tolerates_a_fence():
     assert parse.extract_json('```json\n{"a": 1}\n```') == {"a": 1}
     assert parse.extract_json("no json here") is None
+
+
+# ---- launch news and the same-post rule ---------------------------------
+
+def test_news_file_validates_and_has_its_icons():
+    news = wf.load_news()
+    assert news.get("posts"), "app/poc/wowforever_news.json has no posts"
+    assert wf.validate_news(news) == []
+    missing = {n for n in wf.news_icon_names(news) if not (wf.ICON_DIR / f"{n}.jpg").is_file()}
+    assert not missing, sorted(missing)
+    assert '"items"' not in wf.NEWS_FILE.read_text(encoding="utf-8")
+
+
+def test_validate_news_rejects_a_bad_entry():
+    assert wf.validate_news({"posts": [{"date": "soon", "title": "x"}]})
+    assert wf.validate_news({"raids": [{"name": "Onyxia's Lair", "size": "40"}]})
+
+
+def test_choose_keeps_the_hand_file_for_the_same_post():
+    # The analyzer keys its note on the post's edit date, so a second
+    # reading of the transcribed post looks newer than the hand file.
+    hand = wf.load(wf.note_files()[-1])
+    assert hand.get("post_id"), "the newest hand file should name the post it transcribes"
+    same = dict(hand, key="2026-10-16", _source={"post_id": hand["post_id"]})
+    other = dict(hand, key="2026-10-23", _source={"post_id": hand["post_id"] + 1})
+    assert wf.choose(hand, same) == "file"
+    assert wf.choose(hand, other) == "live"
+
+
+def test_build_carries_the_news_grouped_by_region():
+    ctx = wf.build(today=date(2026, 10, 21))
+    news = ctx["news"]
+    assert all(p["icon_url"].startswith("/static/wow/icons/") for p in news["posts"])
+    regions = [r for r, _ in news["regions"]]
+    assert regions == ["Eastern Kingdoms", "Kalimdor"]
+    assert sum(len(ds) for _, ds in news["regions"]) == len(news["dungeons"])
+
+
+def test_pick_blue_posts_keeps_blizzard_news_and_drops_duplicate_titles():
+    posts = [
+        {"category_id": 347, "topic_id": 10, "username": "BlizzardEntertainment",
+         "topic_title": "Explore the New Dungeons of World of Warcraft: Forever", "url": "/t/d/10/1"},
+        {"category_id": 347, "topic_id": 11, "username": "BlizzardEntertainment",
+         "topic_title": "Raid Overview", "url": "/t/r/11/1"},
+        {"category_id": 347, "topic_id": 12, "username": "BlizzardEntertainment",
+         "topic_title": "Raid Overview", "url": "/t/r/12/1"},
+        {"category_id": 349, "topic_id": 13, "username": "Kaivax",
+         "topic_title": "Druid cat form quest", "url": "/t/c/13/1"},
+    ]
+    got = [g["url"] for g in parse.pick_blue_posts(posts, {347, 349})]
+    assert got == [parse.FORUM + "/t/d/10/1", parse.FORUM + "/t/r/11/1"]
+
+
+def test_pick_blue_posts_drops_the_bracketed_title_from_the_excerpt():
+    posts = [{"category_id": 347, "topic_id": 1, "username": "BlizzardEntertainment",
+              "topic_title": "Raid Overview", "url": "/t/r/1/1",
+              "excerpt": "[Raid Overview] Barrow Deeps, Hyjal Summit"}]
+    assert parse.pick_blue_posts(posts, {347})[0]["excerpt"] == "Barrow Deeps, Hyjal Summit"

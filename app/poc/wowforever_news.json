@@ -1,0 +1,70 @@
+{
+  "updated": "2026-10-21",
+  "checked_by": "Claude, read from worldofwarcraft.blizzard.com and the Blizzard forums",
+  "posts": [
+    {
+      "date": "2026-10-20",
+      "icon": "inv_misc_pocketwatch_01",
+      "title": "Stress Test tonight, then the beta closes for good",
+      "text": "The beta goes offline on 21 October and WoW Forever opens on its regional hardware for a Stress Test, 19:00 to 03:00 CEST. Any WoW account can join, no subscription needed. Afterwards every Stress Test character, names included, is deleted and the beta reopens until it closes for good on Friday 23 October at 10:00 PDT (19:00 CEST).",
+      "label": "Blizzard forums, Kaivax",
+      "url": "https://us.forums.blizzard.com/en/wow/t/heads-up-wow-forever-stress-test-on-october-21/2387920"
+    },
+    {
+      "date": "2026-10-20",
+      "icon": "inv_misc_note_01",
+      "title": "Early Name Reservation, 27 October to 3 November",
+      "text": "Reserve names for up to three characters in total across all Rulesets. Europe opens 27 October at 18:00 CET. Requires a pre-purchase of the Skyborne Heroic Pack, the Skyborne Epic Pack or the Warcraft Forever Collection. First come, first served.",
+      "label": "worldofwarcraft.com",
+      "url": "https://worldofwarcraft.blizzard.com/en-us/news/24303866"
+    },
+    {
+      "date": "2026-10-20",
+      "icon": "inv_misc_head_dragon_black",
+      "title": "Three level 60 raids unlock on 9 December",
+      "text": "Barrow Deeps (10 players), Hyjal Summit (20) and Onyxia's Lair (40). Onyxia needs every raid member to carry the Drakefire Amulet, earned through a faction questline that runs through Blackrock Depths and Blackrock Spire.",
+      "label": "worldofwarcraft.com",
+      "url": "https://worldofwarcraft.blizzard.com/en-us/news/24303009"
+    },
+    {
+      "date": "2026-10-20",
+      "icon": "inv_misc_map_01",
+      "title": "Nine new five-player dungeons, level 13 to 60",
+      "text": "Six in the Eastern Kingdoms and three in Kalimdor, from the Hall of Thanes beneath Ironforge to Shaper's Terrace in Un'Goro. The full list is below.",
+      "label": "worldofwarcraft.com",
+      "url": "https://worldofwarcraft.blizzard.com/en-us/news/24301455"
+    },
+    {
+      "date": "2026-10-16",
+      "icon": "ability_druid_catform",
+      "title": "Hotfix: Cat Form can be learned again",
+      "text": "A beta hotfix fixed the bug that stopped Druids looting the relics for The Great Cat Spirit, so Cat Form can be unlocked.",
+      "label": "Blizzard forums, Kaivax",
+      "url": "https://us.forums.blizzard.com/en/wow/t/druid-cat-form-quest/2384010/56"
+    },
+    {
+      "date": "2026-10-16",
+      "icon": "inv_misc_questionmark",
+      "title": "Datamined art is not for WoW Forever",
+      "text": "Art assets datamined from the latest beta build are not intended for this version of World of Warcraft.",
+      "label": "Blizzard forums, Kaivax",
+      "url": "https://us.forums.blizzard.com/en/wow/t/datamined-in-the-latest-beta-build/2385060"
+    }
+  ],
+  "dungeons": [
+    {"name": "Hall of Thanes", "levels": "13-18", "region": "Eastern Kingdoms", "where": "Beneath Ironforge, Dun Morogh", "access": "Easy for Alliance; Horde travel into Alliance territory."},
+    {"name": "Ruins of Lordaeron", "levels": "15-20", "region": "Eastern Kingdoms", "where": "Ruins above the Undercity, Tirisfal Glades", "access": "Easy for Horde; Alliance travel into Horde territory."},
+    {"name": "Excavation Site", "levels": "24-29", "region": "Eastern Kingdoms", "where": "Above Whelgar's Excavation, Wetlands", "access": ""},
+    {"name": "City of Dalaran", "levels": "28-33", "region": "Eastern Kingdoms", "where": "Alterac Mountains", "access": "Attunement: \"An Alarming Request\" in Southshore (Alliance), \"Key to the City\" and \"Prison Break-In\" in Tarren Mill (Horde)."},
+    {"name": "The Drowned City", "levels": "35-40", "region": "Eastern Kingdoms", "where": "Off the coast of Stranglethorn Vale, west of Grom'gol", "access": "Entrance is under water."},
+    {"name": "Krol'dok Stronghold", "levels": "40-45", "region": "Eastern Kingdoms", "where": "Riverglades", "access": ""},
+    {"name": "Alcaz Prison", "levels": "48-53", "region": "Kalimdor", "where": "Alcaz Island, Dustwallow Marsh", "access": ""},
+    {"name": "Blackmaw Hold", "levels": "55-60", "region": "Kalimdor", "where": "Azshara", "access": ""},
+    {"name": "Shaper's Terrace", "levels": "58-60", "region": "Kalimdor", "where": "Northern hills of Un'Goro Crater", "access": "Bring power crystals from Un'Goro for the consoles inside."}
+  ],
+  "raids": [
+    {"name": "The Barrow Deeps", "size": 10, "bosses": "8 bosses", "where": "Inside Mount Hyjal; entrances from Mount Hyjal, Winterspring and Blackmaw Hold", "text": "The prison that held Illidan for 10,000 years, now opened."},
+    {"name": "Hyjal Summit", "size": 20, "bosses": "13 bosses", "where": "Summit of Mount Hyjal, near Nordrassil", "text": "Opens with an ancient guardian, then several routes across the mountain."},
+    {"name": "Onyxia's Lair", "size": 40, "bosses": "1 boss, 3 phases", "where": "Dustwallow Marsh", "text": "Fire resistance matters. Every raider needs the Drakefire Amulet."}
+  ]
+}

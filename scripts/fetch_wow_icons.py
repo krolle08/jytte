@@ -6,7 +6,7 @@ Run on the host, before `docker compose up -d --build jytte`:
 
 The icons are Blizzard's and gitignored because the repo is public, so a
 fresh clone has none. This reads every note in
-app/poc/wowforever_notes/, takes the icon names the page will ask for,
+app/poc/wowforever_notes/ and the news file, takes the icon names the page will ask for,
 and fetches only the ones missing. Stdlib only.
 """
 from __future__ import annotations
@@ -28,6 +28,7 @@ def main() -> int:
     wanted = {wf.FALLBACK_ICON}
     for f in wf.note_files():
         wanted |= wf.icon_names(wf.load(f))
+    wanted |= wf.news_icon_names(wf.load_news())
     missing = sorted(n for n in wanted if not (wf.ICON_DIR / f"{n}.jpg").is_file())
     failed = []
     for n in missing:
