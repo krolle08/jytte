@@ -69,8 +69,6 @@ async def fetch() -> dict:
     enriched = []
     for m in matches:
         cal = m.get("calibrated_proba") or {}
-        ens = m.get("ensemble_mean") or {}
-        std = m.get("ensemble_std") or {}
         winner = _winner(cal) if cal else None
         enriched.append({
             **m,

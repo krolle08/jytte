@@ -184,7 +184,6 @@ def main(argv: list[str] | None = None) -> int:
 
     # --- held-out predictions (the widget's initial data) ---
     test_matches = matches_with_feats.iloc[val_end:].reset_index(drop=True)
-    member_probas = ens_test.member_probas
     out_rows = []
     classes_list = list(calibrated.classes_)
 

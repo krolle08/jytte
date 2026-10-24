@@ -13,7 +13,7 @@ import json
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse
 
 from app import db, sse
 from . import db_budget

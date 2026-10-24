@@ -88,7 +88,6 @@ async def _card(request: Request, slug: str, *, edit: bool = False,
     stored.
     """
     row = await db_salary.person_row(await _person(slug))
-    prof = row["profile"]
 
     return request.app.state.templates.TemplateResponse(
         "_sal_card.html",

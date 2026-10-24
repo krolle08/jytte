@@ -165,8 +165,7 @@ def plot_bootstrap_distribution(member_probas: np.ndarray, sample_idx: int, clas
     """For a single match, plot how each of the K members predicted."""
     fig, ax = plt.subplots(figsize=(7, 4))
     K, _, n_classes = member_probas.shape
-    width = 0.25
-    for i, cls in enumerate(classes):
+    for i, _cls in enumerate(classes):
         vals = member_probas[:, sample_idx, i]
         ax.scatter(np.full(K, i) + (np.random.rand(K) - 0.5) * 0.3, vals,
                    alpha=0.65, color=list(CLASS_COLORS.values())[i % 3])
