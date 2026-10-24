@@ -20,7 +20,11 @@
 #
 # Base ref: $1, else origin/<target> from $SYSTEM_PULLREQUEST_TARGETBRANCH or
 # $GITHUB_BASE_REF, else origin/dev, else origin/main, else main.
-# During a local merge (pre-merge-commit hook), MERGE_HEAD is compared with HEAD.
+#
+# --staged: compare the index with HEAD instead. This is the mode for a
+# pre-merge-commit hook: git runs that hook before it writes MERGE_HEAD, so
+# the merge result is only visible in the index. Bypass there with
+# SKIP=fold-check git merge ...
 #
 # Exit: 0 pass or nothing to check, 1 a folder changed without its page.
 
@@ -32,9 +36,8 @@ if [ ! -d docs/source ]; then
     exit 0
 fi
 
-if git rev-parse -q --verify MERGE_HEAD >/dev/null; then
-    # git merge in progress: the branch being merged is the change
-    BASE="HEAD"; TIP="MERGE_HEAD"
+if [ "${1:-}" = "--staged" ]; then
+    CHANGED="$(git diff --cached --name-only HEAD)"
 else
     TIP="HEAD"
     BASE="${1:-}"
@@ -45,20 +48,19 @@ else
             if git rev-parse -q --verify "$c" >/dev/null; then BASE="$c"; break; fi
         done
     fi
-fi
-MB="$(git merge-base "$TIP" "$BASE" 2>/dev/null || true)"
-if [ -z "$MB" ]; then
-    echo "check_feature_folded: no merge base between $TIP and ${BASE:-?}; skipping" >&2
-    exit 0
+    MB="$(git merge-base "$TIP" "$BASE" 2>/dev/null || true)"
+    if [ -z "$MB" ]; then
+        echo "check_feature_folded: no merge base between $TIP and ${BASE:-?}; skipping" >&2
+        exit 0
+    fi
+    if git log --format=%B "$MB..$TIP" | grep -Fq "[no-doc-fold]" \
+       || printf '%s' "${PR_BODY:-}" | grep -Fq "[no-doc-fold]"; then
+        echo "check_feature_folded: [no-doc-fold] present; bypass OK" >&2
+        exit 0
+    fi
+    CHANGED="$(git diff --name-only "$MB" "$TIP")"
 fi
 
-if git log --format=%B "$MB..$TIP" | grep -Fq "[no-doc-fold]" \
-   || printf '%s' "${PR_BODY:-}" | grep -Fq "[no-doc-fold]"; then
-    echo "check_feature_folded: [no-doc-fold] present; bypass OK" >&2
-    exit 0
-fi
-
-CHANGED="$(git diff --name-only "$MB" "$TIP")"
 IDS="$(printf '%s\n' "$CHANGED" \
     | sed -nE 's#^docs/features/((JAVA-)?FEAT-[0-9]+)-[^/]+/.*#\1#p' | sort -u)"
 if [ -z "$IDS" ]; then
