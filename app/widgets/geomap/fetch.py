@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import logging
-import math
 import os
 import re
 from datetime import datetime, timedelta, timezone
@@ -321,7 +320,6 @@ async def fetch() -> dict:
 
 async def summary(data: dict) -> str:
     n = data.get("news_count", 0)
-    c = data.get("crisis_count", 0)
     cs = data.get("crisis_sources", {})
     top_crises = sorted(data.get("severity_by_iso", {}).items(), key=lambda kv: -kv[1])[:6]
     crisis_line = ", ".join(f"{iso}={n}" for iso, n in top_crises) or "(none)"

@@ -18,7 +18,7 @@ rather than invented: there is no Gmail source, no portfolio, and no
 from __future__ import annotations
 
 import logging
-from datetime import date, datetime, time, timezone
+from datetime import date, datetime
 
 from app import frontpage, site
 from app.widgets.email import highlight as mail_highlight

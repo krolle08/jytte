@@ -78,7 +78,6 @@ ALIASES = {
     "Palæstina": "Palestine",
     "Syrien":         "Syria",
     "Libyen":         "Libya",
-    "Hviderusland":   "Belarus",
     "Grønland":  "Greenland",
     "Færøerne": "Faroe Islands",
     "Ukraine":        "Ukraine",

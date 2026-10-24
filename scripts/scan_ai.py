@@ -138,7 +138,6 @@ def usage_stats() -> dict:
     A real rate needs an explicit outcome signal; see the note in
     docs/home-monitor/docs/REVIEW-01.md.
     """
-    out = {}
     log = GLOBAL / "logs" / "agent-usage.jsonl"
     runs_log = GLOBAL / "logs" / "agent-runs.jsonl"
     if not log.exists():
@@ -301,7 +300,7 @@ def usage_window(rows: list[dict], days: int = WINDOW_DAYS) -> dict:
 _STOP = {"the", "and", "for", "with", "that", "this", "from", "into", "when",
          "use", "uses", "using", "agent", "skill", "claude", "every", "over",
          "all", "any", "not", "its", "are", "was", "has", "have", "per",
-         "som", "der", "til", "for", "med", "den", "det", "paa", "pr"}
+         "som", "der", "til", "med", "den", "det", "paa", "pr"}
 
 
 def _tokens(text: str) -> set:
@@ -393,7 +392,6 @@ def layers_info(agents: dict, skills: dict, usage: dict) -> list[dict]:
             if m.is_dir():
                 mem_dirs += 1
                 mem_files += sum(1 for f in m.glob("*.md") if f.name != "MEMORY.md")
-    runs_log = GLOBAL / "logs" / "agent-runs.jsonl"
     return [
         {"k": "Modeller", "v": " · ".join(models) or "ingen angivet"},
         {"k": "Runtimes", "v": "Claude Code · n8n (self-hosted)"},
@@ -562,7 +560,7 @@ def scan_skill_workflows() -> dict:
         nodes = [{"id": "start", "k": "trigger", "w": "Session starter",
                   "y": "Enhver anmodning der roerer LLM-Wiki/ starter her (global CLAUDE.md)"}]
         edges, prev = [], "start"
-        for i, m in enumerate(heads):
+        for _i, m in enumerate(heads):
             body = text[m.end(): next((x for x in h2 if x > m.start()), len(text))]
             sid = f"step-{m.group(1)}"
             nodes.append({

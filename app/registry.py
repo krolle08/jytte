@@ -3,7 +3,7 @@ from __future__ import annotations
 import importlib
 import json
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
@@ -11,7 +11,7 @@ from typing import Any, Callable
 import yaml
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from app import db, claude, site, sse
+from app import db, site, sse
 
 log = logging.getLogger(__name__)
 
@@ -172,7 +172,7 @@ class WidgetRegistry:
         module_root = f"app.widgets.{folder.name}"
 
         fetch_mod = importlib.import_module(f"{module_root}.fetch")
-        fetch_fn = getattr(fetch_mod, "fetch")
+        fetch_fn = fetch_mod.fetch
 
         analyze_fn = None
         summary_fn = None

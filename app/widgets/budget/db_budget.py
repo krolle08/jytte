@@ -158,7 +158,7 @@ async def transfer_entries() -> list[BudgetEntry]:
         out_row = BudgetEntry(
             id=-(1000 + i), category_slug="transfer-out",
             category_name="Overførsel", category_kind="expense",
-            name=f"Overførsel til fælles", amount_cents=amt,
+            name="Overførsel til fælles", amount_cents=amt,
             owner=p["slug"], **base)
         in_row = BudgetEntry(
             id=-(2000 + i), category_slug="transfer-in",

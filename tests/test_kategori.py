@@ -208,7 +208,8 @@ def test_the_unknown_bucket_is_grey_so_it_never_looks_like_an_answer():
 
 
 def test_an_explicit_colour_overrides_the_derived_one(tmp_path=None):
-    import tempfile, textwrap
+    import tempfile
+    import textwrap
     with tempfile.TemporaryDirectory() as td:
         c = Path(td) / "c.yml"
         r = Path(td) / "r.yml"

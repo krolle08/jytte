@@ -32,7 +32,7 @@ def entry(name, cents, kind, owner, slug="x"):
 
 
 def transfer_pair(owner, name, cents):
-    out = entry(f"Overfoersel til faelles", cents, "expense", owner, "transfer-out")
+    out = entry("Overfoersel til faelles", cents, "expense", owner, "transfer-out")
     inc = entry(f"Overfoersel fra {name}", cents, "income", None, "transfer-in")
     return [out, inc]
 

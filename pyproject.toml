@@ -1,0 +1,36 @@
+# Tooling config only. Jytte is not packaged; dependencies stay in requirements.txt.
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+extend-exclude = ["futureUI", "docs", ".ai-scan"]
+
+[tool.ruff.lint]
+# Pyflakes + the error subset of pycodestyle, bugbear, and bandit's security rules.
+select = ["E4", "E7", "E9", "F", "B", "S"]
+ignore = [
+  "E741",  # single-letter names like l are used for list items in the fetchers
+  "B904",  # raise-from inside except: style, 16 sites, not a bug
+  "B905",  # zip(strict=) on 3.12: style
+  "S110",  # try-except-pass: the fetchers degrade on purpose, the card shows the error
+  "S112",  # try-except-continue: same
+  "S324",  # sha1 is used for cache keys and ids, never for security
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106", "S108", "E731"]
+"scripts/**" = ["S310"]  # fixed https URLs only
+# String-built SQL/WIQL, each reviewed 2026-10-23: quotes escaped (ado), a constant
+# WHERE (budget), column names from the FIELDS tuple with bound values (salary).
+"app/widgets/azuredevops/ado.py" = ["S608"]
+"app/widgets/budget/db_budget.py" = ["S608"]
+"app/widgets/salary/db_salary.py" = ["S608"]
+
+[tool.ruff.format]
+# Not enforced yet: formatting all of app/ is one large diff that should be its own commit.
+
+[tool.pyright]
+include = ["app", "scripts"]
+pythonVersion = "3.12"
+typeCheckingMode = "basic"
+reportMissingImports = "warning"  # deps live in the container; run inside a venv with requirements.txt for a real check

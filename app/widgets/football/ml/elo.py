@@ -13,7 +13,6 @@ TrueSkill, model-based ratings).
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Iterable
 
 import pandas as pd
 

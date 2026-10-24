@@ -21,7 +21,7 @@ from app import elview  # noqa: E402
 # so the pure helpers are re-derived here rather than imported. The
 # conversion itself is pinned against the real formula below.
 try:
-    from app.widgets.elpris.fetch import _to_oere_x100, kr, _day, _level
+    from app.widgets.elpris.fetch import _to_oere_x100, kr, _level
     HAVE_FETCH = True
 except Exception:  # noqa: BLE001
     HAVE_FETCH = False
@@ -127,7 +127,6 @@ def test_a_line_with_only_bands_counts_as_filled_in():
 
 
 def test_missing_config_degrades_to_raw_spot_not_to_an_error():
-    import os
     old = elview.CONFIG
     try:
         elview.CONFIG = Path("does-not-exist.yml")

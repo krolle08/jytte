@@ -188,7 +188,7 @@ async def devops_context(registry) -> dict:
     for inst in instances:
         label = inst.get("label") or inst.get("slug") or "?"
         sec = inst.get("section_errors") or {}
-        for k, v in sec.items():
+        for k, _v in sec.items():
             errs.append(f"{label}/{k}")
 
         p = inst.get("prs") or {}

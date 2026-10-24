@@ -31,7 +31,7 @@ import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
 
-from .ado import ADOClient, ADOConfig, ADOMisconfigured, discover_configs
+from .ado import ADOClient, ADOConfig, discover_configs
 
 log = logging.getLogger(__name__)
 

@@ -15,7 +15,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
-from sklearn.base import BaseEstimator, ClassifierMixin, clone
+from sklearn.base import BaseEstimator, clone
 from sklearn.utils import resample
 
 
@@ -37,7 +37,7 @@ class BootstrapEnsemble:
     def fit(self, X: pd.DataFrame, y: pd.Series) -> "BootstrapEnsemble":
         rng = np.random.default_rng(self.random_state)
         self.members_ = []
-        for k in range(self.K):
+        for _k in range(self.K):
             seed = int(rng.integers(0, 2**31 - 1))
             Xb, yb = resample(X, y, replace=True, n_samples=len(X), random_state=seed)
             est = clone(self.base_estimator)
