@@ -5,3 +5,4 @@ sphinx-autobuild>=2021.3.5
 sphinx-needs>=2.0
 sphinx-design>=0.5
 myst-parser>=3.0
+pyyaml>=6.0
