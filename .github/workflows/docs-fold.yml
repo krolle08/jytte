@@ -1,0 +1,20 @@
+# A PR that changes docs/features/<ID>-*/ must also change
+# docs/source/features/<ID>.rst, the page fold_feature.py writes from it.
+# The script is a copy from the sphinx-docs skill; see its header.
+name: docs-fold
+on:
+  pull_request:
+    branches: [main, dev]
+permissions:
+  contents: read
+jobs:
+  fold:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Feature folders are folded into the site
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: bash tools/check_feature_folded.sh "origin/${{ github.base_ref }}"

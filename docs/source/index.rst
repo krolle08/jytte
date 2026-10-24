@@ -14,6 +14,7 @@ and an integrated machine-learning football predictor.
    widgets/index
    ml-walkthrough
    requirements/index
+   features/index
 
 Indices and tables
 ==================
