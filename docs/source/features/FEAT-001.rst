@@ -36,6 +36,7 @@ Scope
 -----
 
 **In:**
+
 - ``JYTTE_SITE`` with values ``personal``, ``local``, unset (= all)
 - A ``site:`` key in every ``app/widgets/*/manifest.yaml``; the registry
   skips widgets of the other site
@@ -51,6 +52,7 @@ Scope
 - Runbook for the one-time copy of ``jytte.db`` to the server
 
 **Out:**
+
 - Deleting personal tables from the local ``jytte.db`` (kept, inert)
 - Moving n8n credentials between instances (the user re-creates them in
   the server n8n; an agent never does, per ``feedback_no_self_credentials``)
@@ -64,18 +66,27 @@ Ownership
    :header-rows: 1
 
    * -  
+
      - personal (server)
      - local (work machine)
+
    * - Widgets
+
      - news, budget, salary, bank, elpris, elforbrug, stocks, vacation, football, geomap
      - tasks, email, calendar, azuredevops, projects, aistack, wowforever, vault
+
    * - Pages
+
      - ``/news`` ``/budget`` ``/bank`` ``/bank/callback`` ``/el`` ``/stocks`` ``/vacation`` ``/salary`` ``/docs/ml`` ``/legacy/news`` ``/legacy/budget``
      - ``/`` ``/ai`` ``/constellation`` ``/workflows`` ``/jobs`` ``/projects`` ``/devops`` ``/opslag`` ``/poc`` ``/poc/*`` ``/legacy/today`` ``/legacy/dashboard`` ``/legacy/ai`` ``/legacy/projects`` ``/legacy/ado`` ``/frontpage/box/*``
+
    * - n8n workflows
+
      - ``bank.json``, ``elforbrug.json``
      - ``ado-event-notify``, ``azuredevops``, ``calendar``, ``email``, ``intake-to-ado``, ``pr-comment``, ``pr-complete``, ``pr-create``, ``vault-refresh``
+
    * - Both
+
      - ``/health`` ``/events`` ``/static`` ``/mcp`` ``/widgets/{name}`` (404 for a widget not loaded) ``/legacy`` (index, filtered) ``/docs-files``
      -  
 
