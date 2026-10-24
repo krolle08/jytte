@@ -481,6 +481,18 @@ docker compose exec jytte python -m app.widgets.football.ml.train   # train F1 M
 
 After code changes: `docker compose up -d --build jytte`. (`--force-recreate` alone does NOT rebake templates / Python code.)
 
+## Quality gates
+
+| Gate | Where | What it stops |
+|---|---|---|
+| `pre-commit` | `.pre-commit-config.yaml` | gitleaks (secrets), ruff, YAML/JSON syntax, private keys, files over 1 MB, em and en dashes |
+| ruff | `pyproject.toml` | pyflakes, bugbear and bandit rules. Every ignore carries its reason; three files are exempt from S608 after review |
+| Branch gate | `.claude/settings.json` -> `scripts/hooks/branch_gate.sh` | Claude writing `app/`, `scripts/`, `tests/`, `deploy/` or `config/` while on `main` |
+| Bind-mount probe | `.claude/settings.json` -> `scripts/hooks/bindmount_probe.sh` | a session starting while Docker serves stale mounted files (the section above) |
+
+Install once per clone: `python -m pip install --user pre-commit && pre-commit install`.
+pyright is configured (`[tool.pyright]`) but not a gate: it needs `requirements.txt` installed, and the host has none of it.
+
 ## Auto memory
 
 This project's auto-memory lives at `~/.claude/projects/C--Projects-jytte/memory/`. Two feedback entries are load-bearing:
