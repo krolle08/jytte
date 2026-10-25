@@ -1,0 +1,27 @@
+{% from "hub/_icons.html" import icon %}
+<div class="h-hd" style="gap:9px">
+  {{ icon("wallet", 18, "color:#4c9bff") }}
+  {% if s.here %}<a class="ttlb" href="/salary" hx-get="/salary" hx-target="#content" hx-push-url="true">Salary &amp; Income</a>
+  <span class="selb" style="display:flex;align-items:center">Net per month</span>
+  {% else %}<span class="ttlb">Salary &amp; Income</span>{% if s.peer %}<a class="more" href="{{ s.peer }}">On the server {{ icon("ext", 12) }}</a>{% endif %}{% endif %}
+</div>
+{% if s.here and s.bars %}
+<div style="display:flex;gap:14px;margin-top:6px">
+  <div style="flex:1;min-width:0">
+    <div style="display:flex;align-items:flex-end;justify-content:space-around;height:60px;border-bottom:1px solid #26344f">
+      {% for b in s.bars %}<div class="bar {{ b.cls }}" style="height:{{ b.h }}px;width:26px" title="{{ b.name }}: {{ b.v }}"></div>{% endfor %}
+    </div>
+    <div style="display:flex;justify-content:space-around;margin-top:3px">{% for b in s.bars %}<span class="mo" style="width:auto">{{ b.name }}</span>{% endfor %}</div>
+  </div>
+  <div style="flex:none;width:122px;padding-top:2px">
+    <div style="font-size:11px;color:#c3cde0">Household net</div>
+    <div style="font-size:19px;font-weight:700;color:#f4f7fc;margin-top:3px;white-space:nowrap">{{ s.total }}</div>
+    <div style="font-size:11px;color:#4ee092;margin-top:6px">{{ s.annual }} a year</div>
+    <div style="font-size:10px;color:#8c9bb4;margin-top:2px">{{ s.n }} of {{ s.all }} filled in</div>
+  </div>
+</div>
+{% elif s.here %}
+<div class="empty-st" style="height:80px">No salary profile filled in yet</div>
+{% else %}
+<div class="empty-st" style="height:80px">Salary lives on the personal site.</div>
+{% endif %}

@@ -1,0 +1,76 @@
+/* ======================================================================
+   Adopted pages in the Home Hub palette. FEAT-002.
+
+   A page built for the previous design extends shell.html, which now
+   renders the Home Hub chrome. Its own markup still uses jytte.css and
+   its tokens; this file redefines those tokens with the hub's values,
+   so every adopted page repaints at once without touching its markup.
+
+   Mapping of meaning, not of hue: aqua meant healthy, so it becomes the
+   hub's green; gul meant attention, the hub's amber; coral failed, the
+   hub's red; lilac stays a violet. Surfaces and text tiers take the
+   hub's navy scale.
+   ====================================================================== */
+:root {
+  --bg:        #0a1120;
+  --sidebar:   #0a1120;
+  --panel:     #0f192c;
+  --canvas:    #0c1527;
+  --inset:     #0c1628;
+  --node:      #0e1a2e;
+  --node-sel:  #13203a;
+
+  --text:      #f4f7fc;
+  --text-2:    #e8eef9;
+  --muted:     #c3cde0;
+  --faint:     #a9b6cc;
+  --fainter:   #8c9bb4;
+  --nav-idle:  #c3cde0;
+
+  --line:        #1c2b47;
+  --line-soft:   #17243d;
+  --line-strong: #223352;
+  --line-pill:   #2a3a58;
+  --hover:       #111e36;
+  --fill-active: rgba(37, 99, 235, .16);
+  --fill-chip:   #141f35;
+
+  --aqua:   #4ee092;
+  --aqua-2: #2fd27a;
+  --aqua-3: #1f6a45;
+  --gul:    #f6b445;
+  --coral:  #ff7a7a;
+  --lilac:  #9b8cff;
+  --grey:   #8c9bb4;
+
+  --aqua-t:  rgba(47, 210, 122, .13);
+  --gul-t:   rgba(245, 165, 36, .14);
+  --coral-t: rgba(239, 68, 68, .13);
+  --lilac-t: rgba(155, 140, 255, .14);
+  --grey-t:  rgba(140, 155, 180, .10);
+
+  --ui: 'Inter', system-ui, sans-serif;
+}
+
+/* jytte.css lays the old sidebar out as a body grid; the hub chrome
+   does its own layout. */
+body.hub { display: block; background: #0a1120; margin: 0; }
+
+/* The adopted page sits where hub pages put their content. */
+.adopted .mn { padding: 0 0 24px; gap: 18px; }
+
+/* Links in body copy take the hub's link blue; links styled as
+   buttons or pills keep their own class colours. */
+.mn a:not([class]), .jy-embed a:not([class]) { color: #5ca0ff; }
+
+/* jytte.css panels are flat hairline boxes; the hub's cards have a
+   12px radius and its navy border. */
+.mn .pn, .jy-embed .pn { border-radius: 12px; border-color: #1c2b47; background: #0f192c; }
+
+/* The previous design's page header uses .pg on its h1. */
+.mn h1.pg { font-size: 24px; font-weight: 700; letter-spacing: -.01em; color: #f4f7fc; }
+
+/* Skoleferier bled to the edges of the old .mn padding (28px 32px)
+   with a negative margin. The hub's .mn has no padding, so the same
+   margin pushed the page past the window. */
+.adopted .vac { margin: 0; border-radius: 12px; }

@@ -1,0 +1,13 @@
+# Schedules that live outside n8n and outside Jytte's own widgets, for
+# the Home Hub Schedules page (FEAT-002). n8n schedules are read from
+# deploy/n8n/workflows and widget refreshes from each manifest.yaml, so
+# neither belongs here. These rows are read only: the page says where
+# each one lives, and that is where it is changed.
+#
+# schedules:
+#   - name: Nightly backup
+#     frequency: Daily 02:00
+#     defined_in: Host cron
+#     location: /etc/cron.d/backup on the home server
+#     site: personal
+schedules: []

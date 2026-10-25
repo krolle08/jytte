@@ -2,7 +2,7 @@
 id: FEAT-002
 slug: home-hub-ui
 title: Home Hub UI from the futureUI hand-over
-status: pending        # pending -> in-progress -> review -> done
+status: review         # pending -> in-progress -> review -> done
 priority: high
 target: python
 depends-on: [FEAT-001]

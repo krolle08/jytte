@@ -138,12 +138,18 @@ Then neither value appears in any response body
 **Test location:** `tests/test_hub_routes.py::test_no_secret_in_html`
 
 ## Invariant checklist (all must hold)
-- [ ] No secret value in output/logs/templates (names + lengths only)
-- [ ] Money as INTEGER cents (oere) until formatting
-- [ ] Timestamps UTC ISO + `data-ts` in UI
-- [ ] No AI in the fetch path
-- [ ] No em/en dash in user-facing strings
+- [x] No secret value in output/logs/templates (names + lengths only)
+- [x] Money as INTEGER cents (oere) until formatting
+- [x] Timestamps UTC ISO + `data-ts` in UI
+- [x] No AI in the fetch path
+- [x] No em/en dash in user-facing strings
 
 ## Results
-- pytest: filled in after implementation
-- code-review run: filled in after implementation
+- pytest: 276 passed (29 new in tests/test_hub_flow.py, test_hub_views.py,
+  test_hub_routes.py; tests/test_site_split.py updated for `/` and `/jobs`
+  being shared), run in the image with the repo mounted, 2026-10-25.
+- Browser: every page answers 200 on a preview container (port 8090, copy
+  of jytte.db, vault read-only); no page is wider than the window at 1024,
+  1280, 1440, 1536 and 1920 px; row panel open and collapse, sidebar HTMX
+  navigation and Back checked in Playwright.
+- code-review run: not run yet.

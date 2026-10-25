@@ -1,0 +1,73 @@
+{# Generic table page (hand-over 7.3). Every sidebar page but the
+   overview is a PageDef from app/hub/views.py rendered here. #}
+{% from "hub/_icons.html" import icon %}
+<title>{{ pg.title }} :: Jytte</title>
+{% for href in pg.css %}<link rel="stylesheet" href="{{ href }}">{% endfor %}
+<div><h1 class="pgt">{{ pg.title }}</h1><div class="pgs">{{ pg.sub }}</div></div>
+{% if pg.stats %}
+<div class="pstats" id="pstats">
+  {% for st in pg.stats %}<div class="pst"><span>{{ st.label }}</span><b>{{ st.value }}</b><em>{{ st.sub }}</em></div>{% endfor %}
+</div>
+{% endif %}
+
+{% for t in pg.above %}{% include t %}{% endfor %}
+
+{% if pg.bar %}
+<div class="barx">
+  <span style="flex:1;min-width:240px">{{ pg.bar.text }}</span>
+  {% for ch in pg.bar.chips %}<span style="{{ ch.style }}">{{ ch.label }}</span>{% endfor %}
+  {% for a in pg.bar.actions %}{% include "hub/_action.html" %}{% endfor %}
+</div>
+{% endif %}
+
+<section class="h-card" style="padding:14px 16px" id="table-card">
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    {% for t in pg.tabs %}
+      <button class="tab {{ 'on' if t == tab }}" aria-pressed="{{ 'true' if t == tab else 'false' }}"
+              hx-get="{{ path }}?tab={{ t|urlencode }}{% if sel %}&sel={{ sel|urlencode }}{% endif %}"
+              hx-target="#content" hx-push-url="true">{{ t }}</button>
+    {% endfor %}
+    {% if pg.form_kind == "note" %}
+      <form hx-post="/act/notes" hx-target="#content" style="display:flex;gap:8px;margin-left:auto">
+        <input class="fin" name="text" type="text" placeholder="Write a note..." required aria-label="New note" maxlength="2000">
+        <button class="h-btn sm pri">Add note</button>
+      </form>
+    {% elif pg.form_kind == "bookmark" %}
+      <form hx-post="/act/bookmarks" hx-target="#content" style="display:flex;gap:8px;margin-left:auto;flex-wrap:wrap">
+        <input class="fin" style="min-width:160px" name="title" type="text" placeholder="Title" aria-label="Bookmark title" maxlength="200">
+        <input class="fin" name="url" type="url" placeholder="https://..." required aria-label="Bookmark URL" maxlength="2000">
+        <input class="fin" style="min-width:110px" name="tag" type="text" placeholder="Tag" aria-label="Bookmark tag" maxlength="40">
+        <button class="h-btn sm pri">Add bookmark</button>
+      </form>
+    {% endif %}
+  </div>
+  {% if flash %}<div class="flash">{{ flash }}</div>{% endif %}
+  <div class="prow h {{ pg.ncls }}">
+    {% for h in pg.cols %}<span>{{ h }}</span>{% endfor %}<span></span>
+  </div>
+  {% for r in rows %}
+  <div>
+    <div class="prow {{ pg.ncls }}">
+      {% if r.detail_key %}
+        <button class="p0 lnk" hx-get="/frag/{{ seg }}/row/{{ r.detail_key|urlencode }}{% if sel %}?sel={{ sel|urlencode }}{% endif %}" hx-target="next .slot" hx-swap="innerHTML" data-row="{{ r.detail_key }}">{{ r.cells[0] }}</button>
+      {% else %}<span class="p0">{{ r.cells[0] }}</span>{% endif %}
+      {% for i in range(1, pg.cols|length) %}
+        <span class="pc {{ r.kinds[i] if r.kinds|length > i }}" style="{{ r.cell_styles.get(i, '') }}">{{ r.cells[i] if r.cells|length > i }}</span>
+      {% endfor %}
+      <span style="justify-self:end">
+        {% if r.action %}
+          {% if r.action.href or r.action.post or r.action.copy or r.action.get %}
+            {% with a = r.action %}{% include "hub/_action.html" %}{% endwith %}
+          {% elif r.detail_key %}
+            <button class="h-btn sm lnk-act" hx-get="/frag/{{ seg }}/row/{{ r.detail_key|urlencode }}{% if sel %}?sel={{ sel|urlencode }}{% endif %}" hx-target="next .slot" hx-swap="innerHTML">{{ r.action.label }}</button>
+          {% endif %}
+        {% endif %}
+      </span>
+    </div>
+    <div class="slot"></div>
+  </div>
+  {% endfor %}
+  {% if not rows %}<div class="empty-st">{{ pg.empty_text if not pg.rows else "Nothing here" }}</div>{% endif %}
+</section>
+
+{% for t in pg.below %}{% include t %}{% endfor %}

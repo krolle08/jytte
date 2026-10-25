@@ -1,0 +1,270 @@
+/* ======================================================================
+   Home Hub - FEAT-002. The stylesheet of the futureUI POC
+   (futureUI/home-hub-handover/home-hub-handover/poc/Main.dc.html),
+   extracted verbatim with three changes:
+
+   1. .h-pg min-height 1024px -> 100vh (hand-over section 7.1).
+   2. Eight class names also exist in jytte.css, and the adopted pages
+      load both files: btn card dot hd pg pill search tile. Here they
+      carry an h- prefix. Values are untouched.
+   3. Additions at the end, each marked: .barx (an inline style in the
+      POC), the adopted-page wrapper, and the small states the POC
+      simulated in JS.
+
+   The light theme is the POC's invert filter, kept on purpose (7.1).
+   ====================================================================== */
+body{margin:0;background:#0a1120}
+*{box-sizing:border-box}
+.h-pg{font-family:'Inter',system-ui,sans-serif;color:#e8eef9;background:#0a1120;min-height:100vh;display:flex;flex-direction:column;font-size:13px;line-height:1.3}
+.h-pg a{color:inherit;text-decoration:none}
+.h-pg button{font-family:inherit;cursor:default}
+.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.top{height:70px;display:flex;align-items:center;gap:16px;padding:0 14px 0 16px;flex:none}
+.logo{width:210px;display:flex;align-items:center;gap:12px;flex:none}
+.logomark{width:40px;height:40px;border-radius:12px;border:1px solid #23406e;background:#0e1a30;display:flex;align-items:center;justify-content:center;color:#4c8dff}
+.h-search{width:572px;max-width:42vw;height:36px;margin:0 auto;border:1px solid #223352;background:#0d1627;border-radius:10px;display:flex;align-items:center;gap:10px;padding:0 12px;color:#8c9bb4;font-size:13px}
+.kbd{margin-left:auto;display:flex;gap:4px}
+.kbd span{border:1px solid #2a3a58;border-radius:5px;padding:1px 6px;font-size:11px;color:#a9b6cc}
+.status{display:flex;align-items:center;gap:8px;font-size:12px;color:#c3cde0}
+.h-dot{width:8px;height:8px;border-radius:50%;background:#2fd27a;display:inline-block;flex:none}
+.avatar{width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#d9b99a,#5b4636 60%,#2a2a33);border:1px solid #2a3a58;flex:none}
+.body{display:flex;flex-wrap:wrap;flex:1}
+.side{width:226px;flex:none;padding:0 0 16px 9px;display:flex;flex-direction:column}
+.nav{display:flex;align-items:center;gap:14px;height:35px;padding:0 14px;border-radius:8px;color:#c3cde0;font-size:14px;width:215px}
+.nav .ic{color:#a9b6cc}
+.nav.on{background:#2563eb;color:#fff;height:36px}
+.nav.on .ic{color:#fff}
+.grp{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#8190aa;padding:0 14px;margin:22px 0 7px;font-weight:500}
+.main{flex:999 1 900px;min-width:0;padding:0 14px 8px 14px;display:flex;flex-direction:column;gap:14px}
+.grid{display:grid;grid-template-columns:495fr 345fr 414fr;gap:14px}
+.h-card{background:#0f192c;border:1px solid #1c2b47;border-radius:12px;padding:16px;min-width:0}
+.h-hd{display:flex;align-items:center;gap:10px}
+.h-hd .ttl{font-size:15px;font-weight:600;color:#f1f5fc}
+.h-hd .more{margin-left:auto;font-size:12px;color:#5ca0ff;display:flex;align-items:center;gap:5px}
+.tabs{display:flex;gap:8px;margin-top:14px}
+.tab{height:26px;padding:0 14px;border-radius:7px;border:1px solid #223352;background:#101c32;color:#c3cde0;font-size:12px;display:flex;align-items:center}
+.tab.on{background:#2563eb;border-color:#2563eb;color:#fff}
+.trow{display:grid;grid-template-columns:146px 98px 95px 1fr 20px;align-items:center;height:30.7px;border-bottom:1px solid #17243d;font-size:12px;color:#c3cde0}
+.trow.h{height:26px;color:#8c9bb4;border-bottom:1px solid #1c2b47}
+.nm{display:flex;align-items:center;gap:9px;color:#e8eef9}
+.h-tile{width:22px;height:22px;border-radius:5px;border:1.5px solid var(--c);background:rgba(255,255,255,.04);color:var(--c);display:flex;align-items:center;justify-content:center;flex:none}
+.h-tile .ic{width:13px;height:13px;stroke-width:2}
+.h-pill{display:inline-flex;align-items:center;gap:6px;height:20px;padding:0 9px 0 7px;border-radius:10px;font-size:11px}
+.h-pill.g{background:rgba(47,210,122,.13);color:#4ee092}
+.h-pill.o{background:rgba(245,165,36,.14);color:#f6b445}
+.h-pill i{width:7px;height:7px;border-radius:50%;background:currentColor;display:block}
+.h-pill{border:0;font-family:inherit;cursor:pointer}
+.trow.sel{background:rgba(37,99,235,.16);border-radius:6px;box-shadow:-6px 0 0 rgba(37,99,235,.16),6px 0 0 rgba(37,99,235,.16)}
+.nmbtn{display:flex;align-items:center;gap:9px;background:none;border:0;padding:0;color:inherit;font:inherit;text-align:left;cursor:pointer;min-width:0;height:100%;white-space:nowrap}
+.nmbtn:hover{text-decoration:underline}
+.h-pill:hover{filter:brightness(1.25)}
+.h-pill:focus-visible,.tab:focus-visible,.h-pg button:focus-visible{outline:2px solid #8cb4ff;outline-offset:2px}
+.tab{font-family:inherit;cursor:pointer}
+.tab:hover{border-color:#3b5ea8}
+.h-pg button:disabled{opacity:.6;cursor:default}
+.t0{--c:#ef5b5b}.t1{--c:#4c8dff}.t2{--c:#2fd27a}.t3{--c:#f08a3c}.t4{--c:#f5b83c}.t5{--c:#4c8dff}.t6{--c:#4c8dff}.t7{--c:#f5b83c}
+.dots{color:#a9b6cc;font-size:16px;letter-spacing:1px;text-align:right;line-height:1}
+.node{position:absolute;height:38px;border-radius:9px;border:1.5px solid var(--c);background:#0e1a2e;display:flex;align-items:center;gap:9px;padding:0 10px;font-size:11px;color:#eaf0fb;box-shadow:0 0 12px rgba(255,255,255,.03)}
+.node .ic{width:18px;height:18px;color:var(--c)}
+.h-btn{height:28px;border-radius:7px;border:1px solid #223352;background:#121f36;color:#e8eef9;font-size:12px;width:100%}
+.mrow{display:flex;align-items:center;gap:12px;height:41px;border-bottom:1px solid #17243d;position:relative}
+.mrow.done .mt b{text-decoration:line-through;color:#8c9bb4}
+.mrow.done .ic{opacity:.5}
+.bdg.g{color:#4ee092;background:rgba(47,210,122,.13);border-color:#1f6a45}
+.dotbtn{background:none;border:0;color:#a9b6cc;cursor:pointer;font-size:16px;letter-spacing:1px;padding:4px 2px;line-height:1;width:24px;text-align:right}
+.dotbtn:hover{color:#fff}
+.bk{position:fixed;top:0;left:0;right:0;bottom:0;background:transparent;border:0;z-index:6;cursor:default;padding:0}
+.pop{position:absolute;right:0;top:36px;z-index:7;background:#13203a;border:1px solid #2a3a58;border-radius:8px;padding:4px;width:160px;box-shadow:0 8px 24px rgba(0,0,0,.45)}
+.pi{display:block;width:100%;text-align:left;background:none;border:0;color:#e8eef9;font:inherit;font-size:12px;padding:8px 10px;border-radius:6px;cursor:pointer}
+.pi:hover{background:#1c2f55}
+.panel{margin-top:10px;height:146px;background:#0c1628;border:1px solid #1c2b47;border-radius:9px;padding:12px 14px;display:flex;flex-direction:column}
+.kv{background:#0f192c;border:1px solid #1c2b47;border-radius:7px;padding:7px 9px;display:flex;flex-direction:column;gap:3px}
+.kv span{font-size:10px;color:#8c9bb4}
+.kv b{font-size:12px;font-weight:600;color:#eaf0fb}
+.ok.w{color:#f6b445}
+.ok.w .h-dot{background:#f5a524}
+.app .h-btn:hover{background:#1c2f55}
+.mrow:last-child{border-bottom:0}
+.mt{flex:1;min-width:0}
+.mt b{display:block;font-weight:500;font-size:12px;color:#eaf0fb}
+.mt span{font-size:11px;color:#8c9bb4}
+.bdg{font-size:11px;border-radius:5px;padding:3px 9px;border:1px solid}
+.bdg.r{color:#ff7a7a;background:rgba(239,68,68,.13);border-color:#6a2a30}
+.bdg.y{color:#f6c445;background:rgba(245,190,36,.12);border-color:#6a5420}
+.bdg.d{color:#aeb9cf;background:#141f35;border-color:#1c2b47;padding:3px 10px}
+.srow{display:flex;align-items:center;gap:8px;height:20.5px;font-size:12px;color:#e8eef9}
+.srow em{margin-left:auto;font-style:normal;color:#4ee092}
+.nws{display:flex;gap:12px;padding:9px 0;border-bottom:1px solid #17243d;align-items:center}
+.nws:last-child{border-bottom:0}
+.th{width:66px;height:46px;border-radius:7px;flex:none;border:1px solid #223352}
+.nws b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:600;color:#f1f5fc}
+.nws span{font-size:12px;color:#8c9bb4;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nws time{margin-left:auto;font-size:11px;color:#8c9bb4;align-self:flex-start;margin-top:6px;white-space:nowrap}
+.app{background:#0c1628;border:1px solid #1c2b47;border-radius:9px;padding:9px 7px 7px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;min-width:0}
+.app b{font-weight:500;color:#eaf0fb;font-size:12px}
+.ok{display:flex;align-items:center;gap:6px;color:#4ee092;font-size:12px}
+.lg{display:flex;align-items:center;gap:9px;font-size:12px;height:19px;color:#dfe7f5}
+.lg em{margin-left:auto;font-style:normal;color:#e8eef9}
+.bar{width:12px;border-radius:2px 2px 0 0;background:#2f6bf0}
+.bar.l{background:#5ea6ff}
+.mo{font-size:9px;color:#8c9bb4;width:14px;text-align:center}
+.sel{margin-left:auto;font-size:11px;color:#c3cde0;border:1px solid #223352;background:#101c32;border-radius:6px;height:24px;padding:0 9px;display:flex;align-items:center;gap:8px}
+.lf{color:#ff7a7a}
+.ftag{position:absolute;top:-9px;right:8px;background:#ef4444;color:#fff;font-size:9px;font-weight:600;padding:1px 6px;border-radius:6px;line-height:1.4}
+.det{margin:2px 0 10px;padding:12px 14px;background:#0c1628;border:1px solid #1c2b47;border-radius:9px}
+.dett{font-size:12px;font-weight:600;color:#eaf0fb;margin-bottom:8px}
+.dettl{font-size:11px;color:#8c9bb4;margin:10px 0 4px}
+.pre{margin:0;font:11px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;color:#c3cde0;white-space:pre-wrap;max-height:220px;overflow:auto;background:#09111f;border:1px solid #17243d;border-radius:7px;padding:10px}
+.dact{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.dnote{font-size:11px;color:#8c9bb4;margin-top:8px}
+a.h-btn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;color:#e8eef9}
+.lnk{background:none;border:0;padding:0;font:inherit;text-align:left;cursor:pointer;color:#eaf0fb;font-weight:500}
+.lnk:hover{text-decoration:underline;color:#8cb4ff}
+button.nav{background:none;border:0;font-family:inherit;text-align:left;cursor:pointer}
+button.nav:hover{background:#111e36}
+button.nav.on:hover{background:#2563eb}
+.h-hd button.more{background:none;border:0;font-family:inherit;cursor:pointer;padding:0}
+.ttlb{background:none;border:0;padding:0;font:inherit;font-size:14px;font-weight:600;color:#f1f5fc;cursor:pointer}
+.ttlb:hover{text-decoration:underline}
+.selb{margin-left:auto;margin-right:6px;font:inherit;font-size:11px;color:#c3cde0;border:1px solid #223352;background:#101c32;border-radius:6px;height:24px;padding:0 6px;color-scheme:dark;cursor:pointer}
+.sin{flex:1;min-width:0;background:none;border:0;outline:0;color:#e8eef9;font:inherit}
+.sin::placeholder{color:#8c9bb4}
+.h-search:focus-within{border-color:#4c8dff}
+.themebtn{background:none;border:0;color:#c3cde0;cursor:pointer;margin-right:10px;padding:4px;display:flex}
+.h-pg.lt{filter:invert(1) hue-rotate(180deg)}
+.h-pg.lt .avatar,.h-pg.lt .th{filter:invert(1) hue-rotate(180deg)}
+.pgt{margin:0;font-size:24px;font-weight:700;color:#f4f7fc;letter-spacing:-.01em}
+.pgs{font-size:13px;color:#a9b6cc;margin-top:6px}
+.pstats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.pst{background:#0f192c;border:1px solid #1c2b47;border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.pst span{font-size:12px;color:#a9b6cc}
+.pst b{font-size:24px;font-weight:700;color:#f4f7fc}
+.pst em{font-style:normal;font-size:11px;color:#8c9bb4}
+.prow{display:grid;align-items:center;min-height:42px;border-bottom:1px solid #17243d;font-size:12px;color:#c3cde0;gap:12px;padding:6px 0}
+.prow.h{min-height:30px;color:#8c9bb4;border-bottom:1px solid #1c2b47;margin-top:12px;padding:0}
+.prow.n2{grid-template-columns:3fr 1fr 100px}
+.prow.n3{grid-template-columns:3fr 2fr 1fr 100px}
+.prow.n4{grid-template-columns:2fr 1.5fr 1fr 1fr 100px}
+.prow.n5{grid-template-columns:2fr 1fr 1fr 1fr 1fr 100px}
+.p0{color:#eaf0fb;font-weight:500}
+.pc{justify-self:start}
+.pc.g,.pc.o,.pc.r,.pc.b{border-radius:10px;padding:2px 9px;font-size:11px}
+.pc.g{background:rgba(47,210,122,.13);color:#4ee092}
+.pc.o{background:rgba(245,165,36,.14);color:#f6b445}
+.pc.r{background:rgba(239,68,68,.13);color:#ff7a7a}
+.pc.b{background:rgba(76,141,255,.14);color:#8cb4ff}
+.h-btn.sm{width:auto;height:26px;padding:0 12px}
+.fin{height:30px;border-radius:7px;border:1px solid #223352;background:#0d1627;color:#e8eef9;font:inherit;padding:0 10px;min-width:240px;outline:0}
+.fin:focus{border-color:#4c8dff}
+.h-btn.pri{background:#2563eb;border-color:#2563eb}
+@media (max-width:900px){
+.pstats{grid-template-columns:repeat(2,minmax(0,1fr))}
+.prow.n4,.prow.n5,.prow.n3{grid-template-columns:2fr 1fr 80px}
+.grid{grid-template-columns:minmax(0,1fr)}
+.grid > *{grid-column:auto !important;grid-row:auto !important;margin:0 !important;height:auto !important;box-shadow:none !important}
+.h-search{display:none}
+.side{width:100%;padding:0 14px}
+.nav{width:100%}
+.band{grid-template-columns:minmax(0,1fr) !important}
+.stats{grid-template-columns:repeat(2,minmax(0,1fr)) !important}
+.flowbox{overflow-x:auto}
+}
+
+/* ---- additions, FEAT-002 ------------------------------------------- */
+/* The page bar. An inline style in the POC (hand-over 7.3). */
+.barx{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;border:1px solid #1c2b47;border-radius:10px;background:#0f192c;font-size:12px;color:#a9b6cc}
+.empty-st{height:120px;display:flex;align-items:center;justify-content:center;color:#8c9bb4;font-size:12px;text-align:center;padding:0 16px}
+.flash{margin-top:10px;padding:8px 12px;border-radius:8px;background:rgba(245,165,36,.12);color:#f6b445;font-size:12px;border:1px solid #6a5420}
+.clipn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.h-dot.big{width:14px;height:14px}
+.extmark{margin-left:auto;color:#8190aa;display:flex}
+.nav{text-decoration:none}
+a.nav:hover{background:#111e36}
+a.nav.on:hover{background:#2563eb}
+.status{text-decoration:none}
+/* overview stat tiles: links now, same look as the POC's divs */
+.tilebox{height:98px;border-radius:10px;display:flex;align-items:center;gap:14px;padding:0 14px;color:inherit;cursor:pointer}
+.tilebox .tn{font-size:26px;font-weight:700;color:#f4f7fc;line-height:1.1}
+.tilebox .tl{font-size:13px;color:#dfe7f5;margin-top:2px}
+.tilebox .ts{font-size:11px;color:#a9b6cc;margin-top:6px}
+.tilebox:hover{filter:brightness(1.12)}
+a.nws{color:inherit}
+a.nws:hover b{text-decoration:underline}
+img.th{display:block}
+.nmbtn{color:inherit}
+.gauge{background:#0c1628;border:1px solid #1c2b47;border-radius:9px;height:92px;padding:6px 4px 0;display:flex;flex-direction:column;align-items:center}
+/* flow card footer */
+.flowfoot{position:absolute;left:0;right:0;bottom:0;height:47px;border-top:1px solid #17243d;display:flex;align-items:center;gap:10px;padding:0 16px 0 20px;font-size:12px;color:#a9b6cc;background:#0f192c}
+.runbtn{height:30px;padding:0 15px;border-radius:7px;border:0;background:#2563eb;color:#fff;font-size:12px;font-weight:500;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;flex:none;font-family:inherit}
+.runmsg{font-size:11px;color:#f6b445;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+/* pipelines page: flow next to details */
+.pipetop{display:flex;gap:16px;align-items:flex-start}
+.pipeflow{width:774px;flex:none;min-width:0}
+.pipedet{flex:1;min-width:0;height:342px;padding:16px;display:flex;flex-direction:column;overflow:hidden}
+.fact{display:flex;justify-content:space-between;gap:10px;font-size:12px;padding:5px 0;border-bottom:1px solid #17243d}
+.fact span:first-child{color:#8c9bb4}
+.fact span:last-child{color:#eaf0fb;text-align:right}
+.runrow{display:flex;align-items:center;gap:8px;font-size:11px;padding:4px 0;color:#c3cde0}
+.runrow .t{color:#8c9bb4;width:38px}
+.runrow .m{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* maintenance menu without JS state: a details element */
+.mmenu{position:relative}
+.mmenu summary{list-style:none}
+.mmenu summary::-webkit-details-marker{display:none}
+.mmenu .pop{display:none}
+.mmenu[open] .pop{display:block}
+/* row action that only opens the panel */
+.lnk-act{cursor:pointer}
+.det-inc{margin-top:4px}
+/* parts of a previous page kept inside a hub page (budget editor,
+   bank curve, salary card). They keep their own classes from
+   jytte.css; hub-adopt.css repaints the tokens. */
+.jy-embed{font-family:'Inter',system-ui,sans-serif}
+.adopt-part{margin-top:0}
+@media (max-width:1200px){
+.pipetop{flex-direction:column}
+.pipeflow{width:100%}
+.pipedet{width:100%;height:auto}
+}
+@media (max-width:900px){
+.top{flex-wrap:wrap;height:auto;padding:10px 14px}
+.logo{width:auto}
+.body{flex-direction:column}
+.side{flex-direction:row;flex-wrap:wrap;gap:4px}
+.side .grp{width:100%;margin:10px 0 4px}
+.side .nav{width:auto}
+}
+/* dark scrollbars where a box scrolls (wide flows, long panels) */
+.flowbox,.pre,.side{scrollbar-color:#2a3a58 #0c1527;scrollbar-width:thin}
+.flowbox::-webkit-scrollbar{height:8px;width:8px}
+.flowbox::-webkit-scrollbar-track{background:#0c1527}
+.flowbox::-webkit-scrollbar-thumb{background:#2a3a58;border-radius:4px}
+/* ---- fluid width, FEAT-002 -------------------------------------------
+   The POC is drawn for 1536 px. Its .body wraps and .main has a 900 px
+   basis, so a narrower window pushed content past the right edge or
+   dropped it under the sidebar. Here the main column takes what is left
+   of the window and every grid track may shrink to zero, so nothing is
+   wider than the page. The overview keeps the notch grid down to
+   1180 px and stacks its cards below that. */
+.body{flex-wrap:nowrap;min-width:0}
+.main{flex:1 1 auto;min-width:0;max-width:100%}
+.grid{grid-template-columns:minmax(0,495fr) minmax(0,345fr) minmax(0,414fr)}
+.band{grid-template-columns:minmax(0,382fr) minmax(0,429fr) minmax(0,443fr) !important}
+.tabs{min-width:0;overflow:hidden}
+.tab{flex:none;padding:0 clamp(8px,.9vw,14px)}
+.h-search{min-width:0}
+.prow > *{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.pre{max-width:100%}
+.barx > span{min-width:0;overflow-wrap:anywhere}
+@media (max-width:1180px){
+.grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.grid > *{grid-column:auto !important;grid-row:auto !important;margin:0 !important;box-shadow:none !important}
+.grid > #flow-wrap{grid-column:1 / -1 !important}
+.grid > section:first-child{grid-column:1 / -1 !important}
+.band{grid-template-columns:minmax(0,1fr) !important}
+.band > .h-card{height:auto !important;min-height:125px}
+}
+@media (max-width:900px){
+.body{flex-direction:column}
+.grid{grid-template-columns:minmax(0,1fr)}
+}

@@ -1,0 +1,81 @@
+{# Overview, the POC's notch grid (hand-over section 6). Markup and
+   inline sizes are the POC's; every value comes from app/hub/overview.py.
+   Each card is its own partial so /frag/overview/<card> can re-render
+   it alone. #}
+{% from "hub/_icons.html" import icon %}
+<title>Overview :: Jytte</title>
+<div class="grid">
+
+  <section class="h-card" style="grid-column:1 / 3;height:206px;padding:18px 18px 12px 18px;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:flex-start">
+      <div>
+        <div style="display:flex;align-items:center;gap:10px"><h1 style="margin:0;font-size:30px;font-weight:700;letter-spacing:-.01em;color:#f4f7fc">{{ o.greeting }}</h1>
+          <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><path d="M11 15V6.5a1.7 1.7 0 013.4 0V14M14.4 14V4.8a1.7 1.7 0 013.4 0V14M17.8 14V6a1.7 1.7 0 013.4 0v9M21.2 15v-3.2a1.7 1.7 0 013.4 0V19c0 5-3.5 8-8 8-3.6 0-5.6-1.8-7.4-4.6L6.5 18a1.8 1.8 0 013-2L11 17.5" fill="#f7c84a" stroke="#c98f1c" stroke-width="1.2" stroke-linejoin="round"></path></svg>
+        </div>
+        <div style="font-size:14px;color:#a9b6cc;margin-top:10px">Everything in one place. Automated, monitored and under your control.</div>
+      </div>
+      <div style="margin-left:auto;text-align:right">
+        <div style="font-size:14px;color:#dfe7f5">{{ o.date }}</div>
+        <div id="clock" style="font-size:32px;font-weight:500;color:#f4f7fc;margin-top:4px;letter-spacing:.01em">{{ o.clock }}</div>
+      </div>
+    </div>
+    <div class="stats" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:auto">
+      <a class="tilebox" href="/jobs" hx-get="/jobs" hx-target="#content" hx-push-url="true" style="border:1px solid #5b4bd1;background:linear-gradient(135deg,rgba(91,75,209,.28),rgba(91,75,209,.08))">
+        {{ icon("flow3", 36, "color:#9b8cff") }}
+        <div><div class="tn">{{ o.tiles.pipelines.n }}</div><div class="tl">N8N Pipelines</div><div class="ts">{{ o.tiles.pipelines.running }} running &bull; {{ o.tiles.pipelines.paused }} paused</div></div>
+      </a>
+      <a class="tilebox" href="/apps" hx-get="/apps" hx-target="#content" hx-push-url="true" style="border:1px solid #1f9a63;background:linear-gradient(135deg,rgba(31,154,99,.25),rgba(31,154,99,.06))">
+        {{ icon("boxfill", 36, "color:#2fd27a") }}
+        <div><div class="tn">{{ o.tiles.apps.n }}</div><div class="tl">Apps &amp; Services</div><div class="ts" style="color:{{ '#4ee092' if o.tiles.apps.text == 'All healthy' else '#ff7a7a' }}">{{ o.tiles.apps.text }}</div></div>
+      </a>
+      {% set mt = o.tiles.maint %}
+      <a class="tilebox" href="{{ '/maintenance' if mt.here else (mt.peer or '/maintenance') }}" {% if mt.here %}hx-get="/maintenance" hx-target="#content" hx-push-url="true"{% endif %} style="border:1px solid #b9741a;background:linear-gradient(135deg,rgba(185,116,26,.28),rgba(185,116,26,.07))">
+        {{ icon("wrenchfill", 36, "color:#f5a524") }}
+        <div><div class="tn">{{ mt.attn if mt.here else '-' }}</div><div class="tl">Maintenance Tasks</div><div class="ts" style="color:#f6b445">{{ (mt.overdue ~ ' overdue') if mt.here else 'on the local site' }}</div></div>
+      </a>
+      <a class="tilebox" href="/monitoring" hx-get="/monitoring" hx-target="#content" hx-push-url="true" style="border:1px solid #2a64c8;background:linear-gradient(135deg,rgba(42,100,200,.28),rgba(42,100,200,.07))">
+        {{ icon("shieldfill", 36, "color:#4c9bff") }}
+        <div><div class="tn">{{ o.tiles.critical.n }}</div><div class="tl">Critical Issues</div><div class="ts">{{ o.tiles.critical.text }}</div></div>
+      </a>
+    </div>
+  </section>
+
+  <section class="h-card" id="news" style="grid-column:3;grid-row:1;height:315px;margin-bottom:-109px;z-index:2;box-shadow:0 0 0 14px #0a1120;padding:14px 16px">
+    {% with n = o.news %}{% include "hub/cards/news.html" %}{% endwith %}
+  </section>
+
+  <section class="h-card" id="n8n" style="grid-column:1;grid-row:2;height:363px;margin-bottom:-21px;padding:16px 16px 0 16px">
+    {% with c = o.pipes %}{% include "hub/cards/n8n.html" %}{% endwith %}
+  </section>
+
+  <div id="flow-wrap" style="grid-column:2 / 4;grid-row:2;min-width:0">
+    {% if o.flow %}{% with flow = o.flow %}{% include "hub/_flow.html" %}{% endwith %}
+    {% else %}<section class="h-card" style="height:342px"><div class="empty-st" style="height:300px">No workflows on this site</div></section>{% endif %}
+  </div>
+
+  <section class="h-card" id="apps" style="grid-column:1;grid-row:3;margin-top:21px;height:217px;padding:14px 12px 12px 12px">
+    {% with a = o.apps %}{% include "hub/cards/apps.html" %}{% endwith %}
+  </section>
+
+  <section class="h-card" id="monitoring" style="grid-column:2;grid-row:3;height:238px;padding:14px 12px 12px 12px"
+           hx-get="/frag/monitoring/card" hx-trigger="every 5s" hx-swap="innerHTML">
+    {% with m = o.mon %}{% include "hub/cards/monitoring.html" %}{% endwith %}
+  </section>
+
+  <section class="h-card" id="maintenance" style="grid-column:3;grid-row:3;height:238px;padding:12px 12px 8px 14px">
+    {% with t = o.maint %}{% include "hub/cards/maintenance.html" %}{% endwith %}
+  </section>
+
+</div>
+
+<div class="band" style="display:grid;grid-template-columns:382fr 429fr 443fr;gap:14px">
+  <section class="h-card" id="budget" style="height:125px;padding:10px 14px 8px 16px">
+    {% with b = o.budget %}{% include "hub/cards/budget.html" %}{% endwith %}
+  </section>
+  <section class="h-card" id="salary" style="height:125px;padding:10px 14px 8px 14px">
+    {% with s = o.salary %}{% include "hub/cards/salary.html" %}{% endwith %}
+  </section>
+  <section class="h-card" id="investments" style="height:125px;padding:10px 14px 8px 14px">
+    {% with v = o.inv %}{% include "hub/cards/investments.html" %}{% endwith %}
+  </section>
+</div>

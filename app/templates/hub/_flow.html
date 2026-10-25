@@ -1,0 +1,27 @@
+{# Flow card (hand-over 7.4). `flow` from app.hub.views.flow_ctx: the
+   workflow's own nodes and connections, laid out by app/hub/flow.py.
+   A wide or tall workflow scrolls inside the box instead of drawing
+   nodes over each other. #}
+{% from "hub/_icons.html" import icon %}
+<section class="h-card flowcard" id="flow-card" style="height:342px;padding:0;position:relative;overflow:hidden">
+  <div class="h-hd" style="position:absolute;left:16px;top:14px;height:30px;right:16px">
+    {{ icon("flow3", 20, "color:#9b8cff") }}<span class="ttl" style="font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Pipeline Flow: {{ flow.name }}</span>
+  </div>
+  <div class="flowbox" style="position:absolute;left:0;top:54px;right:0;height:240px;background:#0c1527;border-top:1px solid #17243d;overflow-x:auto;overflow-y:{{ "auto" if flow.height > 240 else "hidden" }}">
+    <div style="position:relative;width:{{ flow.width }}px;height:{{ flow.height }}px">
+      <svg width="{{ flow.width }}" height="{{ flow.height }}" viewBox="0 0 {{ flow.width }} {{ flow.height }}" style="position:absolute;left:0;top:0" aria-hidden="true">
+        <g fill="none" stroke-width="1.6">
+          {% for e in flow.edges %}<path d="{{ e.d }}" stroke="{{ e.colour }}" stroke-dasharray="{{ e.dash }}"></path>{% endfor %}
+        </g>
+      </svg>
+      {% for n in flow.nodes %}
+        <div class="node" title="{{ n.label }} ({{ n.type }})" style="--c:{{ n.colour }};left:{{ n.x|round|int }}px;top:{{ (n.cy - 19)|round|int }}px;width:148px{% if n.failed %};border-color:#ef4444;box-shadow:0 0 0 2px rgba(239,68,68,.45),0 0 14px rgba(239,68,68,.35){% endif %}{% if n.dim %};opacity:.45{% endif %}">
+          {{ icon(n.icon, 18) }}<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ n.label }}</span>
+          {% if n.failed %}<span class="ftag">Failed</span>{% endif %}
+        </div>
+      {% endfor %}
+      {% if not flow.nodes %}<div class="empty-st" style="height:240px">This workflow file has no nodes</div>{% endif %}
+    </div>
+  </div>
+  {% include "hub/_flow_footer.html" %}
+</section>

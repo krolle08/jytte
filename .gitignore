@@ -40,3 +40,7 @@ assets/certificates/*
 app/static/wow/icons/*
 !app/static/wow/icons/.gitkeep
 deploy/cloudflared/credentials.json
+
+# Playwright MCP screenshots and snapshots. They can show personal data
+# (bank, salary), so they never go into this public repo.
+.playwright-mcp/

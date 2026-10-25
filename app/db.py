@@ -127,6 +127,26 @@ CREATE TABLE IF NOT EXISTS salary_profiles (
     pension_on_supplement INTEGER NOT NULL DEFAULT 1,
     updated_at TEXT NOT NULL
 );
+
+-- FEAT-002 Home Hub. Notes, bookmarks and toggles the hub pages own.
+-- Nothing else writes them; app/hub/store.py is the only reader.
+CREATE TABLE IF NOT EXISTS hub_note (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    text TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS hub_bookmark (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    url TEXT NOT NULL,
+    tag TEXT NOT NULL DEFAULT 'Other',
+    created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS hub_setting (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
 """
 
 # Pre-seeded categories. Idempotent: INSERT OR IGNORE on slug.

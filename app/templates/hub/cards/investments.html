@@ -1,0 +1,25 @@
+{% from "hub/_icons.html" import icon %}
+<div class="h-hd" style="gap:9px">
+  {{ icon("bars", 18, "color:#2fd27a") }}
+  {% if v.here %}<a class="ttlb" href="/stocks" hx-get="/stocks" hx-target="#content" hx-push-url="true">Investments</a>
+  {% else %}<span class="ttlb">Investments</span>{% if v.peer %}<a class="more" href="{{ v.peer }}">On the server {{ icon("ext", 12) }}</a>{% endif %}{% endif %}
+</div>
+{% if v.here and v.ready %}
+<div style="display:flex;gap:10px;margin-top:2px">
+  <div style="flex:none;width:110px;padding-top:6px">
+    <div style="font-size:11px;color:#c3cde0">Total value</div>
+    <div style="font-size:19px;font-weight:700;color:#f4f7fc;margin-top:6px;white-space:nowrap">{{ v.total }}</div>
+    <div style="font-size:14px;color:{{ '#4ee092' if v.up else '#ff7a7a' }};margin-top:8px">{{ v.ret }}</div>
+  </div>
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;padding-top:6px">
+    {% for b in v.bars %}<div style="display:flex;align-items:center;gap:6px;font-size:9px;color:#8c9bb4"><span style="width:34px;overflow:hidden;white-space:nowrap">{{ b.name }}</span><span style="flex:1;height:6px;background:#141f35;border-radius:3px"><span style="display:block;height:6px;width:{{ b.w }}%;background:#2fd27a;border-radius:3px"></span></span></div>{% endfor %}
+  </div>
+  <div style="flex:none;width:86px;padding-top:2px">
+    {% for l in v.legend %}<div class="lg" style="height:20px;font-size:11px"><span class="h-dot" style="background:{{ l.c }};width:12px;height:12px"></span>{{ l.name }}<em>{{ l.pct }}</em></div>{% endfor %}
+  </div>
+</div>
+{% elif v.here %}
+<div class="empty-st" style="height:80px">{{ v.reason|truncate(120) }}</div>
+{% else %}
+<div class="empty-st" style="height:80px">Investments live on the personal site.</div>
+{% endif %}
