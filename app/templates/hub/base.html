@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{% block title %}{{ page_title or "Jytte" }} :: Jytte{% endblock %}</title>
+  {# Home Hub chrome, FEAT-002. Nothing here reaches the internet: Inter
+     and htmx are vendored, same rule as before (Tailscale-only). Pages
+     drawn by hub/page.html load hub.css only. A page adopted from the
+     previous design (it extends shell.html) also loads jytte.css and
+     hub-adopt.css, which repaints its tokens in this palette. #}
+  <link rel="preload" href="/static/vendor/fonts/Inter-var.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/static/vendor/fonts.css">
+  {% if adopted %}<link rel="stylesheet" href="/static/jytte.css">{% endif %}
+  <link rel="stylesheet" href="/static/hub.css">
+  {% if adopted %}<link rel="stylesheet" href="/static/hub-adopt.css">{% endif %}
+  <script src="/static/vendor/htmx-2.0.3.min.js" defer></script>
+  {% if adopted %}
+  <script src="/static/vendor/htmx-ext-sse-2.2.2.js" defer></script>
+  <script src="/static/jy_board.js" defer></script>
+  {% endif %}
+  <script src="/static/hub.js" defer></script>
+  {% block head_extra %}{% endblock %}
+</head>
+<body class="hub{% if adopted %} adopted{% endif %}" hx-boost="false">
+{% from "hub/_icons.html" import icon %}
+<div class="h-pg {{ 'lt' if chrome.theme == 'light' }}" id="shell">
+  <div class="top">
+    <a class="logo" href="/">
+      <div class="logomark">{{ icon("home", 24) }}</div>
+      <div><div style="font-size:18px;font-weight:700;color:#f4f7fc">Jytte</div>
+           <div style="font-size:11px;color:#8c9bb4;margin-top:2px">{{ chrome.host }} &bull; {{ chrome.site_label }}</div></div>
+    </a>
+    <label class="h-search">
+      {{ icon("search") }}
+      <input class="sin" type="text" name="q" placeholder="Search apps, pipelines, notes, news..."
+             value="{{ chrome.q }}" autocomplete="off" aria-label="Search"
+             {% if adopted %}onkeydown="if(event.key==='Enter'){location.href='/search?q='+encodeURIComponent(this.value)}"
+             {% else %}hx-get="/search" hx-trigger="input changed delay:250ms, search" hx-target="#content"
+             hx-push-url="false"{% endif %}>
+      <div class="kbd"><span>Ctrl</span><span>K</span></div>
+    </label>
+    <button class="themebtn" id="theme-btn" aria-label="Toggle light and dark theme">{{ icon("sun") }}</button>
+    <a class="status" href="/monitoring"><span class="h-dot" style="{{ '' if chrome.ok else 'background:#ef4444' }}"></span>{{ chrome.status }}</a>
+    <div class="avatar" role="img" aria-label="User avatar"></div>
+  </div>
+  <div class="body">
+    <nav class="side" id="nav" aria-label="Main">
+      {% for g in chrome.sidebar %}
+        {% if g.label %}<div class="grp">{{ g.label }}</div>{% endif %}
+        {% for it in g.links %}
+          <a class="nav{{ ' on' if it.on }}" href="{{ it.href }}" data-key="{{ it.key }}"
+             {% if it.hub and not adopted %}hx-get="{{ it.href }}" hx-target="#content" hx-push-url="true"{% endif %}
+             {% if it.ext %}title="On the other site"{% endif %}>{{ icon(it.icon) }}{{ it.label }}{% if it.ext %}<span class="extmark">{{ icon("ext", 11) }}</span>{% endif %}</a>
+        {% endfor %}
+      {% endfor %}
+      <a class="nav{{ ' on' if chrome.active == 'settings' }}" style="margin-top:auto" href="/settings" data-key="settings"
+         {% if not adopted %}hx-get="/settings" hx-target="#content" hx-push-url="true"{% endif %}>{{ icon("gear") }}Settings</a>
+    </nav>
+    <main class="main" id="content">{% if adopted %}<div class="mn">{% endif %}{% block content %}{% endblock %}{% if adopted %}</div>{% endif %}</main>
+  </div>
+</div>
+<script>
+  // Local time, same contract the previous shell had: the server emits
+  // ISO 8601 UTC in data-ts and the client converts. data-ts-label=""
+  // opts out of the "updated" prefix.
+  (function () {
+    function fmt(iso) {
+      var d = new Date(iso);
+      if (isNaN(d)) return null;
+      var now = new Date(), mins = Math.round((now - d) / 60000);
+      if (Math.abs(mins) < 1) return "nu";
+      if (mins > 0 && mins < 60) return mins + " min siden";
+      if (mins < 0 && mins > -60) return "om " + (-mins) + " min";
+      var hm = d.toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" });
+      if (d.toDateString() === now.toDateString()) return hm;
+      return d.toLocaleDateString("da-DK", { day: "numeric", month: "short" }) + " " + hm;
+    }
+    function paint(root) {
+      (root || document).querySelectorAll("[data-ts]").forEach(function (el) {
+        var t = fmt(el.getAttribute("data-ts"));
+        if (!t) return;
+        el.textContent = el.hasAttribute("data-ts-label") ? t : "opdateret " + t;
+      });
+    }
+    paint();
+    document.body.addEventListener("htmx:afterSwap", function (e) { paint(e.target); });
+  })();
+</script>
+{% block script_extra %}{% endblock %}
+</body>
+</html>

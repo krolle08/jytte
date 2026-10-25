@@ -1,0 +1,9 @@
+{# Bank: the month's spend curve against the budget, kept from the
+   previous /bank page. Same partial, same context (app/bankview.py),
+   which the route puts at the top level. #}
+{% if curve %}
+<section class="h-card adopt-part" style="padding:14px 16px">
+  <div class="h-hd"><span class="ttl">Spend over the month</span></div>
+  <div class="jy-embed">{% include "_bk_curve.html" %}</div>
+</section>
+{% endif %}

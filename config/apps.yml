@@ -1,0 +1,37 @@
+# Apps and services for the Home Hub (FEAT-002): the My Apps card and
+# page, and the service rows on Monitoring. Read by app/hub/monitor.py.
+#
+# Each entry is checked FROM INSIDE the Jytte container, at most every
+# 15 seconds with a 2 second timeout:
+#   health: an http(s) URL; any status under 400 is healthy
+#   tcp:    host:port; an open port is healthy
+# `url` is the link the browser opens, so it is the host's address, not
+# the container's. `site` follows FEAT-001: personal, local, or leave it
+# out for both. `kind: service` lists it on Monitoring only.
+#
+# Nothing here talks to Docker. Restart is not wired, on purpose: see
+# FEAT-002 B-2.
+apps:
+  - id: jytte
+    name: Jytte
+    icon: home
+    health: http://localhost:8080/health
+    url: /
+  - id: n8n
+    name: n8n
+    icon: flow
+    health: http://n8n:5678/healthz
+    url: http://localhost:5678
+  - id: twapp-backend
+    name: twapp backend
+    icon: code
+    site: local
+    tcp: host.docker.internal:8081
+    url: http://localhost:8081
+    note: The twapp docker compose on this machine. Spring Boot has no health endpoint exposed, so the check is the open port.
+  - id: twapp-mysql
+    name: twapp MySQL
+    kind: service
+    icon: db
+    site: local
+    tcp: host.docker.internal:3307

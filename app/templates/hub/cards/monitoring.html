@@ -1,0 +1,26 @@
+{% from "hub/_icons.html" import icon %}
+<div class="h-hd" style="padding-left:4px">
+  {{ icon("monshield", 20, "color:#4c9bff") }}
+  <span class="ttl" style="font-size:15px">System Monitoring</span>
+  <a class="more" style="color:#4ee092;margin-right:4px" href="/monitoring" hx-get="/monitoring" hx-target="#content" hx-push-url="true"><span class="h-dot" style="width:8px;height:8px"></span>Live {{ icon("arrow", 12, "color:#c3cde0;margin-left:6px") }}</a>
+</div>
+{% if m.ready %}
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px">
+  {% for g in m.gauges %}
+  <div class="gauge">
+    <span style="font-size:11px;color:#c3cde0;align-self:flex-start;padding-left:6px">{{ g.label }}</span>
+    <svg width="56" height="46" viewBox="0 0 56 56" role="img" aria-label="{{ g.aria }}"><g transform="rotate(135 28 28)" fill="none" stroke-width="5" stroke-linecap="round"><circle cx="28" cy="28" r="20" stroke="#26344f" stroke-dasharray="94.2 125.66"></circle><circle cx="28" cy="28" r="20" stroke="{{ g.c }}" stroke-dasharray="{{ g.dash }}"></circle></g><text x="28" y="33" text-anchor="middle" font-size="13" font-weight="700" fill="#f4f7fc" font-family="Inter,system-ui,sans-serif">{{ g.pct }}%</text></svg>
+    <svg width="94" height="20" viewBox="0 0 94 20" preserveAspectRatio="none" style="max-width:calc(100% - 8px)" aria-hidden="true"><path d="{{ g.spark }}" fill="none" stroke="#3b82f6" stroke-width="1.6"></path></svg>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-st" style="height:92px">{{ m.reason }}</div>
+{% endif %}
+<div style="margin-top:10px;padding:0 4px">
+  {% for s in m.services %}
+    <div class="srow"><span class="h-dot" style="{{ '' if s.status == 'healthy' else 'background:#ef4444' }}"></span>{{ s.name }}<em style="{{ '' if s.status == 'healthy' else 'color:#ff7a7a' }}">{{ s.status|title }}</em></div>
+  {% else %}
+    <div class="srow" style="color:#8c9bb4">No services in config/apps.yml</div>
+  {% endfor %}
+</div>

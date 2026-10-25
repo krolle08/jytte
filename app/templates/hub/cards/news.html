@@ -1,0 +1,28 @@
+{% from "hub/_icons.html" import icon %}
+<div class="h-hd">
+  {{ icon("bars", 20, "color:#4c8dff") }}
+  <span class="ttl" style="font-size:16px">Latest News</span>
+  {% if n.here %}<a class="more" href="/news" hx-get="/news" hx-target="#content" hx-push-url="true">View all {{ icon("arrow", 12) }}</a>
+  {% elif n.peer %}<a class="more" href="{{ n.peer }}">Open on the server {{ icon("ext", 12) }}</a>{% endif %}
+</div>
+{% if n.here %}
+<div class="tabs" style="margin-top:12px;gap:8px">
+  {% for t in n.tabs %}
+    <button class="tab {{ 'on' if t == n.tab }}" aria-pressed="{{ 'true' if t == n.tab else 'false' }}"
+            hx-get="/frag/overview/news?tab={{ t|urlencode }}" hx-target="#news" hx-swap="innerHTML">{{ t }}</button>
+  {% endfor %}
+</div>
+<div style="margin-top:6px">
+  {% for it in n["items"] %}
+    <a class="nws" href="{{ it.link or '#' }}" target="_blank" rel="noopener">
+      {% if it.image %}<img class="th" src="{{ it.image }}" alt="" loading="lazy" referrerpolicy="no-referrer" style="object-fit:cover">
+      {% else %}<div class="th" style="{{ it.bg }}"></div>{% endif %}
+      <div style="min-width:0"><b>{{ it.title }}</b><span>{{ it.desc|striptags|truncate(120) }}</span></div><time>{{ it.age }}</time>
+    </a>
+  {% else %}
+    <div class="empty-st" style="height:180px">No news in the cache yet</div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-st" style="height:220px">News lives on the personal site.</div>
+{% endif %}

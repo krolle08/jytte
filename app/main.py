@@ -8,13 +8,14 @@ from pathlib import Path
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from jinja2 import ChoiceLoader, FileSystemLoader
 
 from app import (aiview, bankauth, claude, db, frontpage, jyviews,
                  mcp_server, nav, site, sse, today, watchdog)
+from app.hub import routes as hub
 from app.registry import WidgetRegistry
 from app.sse import sse_router
 
@@ -80,8 +81,8 @@ class SiteGate:
     """FEAT-001. The other site's pages answer 404 here, in one place,
     instead of a check in each of thirty handlers. Widget routes need no
     gate: an unloaded widget has no router and the generic handlers
-    already 404 on an unknown name. `/` is local Home, so the personal
-    site sends it to its own first page instead.
+    already 404 on an unknown name. `/` is the Home Hub overview and is
+    served by both sites (FEAT-002).
 
     Plain ASGI, not @app.middleware("http"): that wraps every response in
     BaseHTTPMiddleware's task group, including the SSE stream on /events
@@ -96,10 +97,7 @@ class SiteGate:
             path = scope["path"]
             owner = site.path_site(path)
             if owner is not None and not site.owns(owner):
-                if path == "/" and site.current() == site.PERSONAL:
-                    resp = RedirectResponse(site.PERSONAL_ROOT, status_code=302)
-                else:
-                    resp = JSONResponse({"detail": "Not Found"}, status_code=404)
+                resp = JSONResponse({"detail": "Not Found"}, status_code=404)
                 await resp(scope, receive, send)
                 return
         await self.app(scope, receive, send)
@@ -117,6 +115,12 @@ app.include_router(sse_router)
 # tunnel in front of Jytte makes this one path reachable from the
 # internet; see the docstring in app/bankauth.py.
 app.include_router(bankauth.router)
+# FEAT-002 Home Hub: the overview at /, the table pages, their
+# fragments and actions. The six pages it shares a path with
+# (/jobs /bank /budget /salary /stocks /news) are registered below and
+# hand over to hub.render_view.
+hub.bind(registry)
+app.include_router(hub.router)
 
 for _w in registry.list():
     if _w.router is not None:
@@ -138,9 +142,13 @@ def health():
 # under /legacy/* and is unchanged - see app/nav.py.
 # ----------------------------------------------------------------------
 
+# A page from the previous design keeps its template; shell.html now
+# renders the Home Hub chrome around it (FEAT-002). `chrome` is that
+# chrome's context, `nav` the old one, still read by a few templates.
 async def _shell(request: Request, active: str, template: str, ctx: dict | None = None):
     templates: Jinja2Templates = request.app.state.templates
-    out = {"request": request, "nav": await nav.context(registry, active)}
+    out = {"request": request, "nav": await nav.context(registry, active),
+           "chrome": await hub.chrome(request, active), "adopted": True}
     out.update(ctx or {})
     # A dict key named `items` (or keys/values/get/...) resolves to the
     # bound method in Jinja, not to the key. That has cost this project
@@ -151,13 +159,14 @@ async def _shell(request: Request, active: str, template: str, ctx: dict | None 
     return templates.TemplateResponse(template, out)
 
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/today", response_class=HTMLResponse)
 async def home(request: Request):
-    """Mock 1a. Mail, calendar and tasks over a stat strip, then four
-    link tiles. Composition is app/home.py; it reuses the widget state
-    app/today.py already reads, so nothing fetches twice."""
+    """Mock 1a, now "Today" (FEAT-002 moved it off `/`, which is the
+    Home Hub overview). Mail, calendar and tasks over a stat strip, then
+    four link tiles. Composition is app/home.py; it reuses the widget
+    state app/today.py already reads, so nothing fetches twice."""
     from app import home as home_mod
-    return await _shell(request, "home", "jy_home.html", await home_mod.build(registry))
+    return await _shell(request, "today", "jy_home.html", await home_mod.build(registry))
 
 
 @app.get("/ai", response_class=HTMLResponse)
@@ -195,32 +204,31 @@ async def jy_devops(request: Request, org: str | None = None):
 
 
 @app.get("/news", response_class=HTMLResponse)
-async def jy_news(request: Request, cat: str | None = None):
-    """Mock 1g."""
-    return await _shell(request, "news", "jy_news.html",
-                        await jyviews.news(registry, cat=cat))
+async def jy_news(request: Request):
+    """News & Updates (FEAT-002): the news widget's cache as a hub
+    table, tabbed by the channel groups of app/jyviews.NEWS_GROUPS."""
+    return await hub.render_view(request, "news")
 
 
 @app.get("/budget", response_class=HTMLResponse)
 async def jy_budget(request: Request):
-    """Mock 1h."""
-    return await _shell(request, "budget", "jy_budget.html",
-                        await jyviews.budget(registry))
+    """Budget (FEAT-002): plan per category as a hub table, with the
+    previous page's per-person columns, rose and editor kept below it
+    (_jy_budget_body.html)."""
+    return await hub.render_view(request, "budget")
 
 
 @app.get("/stocks", response_class=HTMLResponse)
 async def jy_stocks(request: Request):
-    """Mock 1i. No provider wired; the widget reports what it needs."""
-    return await _shell(request, "stocks", "jy_stocks.html",
-                        await jyviews.stocks(registry))
+    """Investments (FEAT-002): the Nordnet holdings as a hub table."""
+    return await hub.render_view(request, "investments")
 
 
 @app.get("/salary", response_class=HTMLResponse)
 async def jy_salary(request: Request):
-    """Net pay per person, computed from each one's skattekort figures.
-    Not in the design handoff - added on request."""
-    return await _shell(request, "salary", "jy_salary.html",
-                        await jyviews.salary(registry))
+    """Salary (FEAT-002): net pay per person, computed from each one's
+    skattekort figures. Each row opens that person's card and form."""
+    return await hub.render_view(request, "salary")
 
 
 @app.get("/vacation", response_class=HTMLResponse)
@@ -321,9 +329,7 @@ async def jy_bank(request: Request):
     out of this path, because a categorisation has to be explainable
     as "it matched line 23" for the rules to ever improve. The share
     of spend no rule caught is printed in the strip, not hidden."""
-    from app import bankview
-    return await _shell(request, "bank", "jy_bank.html",
-                        await bankview.build(registry))
+    return await hub.render_view(request, "bank")
 
 
 @app.get("/el", response_class=HTMLResponse)
@@ -347,9 +353,9 @@ async def jy_jobs(request: Request):
     /workflows draws one flow at a time, so it cannot answer "which of
     my jobs are switched on". Source is the committed workflow JSON,
     bind-mounted read-only; app/jobs.py documents why the live state is
-    not read."""
-    from app import jobs
-    return await _shell(request, "jobs", "jy_jobs.html", jobs.load())
+    not read. FEAT-002 made it the hub's N8N Pipelines page, with the
+    selected workflow's flow drawn above the table (?sel=<id>)."""
+    return await hub.render_view(request, "pipelines")
 
 
 @app.get("/opslag", response_class=HTMLResponse)

@@ -87,6 +87,29 @@ tailnet and LAN at `server:8080`; only `/bank/callback` is public.
 
 ## Pages
 
+**Home Hub chrome (FEAT-002).** Every page that extended `shell.html`
+now renders inside the Home Hub design from `futureUI/` (top bar with
+search, grouped sidebar, Settings at the bottom). `shell.html` is a
+one-line `extends "hub/base.html"`. Two kinds of page sit in it:
+
+- **Hub pages** are data: a `PageDef` (stats, tabs, rows, detail
+  panels) from one function in `app/hub/views.py`, drawn by
+  `hub/page.html`. They navigate with HTMX into `#content` and push the
+  URL; the same URL returns a full page on a normal request. Fragments
+  are `/frag/<seg>/...`, actions `POST /act/<seg>/...` (HX-Request
+  header required, the CSRF guard), owned by the page's own segment in
+  `app/site.py`. `/` is the overview (`app/hub/overview.py`).
+- **Adopted pages** keep their own template and handler; `hub-adopt.css`
+  repaints their `jytte.css` tokens in the hub palette.
+
+The sidebar is `app/hub/registry.py`, not `app/nav.py`. `/jobs`,
+`/bank`, `/budget`, `/salary`, `/stocks` and `/news` became hub pages
+(the budget editor, bank curve and salary form are kept inside them);
+the old Home moved to `/today`. Live n8n status needs `N8N_API_KEY`,
+which the user creates; without it the pages read the committed
+workflow files and widget state and say so. No Docker socket is mounted
+(FEAT-002 B-2), so Infrastructure is an honest empty page.
+
 Two generations live side by side. The **new dark UI** owns the
 canonical paths and extends `shell.html` + `jytte.css`; everything
 built before it is unchanged under `/legacy/*`, extending the old
@@ -357,13 +380,20 @@ the `llm-wiki-librarian` skill, per `~/.claude/CLAUDE.md`.
 Which site serves each path is `app/site.py`, not this list.
 
 ```
-GET  /            Today - brief, calendar, mail, vault tasks, PRs, pipelines, board
+GET  /            Home Hub overview: pipelines, flow, apps, monitoring, maintenance, budget, salary, investments
+GET  /today       Today - mail, calendar, vault tasks (was /)
+GET  /logs /schedules /credentials /apps /monitoring /infra   Home Hub pages, both sites
+GET  /maintenance /documents   Home Hub pages, local site (vault, Azure DevOps /docs index)
+GET  /bookmarks /notes /settings /search   Home Hub pages, stored in jytte.db
+GET  /frag/<seg>/row/<key>   a row's detail panel (hub pages)
+GET  /frag/overview/<card>   one overview card; /frag/monitoring/card polls every 5 s
+POST /act/<seg>/...          hub actions, need the HX-Request header
 GET  /legacy/dashboard  Boxes - widgets that have no page of their own
 GET  /frontpage/box/<slug>    one dashboard box
 GET  /ai          AI architecture - agent constellation, workflows, flow canvas
 GET  /projects    AI projects + normal projects, read from Projects/_index.json
 GET  /vacation    Danish school holidays (?r=oest|vest for the winter week)
-GET  /stocks      Nordnet portfolio, parsed from the newest CSV in JYTTE_NORDNET_DIR
+GET  /stocks      Investments - Nordnet holdings, from the newest CSV in JYTTE_NORDNET_DIR
 GET  /poc         POC register - stage + what is blocking each one from PROD
 GET  /poc/systems POC: systemmonitor, every widget and mount as a monitored bed
 GET  /poc/certifikater  POC: course certificates from assets/certificates (not X.509)
@@ -371,7 +401,7 @@ GET  /poc/wow  POC: newest WoW Forever beta note as a game-styled walkthrough
 GET  /bank        Bank - spend by category, from the posting text
 GET  /bank/callback  AIS consent redirect. No shell, no DB write, code never logged
 GET  /el          El - spot price per quarter-hour, what it costs, consumption
-GET  /jobs        Jobs - every n8n workflow as a table row, link into n8n
+GET  /jobs        N8N Pipelines - every workflow, its flow (?sel=<id>), pause/resume with N8N_API_KEY
 GET  /opslag      Opslagsværk - tools and concepts, from config/opslagsvaerk.yml
 GET  /devops      multi-instance Azure DevOps tab (/legacy/ado is the old one)
 GET  /news        8-category news aggregator

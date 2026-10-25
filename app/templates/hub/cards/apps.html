@@ -1,0 +1,40 @@
+{% from "hub/_icons.html" import icon %}
+<div class="h-hd" style="padding-left:4px">
+  {{ icon("openbox", 20, "color:#4c9bff") }}
+  <span class="ttl" style="font-size:15px">My Apps &amp; Services</span>
+  <a class="more" style="margin-right:4px" href="/apps" hx-get="/apps" hx-target="#content" hx-push-url="true">View all {{ icon("arrow", 12) }}</a>
+</div>
+{% if not a.sel %}
+<div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px;margin-top:11px">
+  {% for x in a.apps %}
+    <div class="app" style="height:137px">
+      {{ icon(x.icon, 30, "color:#5ca0ff") }}
+      <b class="clipn" style="max-width:100%">{{ x.name }}</b>
+      <span class="ok {{ '' if x.status == 'healthy' else 'w' }}"><span class="h-dot" style="width:7px;height:7px"></span>{{ x.status|title }}</span>
+      <span style="font-size:12px;color:#a9b6cc">{{ x.version }}</span>
+      <button class="h-btn" style="margin-top:auto" hx-get="/frag/overview/apps?sel={{ x.id|urlencode }}" hx-target="#apps" hx-swap="innerHTML" aria-label="Open {{ x.name }}">Open</button>
+    </div>
+  {% endfor %}
+</div>
+{% if not a.apps %}<div class="empty-st" style="height:140px">{{ a.reason or "No apps in config/apps.yml" }}</div>{% endif %}
+{% else %}
+{% set x = a.sel %}
+<div class="panel">
+  <div style="display:flex;align-items:center;gap:14px">
+    {{ icon(x.icon, 38, "color:#5ca0ff") }}
+    <div><div style="font-size:16px;font-weight:600;color:#f4f7fc">{{ x.name }}</div><div class="ok {{ '' if x.status == 'healthy' else 'w' }}" style="margin-top:3px"><span class="h-dot" style="width:7px;height:7px"></span>{{ x.status|title }}</div></div>
+    <span style="margin-left:auto;font-size:12px;color:#a9b6cc">{{ x.version }}</span>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px">
+    <div class="kv"><span>Check</span><b>{{ x.detail }}</b></div>
+    <div class="kv"><span>Latency</span><b>{{ x.latency }}</b></div>
+    <div class="kv"><span>Kind</span><b>{{ x.kind|title }}</b></div>
+    <div class="kv"><span>Restart</span><b>Not wired</b></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;margin-top:auto">
+    <button class="h-btn" style="width:auto;padding:0 14px" hx-get="/frag/overview/apps" hx-target="#apps" hx-swap="innerHTML">Back</button>
+    {% if x.url %}<a class="h-btn" style="width:auto;padding:0 14px;background:#2563eb;border-color:#2563eb" href="{{ x.url }}" target="_blank" rel="noopener">Launch app</a>{% endif %}
+    <span style="font-size:11px;color:#8c9bb4;margin-left:6px">No Docker socket, so no restart from here</span>
+  </div>
+</div>
+{% endif %}

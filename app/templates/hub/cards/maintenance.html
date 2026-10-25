@@ -1,0 +1,29 @@
+{% from "hub/_icons.html" import icon %}
+<div class="h-hd" style="height:28px">
+  {{ icon("wrench", 20, "color:#4c9bff") }}
+  <span class="ttl" style="font-size:14px">Maintenance &amp; Operations</span>
+  {% if t.here %}<a class="more" href="/maintenance" hx-get="/maintenance" hx-target="#content" hx-push-url="true">View all {{ icon("arrow", 12) }}</a>
+  {% elif t.peer %}<a class="more" href="{{ t.peer }}">Open on the local site {{ icon("ext", 12) }}</a>{% endif %}
+</div>
+<div style="margin-top:4px">
+  {% if t.here %}
+  {% for x in t.tasks %}
+    <div class="mrow {{ 'done' if x.status == 'done' }}">
+      {{ icon("wrench", 24, "color:#4c9bff") }}
+      <div class="mt"><b>{{ x.title }}</b><span>{{ x.detail or x.system }}</span></div>
+      <span class="bdg {{ x.bcls }}">{{ x.badge }}</span>
+      <details class="mmenu">
+        <summary class="dotbtn" aria-label="Task actions">&middot;&middot;&middot;</summary>
+        <div class="pop">
+          <button class="pi" hx-post="/act/maintenance/{{ x.id|urlencode }}/{{ 'undo' if x.status == 'done' else 'done' }}?back=overview" hx-target="#maintenance" hx-swap="innerHTML">{{ 'Mark as not done' if x.status == 'done' else 'Mark as done' }}</button>
+          <button class="pi" hx-post="/act/maintenance/{{ x.id|urlencode }}/{{ 'unsnooze' if x.status == 'snoozed' else 'snooze' }}?back=overview" hx-target="#maintenance" hx-swap="innerHTML">{{ 'Remove snooze' if x.status == 'snoozed' else 'Snooze 1 day' }}</button>
+        </div>
+      </details>
+    </div>
+  {% else %}
+    <div class="empty-st" style="height:170px">{{ t.reason or "No maintenance notes in the vault yet" }}</div>
+  {% endfor %}
+  {% else %}
+    <div class="empty-st" style="height:170px">Maintenance is read from the vault on the local site.</div>
+  {% endif %}
+</div>

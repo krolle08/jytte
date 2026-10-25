@@ -36,14 +36,28 @@ PERSONAL_PATHS = (
     "/docs/ml", "/legacy/news", "/legacy/budget",
 )
 LOCAL_PATHS = (
-    "/ai", "/constellation", "/workflows", "/jobs", "/projects", "/devops",
-    "/opslag", "/poc", "/frontpage",
+    "/ai", "/constellation", "/workflows", "/projects", "/devops",
+    "/opslag", "/poc", "/frontpage", "/today", "/maintenance", "/documents",
     "/legacy/today", "/legacy/dashboard", "/legacy/ai", "/legacy/projects",
     "/legacy/ado",
 )
 
-# Where the personal site sends `/`, which is local Home.
-PERSONAL_ROOT = "/budget"
+# FEAT-002 Home Hub pages that both sites serve, each about its own
+# site: the overview at `/`, n8n's pipelines (each site has its own
+# n8n), apps, monitoring, notes. Listed so a test can tell "shared on
+# purpose" from "nobody assigned it".
+SHARED_PATHS = (
+    "/", "/jobs", "/logs", "/schedules", "/credentials", "/apps", "/monitoring",
+    "/infra", "/bookmarks", "/notes", "/settings", "/search",
+)
+
+# Fragments and actions of a hub page live under /frag/<seg>/ and
+# /act/<seg>/, where <seg> is the page's own first path segment. They
+# belong to whichever site owns that page.
+_HUB_PREFIXES = ("/frag/", "/act/")
+# Fragment and action segments that belong to no page: the overview's
+# cards and the theme cookie. Shared like `/`.
+HUB_SHARED_SEGMENTS = ("overview", "theme")
 
 WORKFLOWS: dict[str, str] = {
     "bank.json": PERSONAL,
@@ -92,7 +106,11 @@ def _under(path: str, prefix: str) -> bool:
 def path_site(path: str) -> str | None:
     """Which site owns a request path, or None when it is shared."""
     if path == "/":
-        return LOCAL
+        return None
+    for pre in _HUB_PREFIXES:
+        if path.startswith(pre):
+            seg = path[len(pre):].split("/", 1)[0]
+            return None if seg in ("", *HUB_SHARED_SEGMENTS) else path_site("/" + seg)
     for p in PERSONAL_PATHS:
         if _under(path, p):
             return PERSONAL

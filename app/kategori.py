@@ -277,14 +277,20 @@ def categorise(tx: dict, book: Book) -> dict:
         hit = r.hits(hay, amount)
         if hit:
             c = book.get(r.kategori)
+            # Which kind of needle won, for the Home Hub "Why" panel
+            # (FEAT-002). Same order as Rule.hits() tries them.
+            kind = ("tekst" if hit in r.tekst
+                    else "ord" if any(src == hit for _, src in r.ord_) else "regex")
             return {"kategori": c.id, "navn": c.navn, "farve": c.farve,
                     "gruppe": c.gruppe, "gruppe_navn": c.gruppe_navn,
                     "fast": c.fast, "rank": c.rank,
-                    "why": f"{hit!r} (linje {r.line})", "matched": True}
+                    "why": f"{hit!r} (linje {r.line})", "matched": True,
+                    "line": r.line, "hit": hit, "kind": kind}
     c = book.unknown
     return {"kategori": c.id, "navn": c.navn, "farve": c.farve,
             "gruppe": "", "gruppe_navn": "", "fast": False, "rank": c.rank,
-            "why": "ingen regel ramte", "matched": False}
+            "why": "ingen regel ramte", "matched": False,
+            "line": 0, "hit": "", "kind": ""}
 
 
 def categorise_all(transactions: list[dict], book: Book) -> list[dict]:

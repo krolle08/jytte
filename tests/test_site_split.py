@@ -97,17 +97,37 @@ def test_every_route_is_owned_or_shared():
             # Widget routers (/widgets/<name>/...) belong to their widget,
             # which the registry already filters.
             continue
-        assert site.path_site(r.path) is not None or r.path in SHARED, r.path
+        assert (site.path_site(r.path) is not None or r.path in SHARED
+                or r.path in site.SHARED_PATHS or _hub_shared(r.path)), r.path
+
+
+def _hub_shared(path: str) -> bool:
+    """FEAT-002: a hub fragment or action is shared when its page is."""
+    for pre in ("/frag/", "/act/"):
+        if path.startswith(pre):
+            seg = path[len(pre):].split("/", 1)[0]
+            return (seg == "{seg}" or seg in site.HUB_SHARED_SEGMENTS
+                    or "/" + seg in site.SHARED_PATHS)
+    return False
+
+
+def test_hub_fragments_follow_their_page():
+    assert site.path_site("/frag/bank/row/tx1") == site.PERSONAL
+    assert site.path_site("/act/maintenance/x/done") == site.LOCAL
+    assert site.path_site("/frag/jobs/row/x") is None
+    assert site.path_site("/") is None
 
 
 @pytest.mark.parametrize("path", ["/budget", "/bank", "/bank/callback", "/salary",
-                                  "/el", "/legacy/budget", "/docs/ml"])
+                                  "/el", "/legacy/budget", "/docs/ml", "/stocks",
+                                  "/news", "/frag/bank/row/x"])
 def test_routes_gated_local(monkeypatch, path):
     assert _client(monkeypatch, "local").get(path).status_code == 404
 
 
-@pytest.mark.parametrize("path", ["/ai", "/devops", "/jobs", "/poc", "/poc/systems",
-                                  "/legacy/today", "/frontpage/box/now"])
+@pytest.mark.parametrize("path", ["/ai", "/devops", "/poc", "/poc/systems",
+                                  "/legacy/today", "/frontpage/box/now", "/today",
+                                  "/maintenance", "/documents"])
 def test_routes_gated_personal(monkeypatch, path):
     assert _client(monkeypatch, "personal").get(path).status_code == 404
 
@@ -133,10 +153,11 @@ def test_legacy_unset_lists_all(monkeypatch):
     assert len(nav.legacy_pages()) == len(nav.LEGACY_PAGES)
 
 
-def test_personal_root_redirect(monkeypatch):
-    r = _client(monkeypatch, "personal").get("/")
-    assert r.status_code == 302
-    assert r.headers["location"] == "/budget"
+@pytest.mark.parametrize("value", ["personal", "local"])
+def test_root_is_shared(monkeypatch, value):
+    """FEAT-002: `/` is the Home Hub overview on both sites. It used to
+    send the personal site to /budget."""
+    assert _client(monkeypatch, value).get("/").status_code != 404
 
 
 # --- AC-07 / AC-NF-02 nav -----------------------------------------------

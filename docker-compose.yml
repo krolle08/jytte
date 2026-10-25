@@ -20,6 +20,10 @@ services:
       JYTTE_SITE: "local"
       JYTTE_DATA_DIR: "/data"
       JYTTE_TASKS_PATH: "/data/obsidian-tasks"
+      # FEAT-002: obsidian:// links on the Maintenance page. The Tasks
+      # mount below is the Tasks folder of the vault named Nichlas.
+      JYTTE_VAULT_NAME: "Nichlas"
+      JYTTE_VAULT_TASKS_DIR: "Tasks"
       # The librarian-generated Projects/ view. The projects widget
       # reads <root>/_index.json, nothing else.
       JYTTE_PROJECTS_PATH: "/data/obsidian-projects"

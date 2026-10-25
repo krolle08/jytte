@@ -1,0 +1,27 @@
+{% from "hub/_icons.html" import icon %}
+<div class="h-hd" style="gap:9px">
+  {{ icon("cal", 18, "color:#e8eef9") }}
+  {% if b.here %}
+  <a class="ttlb" href="/budget" hx-get="/budget" hx-target="#content" hx-push-url="true">Budget Overview</a>
+  <select class="selb" name="period" aria-label="Budget period" hx-get="/frag/overview/budget" hx-trigger="change" hx-target="#budget" hx-swap="innerHTML">
+    {% for k, label in (("plan", "Plan"), ("this", "This Month"), ("last", "Last Month")) %}<option value="{{ k }}" {{ 'selected' if b.period == k }}>{{ label }}</option>{% endfor %}
+  </select>
+  {% else %}<span class="ttlb">Budget Overview</span>{% if b.peer %}<a class="more" href="{{ b.peer }}">On the server {{ icon("ext", 12) }}</a>{% endif %}{% endif %}
+</div>
+{% if b.here and b.parts %}
+<div style="display:flex;gap:18px;align-items:center;margin-top:4px">
+  <div style="position:relative;width:92px;height:92px;flex:none">
+    <svg width="92" height="92" viewBox="0 0 100 100" role="img" aria-label="Budget donut chart"><g transform="rotate(-90 50 50)" fill="none" stroke-width="12">
+      {% for p in b.parts %}<circle cx="50" cy="50" r="40" stroke="{{ p.c }}" stroke-dasharray="{{ p.da }}" stroke-dashoffset="{{ p.off }}"></circle>{% endfor %}
+    </g></svg>
+    <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center"><b style="font-size:11px;color:#f4f7fc;font-weight:700">{{ b.total }}</b><span style="font-size:8.5px;color:#8c9bb4;margin-top:1px;max-width:70px">{{ b.total_label }}</span></div>
+  </div>
+  <div style="flex:1;min-width:0">
+    {% for p in b.parts %}<div class="lg"><span class="h-dot" style="background:{{ p.c }};width:9px;height:9px"></span><span class="clipn">{{ p.name }}</span><em>{{ p.amt }}</em></div>{% endfor %}
+  </div>
+</div>
+{% elif b.here %}
+<div class="empty-st" style="height:80px">{{ 'No budget entries yet' if b.period == 'plan' else 'No bank transactions for this month' }}</div>
+{% else %}
+<div class="empty-st" style="height:80px">Budget lives on the personal site.</div>
+{% endif %}

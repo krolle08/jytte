@@ -1,0 +1,23 @@
+{# Row detail panel (hand-over 7.3). Returned by /frag/<view>/row/<key>
+   into the row's .slot. A panel with load_url fetches its body when it
+   opens and never before: execution logs are not preloaded. #}
+{% from "hub/_icons.html" import icon %}
+<div class="det">
+  <div class="dett">{{ d.title }}</div>
+  {% if inner %}
+    {# Rendered server side from our own template with autoescape on,
+       so `inner` is markup we produced, never data passed through. #}
+    <div class="det-inc">{{ inner }}</div>
+  {% elif d.load_url %}
+    <pre class="pre" hx-get="{{ d.load_url }}" hx-trigger="load" hx-swap="innerHTML">{{ d.body }}</pre>
+  {% else %}
+    <pre class="pre">{{ d.body }}</pre>
+  {% endif %}
+  {% if d.cmd %}<div class="dettl">Fetch command</div><pre class="pre">{{ d.cmd }}</pre>{% endif %}
+  {% if d.actions %}
+  <div class="dact">
+    {% for a in d.actions %}{% include "hub/_action.html" %}{% endfor %}
+  </div>
+  {% endif %}
+  {% if d.note %}<div class="dnote">{{ d.note }}</div>{% endif %}
+</div>

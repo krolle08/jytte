@@ -1,0 +1,29 @@
+{# Four states as the POC footer: running, failed, idle, paused, plus
+   "no run reported" for a workflow nothing has heard from yet. #}
+{% from "hub/_icons.html" import icon %}
+<div class="flowfoot" id="flow-foot"
+     {% if flow.state == 'running' %}hx-get="/frag/jobs/flow-footer?sel={{ flow.id|urlencode }}" hx-trigger="every 2s" hx-swap="outerHTML"{% endif %}>
+  {% if flow.state == 'running' %}
+    <span class="h-dot big" style="background:#f5a524;box-shadow:0 0 0 2px rgba(245,165,36,.25)"></span><span style="color:#f6b445;font-weight:500">Running...</span>
+    <span style="margin-left:14px">Started just now</span>
+  {% elif flow.state == 'failed' %}
+    <span class="h-dot big" style="background:#ef4444;box-shadow:0 0 0 2px rgba(239,68,68,.3)"></span><span style="color:#ff7a7a;font-weight:500;white-space:nowrap">Last run failed</span>
+    <span style="margin-left:10px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ flow.fail_msg }}</span>
+    {% if flow.exec_url %}<span>&bull;</span><a href="{{ flow.exec_url }}" target="_blank" rel="noopener" style="color:#8cb4ff;text-decoration:underline;white-space:nowrap;flex:none">View execution</a>{% endif %}
+  {% elif flow.state == 'paused' %}
+    <span class="h-dot big" style="background:#f5a524;box-shadow:0 0 0 2px rgba(245,165,36,.25)"></span><span style="color:#f6b445;font-weight:500">Pipeline paused</span>
+    <span style="margin-left:14px">Last run {{ flow.last }}</span><span>&bull;</span><span>Duration: {{ flow.duration }}</span>
+  {% elif flow.state == 'idle' %}
+    <span class="h-dot big" style="background:#2fd27a;box-shadow:0 0 0 2px rgba(47,210,122,.25)"></span><span style="color:#4ee092;font-weight:500">Last run successful</span>
+    <span style="margin-left:14px">{{ flow.last }}</span><span>&bull;</span><span>Duration: {{ flow.duration }}</span>
+  {% else %}
+    <span class="h-dot big" style="background:#6b7a93"></span><span style="color:#c3cde0;font-weight:500">No run reported</span>
+    <span style="margin-left:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">This workflow reports to no Jytte widget</span>
+  {% endif %}
+  {% if run_msg %}<span class="runmsg">{{ run_msg }}</span>{% endif %}
+  {% if flow.n8n_url %}<a class="h-btn" href="{{ flow.n8n_url }}" target="_blank" rel="noopener" style="margin-left:auto;height:30px;width:auto;padding:0 13px;gap:7px;font-size:12px;white-space:nowrap;flex:none">{{ icon("ext", 13) }}Open in n8n</a>{% endif %}
+  <button class="runbtn" hx-post="/act/jobs/{{ flow.id|urlencode }}/run" hx-target="#flow-foot" hx-swap="outerHTML"
+          {{ 'disabled' if flow.state == 'running' }}
+          title="{{ 'Calls the workflow webhook' if flow.can_run else 'Only a webhook workflow can be started from here' }}"
+          {% if not flow.n8n_url %}style="margin-left:auto"{% endif %}>{{ icon("play", 12) }}{{ 'Running' if flow.state == 'running' else 'Run now' }}</button>
+</div>

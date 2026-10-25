@@ -1,0 +1,12 @@
+{# One button. `a` is an app.hub.model.Action. href opens a new tab,
+   post is an HTMX POST into its target, get navigates #content, copy
+   puts text on the clipboard (hub.js). #}
+{%- if a.href -%}
+<a class="h-btn sm" href="{{ a.href }}" target="_blank" rel="noopener">{{ a.label }}</a>
+{%- elif a.post -%}
+<button class="h-btn sm" hx-post="{{ a.post }}" hx-target="{{ a.target }}">{{ a.label }}</button>
+{%- elif a.copy -%}
+<button class="h-btn sm" data-copy="{{ a.copy }}">{{ a.label }}</button>
+{%- elif a.get -%}
+<button class="h-btn sm" hx-get="{{ a.get }}" hx-target="#content" hx-push-url="true">{{ a.label }}</button>
+{%- endif -%}

@@ -1,0 +1,5 @@
+{# A hub view as a whole page: the chrome around the same partial that
+   an HTMX navigation swaps into #content on its own. One partial, two
+   ways to get it, so a reload and a click cannot render differently. #}
+{% extends "hub/base.html" %}
+{% block content %}{% include partial %}{% endblock %}

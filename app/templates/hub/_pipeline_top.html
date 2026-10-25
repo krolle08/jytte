@@ -1,0 +1,22 @@
+{# Pipelines page: the selected workflow's flow next to its details. #}
+<div class="pipetop">
+  <div class="pipeflow">{% with flow = pg.extra_ctx.flow %}{% include "hub/_flow.html" %}{% endwith %}</div>
+  {% set f = pg.extra_ctx.flow %}
+  <section class="h-card pipedet">
+    <div class="h-hd"><span class="ttl" style="font-size:16px">Pipeline details</span></div>
+    <div style="margin-top:10px">
+      {% for l, v in f.facts %}
+        <div class="fact"><span>{{ l }}</span><span>{{ v }}</span></div>
+      {% endfor %}
+    </div>
+    <div class="dettl" style="margin-top:12px">Last runs</div>
+    <div style="flex:1;overflow:hidden">
+      {% for r in f.runs %}
+        <div class="runrow"><span class="t">{{ r.t }}</span><span class="pc {{ r.cls }}">{{ r.st }}</span><span class="m">{{ r.m }}</span></div>
+      {% else %}
+        <div style="font-size:11px;color:#8c9bb4;padding:4px 0">Run history needs N8N_API_KEY</div>
+      {% endfor %}
+    </div>
+    <button class="h-btn sm" style="align-self:flex-start;margin-top:8px" hx-post="/act/jobs/{{ f.id|urlencode }}/toggle" hx-target="#content">{{ 'Resume pipeline' if f.paused else 'Pause pipeline' }}</button>
+  </section>
+</div>

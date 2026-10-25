@@ -1,0 +1,12 @@
+# Optional overrides for the Home Hub Documents page (FEAT-002). The
+# page indexes the /docs folder of every repo in each Azure DevOps
+# project Jytte is configured for (AZDO_*), so a repo needs no entry
+# here to show up. Use this to give a repo the name of the system it
+# documents, or to hide one.
+#
+# systems:
+#   - repo: some-repo
+#     name: Some system
+#   - repo: an-archive
+#     hide: true
+systems: []

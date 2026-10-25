@@ -1,0 +1,24 @@
+{% from "hub/_icons.html" import icon %}
+<div class="h-hd">
+  {{ icon("flow", 24, "color:#e8eef9") }}
+  <span class="ttl" style="font-size:16px">N8N Pipeline Overview</span>
+  <a class="more" href="/jobs" hx-get="/jobs" hx-target="#content" hx-push-url="true">View all {{ icon("arrow", 12) }}</a>
+</div>
+<div class="tabs" style="margin-top:14px">
+  {% for k, label in (("all", "All"), ("running", "Running"), ("paused", "Paused"), ("failed", "Failed")) %}
+    <button class="tab {{ 'on' if c.filter == k }}" aria-pressed="{{ 'true' if c.filter == k else 'false' }}"
+            hx-get="/frag/overview/n8n?filter={{ k }}" hx-target="#n8n" hx-swap="innerHTML">{{ label }} ({{ c.counts[k] }})</button>
+  {% endfor %}
+</div>
+<div style="margin-top:8px">
+  <div class="trow h"><span>Name</span><span>Status</span><span>Last run</span><span>Next run</span><span></span></div>
+  {% for r in c.rows %}
+    <div class="trow {{ 'sel' if r.sel }}">
+      <span class="nm"><a class="nmbtn" href="/jobs?sel={{ r.id|urlencode }}" hx-get="/jobs?sel={{ r.id|urlencode }}" hx-target="#content" hx-push-url="true" title="Show pipeline flow"><span class="h-tile" style="--c:{{ r.colour }}">{{ icon(r.icon, 13) }}</span><span class="clipn">{{ r.name }}</span></a></span>
+      <span><button class="h-pill {{ 'o' if r.paused else 'g' }}" hx-post="/act/jobs/{{ r.id|urlencode }}/toggle?back=overview" hx-target="#n8n" hx-swap="innerHTML" title="{{ 'Resume ' if r.paused else 'Pause ' }}{{ r.name }}"><i></i>{{ 'Paused' if r.paused else 'Running' }}</button></span>
+      <span class="{{ 'lf' if r.failed }}">{{ r.last }}</span><span>{{ r.next }}</span><span class="dots">&middot;&middot;&middot;</span>
+    </div>
+  {% endfor %}
+  {% if not c.rows %}<div class="empty-st">{{ c.empty if c.ready else c.reason }}</div>{% endif %}
+  {% if flash %}<div class="flash">{{ flash }}</div>{% endif %}
+</div>
