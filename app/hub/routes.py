@@ -30,7 +30,7 @@ from markupsafe import Markup
 from app import site
 from app.hub import maintenance, n8n, overview, registry as hreg, store
 from app.hub.model import PageDef, filter_rows
-from app.hub.views import BUILDERS, Ctx
+from app.hub.views import BUILDERS, Ctx, invalidate_search
 
 log = logging.getLogger(__name__)
 
@@ -316,6 +316,7 @@ async def maintenance_action(request: Request, item_id: str, action: str):
         raise HTTPException(status_code=404)
     try:
         maintenance.write_status(item_id, action)
+        invalidate_search()
     except (ValueError, FileNotFoundError) as e:
         raise HTTPException(status_code=404, detail=str(e)) from None
     if request.query_params.get("back") == "overview":
@@ -328,6 +329,7 @@ async def maintenance_action(request: Request, item_id: str, action: str):
 async def add_note(request: Request, text: str = Form("")):
     _check_hx(request)
     await store.add_note(text)
+    invalidate_search()
     return await render_view(request, "notes", force_partial=True)
 
 
@@ -335,6 +337,7 @@ async def add_note(request: Request, text: str = Form("")):
 async def delete_note(request: Request, note_id: int):
     _check_hx(request)
     await store.delete_note(note_id)
+    invalidate_search()
     return await render_view(request, "notes", force_partial=True)
 
 
@@ -348,6 +351,7 @@ async def add_bookmark(request: Request, title: str = Form(""), url: str = Form(
                        tag: str = Form("")):
     _check_hx(request)
     ok = await store.add_bookmark(title, url, tag)
+    invalidate_search()
     return await render_view(request, "bookmarks", force_partial=True,
                              flash="" if ok else "Only http and https links can be saved.")
 
@@ -356,6 +360,7 @@ async def add_bookmark(request: Request, title: str = Form(""), url: str = Form(
 async def remove_bookmark(request: Request, bm_id: int):
     _check_hx(request)
     await store.remove_bookmark(bm_id)
+    invalidate_search()
     return await render_view(request, "bookmarks", force_partial=True)
 
 

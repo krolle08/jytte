@@ -68,7 +68,8 @@ def test_bank_rows(rules, monkeypatch):
     assert unk.cells[2] == "Ukategoriseret" and unk.tag == "Ukategoriseret"
     assert views.GREY_BG in unk.cell_styles[2]
     uncat = next(s for s in pg.stats if s.label == "Ukategoriseret")
-    assert uncat.value == "120 kr." and uncat.sub.startswith("1 ")
+    # share of SPEND that no rule caught: 120 of 532 kr.
+    assert uncat.value == f"{round(12000 / 53200 * 100)}%" and "120 kr." in uncat.sub
     # the suggestion is offered for the uncategorised row only, as text
     d = pg.details[unk.detail_key]
     assert "kategori: <vaelg>" in d.body and d.actions[0].copy
@@ -108,6 +109,24 @@ def test_next_cron():
     daily = sources.next_cron("0 2 * * *", after)
     assert daily.astimezone(sources.TZ).hour == 2
     assert sources.next_cron("0 0 L * *", after) is None
+
+
+def test_kr_rounds_half_up():
+    assert views.kr(1234450) == "12.345 kr."
+    assert views.kr(1234550) == "12.346 kr."
+
+
+def test_bank_keys_survive_new_rows(rules, monkeypatch):
+    monkeypatch.setenv("JYTTE_SITE", "personal")
+    today = datetime.now(timezone.utc).date().isoformat()
+    a = {"date": today, "text": "NETTO 4711 Sydhavn", "amount_oere": -41200}
+    b = {"date": today, "text": "Wolt Copenhagen", "amount_oere": -21900}
+
+    def key_of(txs, text):
+        reg = _Reg([_W("bank", {"ready": True, "transactions": txs, "accounts": []})])
+        pg = asyncio.run(views.build_bank(views.Ctx(registry=reg)))
+        return next(r.detail_key for r in pg.rows if r.cells[0] == text)
+    assert key_of([a], "NETTO 4711 Sydhavn") == key_of([b, a], "NETTO 4711 Sydhavn")
 
 
 def test_safe_url():

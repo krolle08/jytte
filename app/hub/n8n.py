@@ -34,7 +34,28 @@ log = logging.getLogger(__name__)
 
 _TTL_LIST = 30.0
 _TTL_LOG = 60.0
-_cache: dict[str, tuple[float, Any]] = {}
+_MAX_CACHE = 200
+_cache: dict[str, tuple[float, float, Any]] = {}   # key -> (stored at, ttl, data)
+
+
+def _cache_get(key: str) -> Any | None:
+    hit = _cache.get(key)
+    if hit is None:
+        return None
+    at, ttl, data = hit
+    if time.monotonic() - at >= ttl:
+        del _cache[key]
+        return None
+    return data
+
+
+def _cache_put(key: str, data: Any, ttl: float) -> None:
+    now = time.monotonic()
+    for k in [k for k, (at, t, _) in _cache.items() if now - at >= t]:
+        del _cache[k]
+    while len(_cache) >= _MAX_CACHE:
+        del _cache[next(iter(_cache))]
+    _cache[key] = (now, ttl, data)
 
 
 class N8nUnavailable(Exception):
@@ -66,9 +87,9 @@ def _headers() -> dict[str, str]:
 
 async def _get(path: str, params: dict | None = None, ttl: float = _TTL_LIST) -> Any:
     ck = path + "?" + "&".join(f"{k}={v}" for k, v in sorted((params or {}).items()))
-    hit = _cache.get(ck)
-    if hit and time.monotonic() - hit[0] < ttl:
-        return hit[1]
+    hit = _cache_get(ck)
+    if hit is not None:
+        return hit
     headers = _headers()
     try:
         async with httpx.AsyncClient(timeout=8.0) as c:
@@ -80,8 +101,35 @@ async def _get(path: str, params: dict | None = None, ttl: float = _TTL_LIST) ->
     if r.status_code >= 300:
         raise N8nUnavailable(f"n8n answered {r.status_code}")
     data = r.json()
-    _cache[ck] = (time.monotonic(), data)
+    if path.startswith("/api/v1/executions/"):
+        data = _slim(data)
+    _cache_put(ck, data, ttl)
     return data
+
+
+def _slim(ex: dict) -> dict:
+    """Keep only what log_text() and failed_node() read. A full
+    includeData execution carries every node's output, mail bodies and
+    tokens included, and none of that belongs in this process's memory."""
+    rd = ((ex.get("data") or {}).get("resultData") or {})
+    run = {}
+    for node, attempts in (rd.get("runData") or {}).items():
+        run[node] = [{"executionTime": a.get("executionTime"),
+                      "error": ({"message": str((a.get("error") or {}).get("message") or "error")}
+                                if a.get("error") else None)}
+                     for a in attempts or []]
+    err = rd.get("error") or {}
+    node = err.get("node")
+    return {
+        "id": ex.get("id"), "mode": ex.get("mode"), "status": ex.get("status"),
+        "finished": ex.get("finished"), "startedAt": ex.get("startedAt"),
+        "stoppedAt": ex.get("stoppedAt"),
+        "data": {"resultData": {
+            "runData": run, "lastNodeExecuted": rd.get("lastNodeExecuted"),
+            "error": ({"message": str(err.get("message") or "error"),
+                       "node": {"name": node.get("name")} if isinstance(node, dict) else None}
+                      if err else None)}},
+    }
 
 
 async def _post(path: str) -> Any:

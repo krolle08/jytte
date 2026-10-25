@@ -172,3 +172,11 @@ def test_adopted_page_has_hub_chrome(client):
     r = client.get("/opslag")
     assert r.status_code == 200
     assert 'id="nav"' in r.text and "/static/hub-adopt.css" in r.text
+
+
+def test_overview_filter_sees_every_pipeline(client):
+    """The tab counts cover all pipelines, so the rows must too, not
+    only the first eight (code review finding on FEAT-002)."""
+    r = client.get("/frag/overview/n8n?filter=paused", headers=HX).text
+    n = int(re.search(r"Paused \((\d+)\)", r).group(1))
+    assert r.count('class="trow "') + r.count('class="trow sel"') == min(8, n)

@@ -10,9 +10,12 @@ Money stays in oere (int) until `kr()` formats it.
 """
 from __future__ import annotations
 
+import hashlib
 import logging
 import os
 import re
+import time
+from urllib.parse import quote
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
 
@@ -45,7 +48,9 @@ class Ctx:
 
 def kr(oere: int, sign: bool = False) -> str:
     """Whole kroner, Danish thousands separator: 1234500 -> "12.345 kr."."""
-    v = round(abs(int(oere)) / 100)
+    # Integer half-up, no float: round() is half-to-even, which turns
+    # 50 oere into a krone on one figure and drops it on the next.
+    v = (abs(int(oere)) + 50) // 100
     s = f"{v:,}".replace(",", ".") + " kr."
     if sign:
         return ("-" if oere < 0 else "+") + s
@@ -509,13 +514,13 @@ async def build_maintenance(ctx: Ctx) -> PageDef:
                                "g" if t["status"] == "done" else ("b" if t["status"] == "snoozed" else "")],
                         tag=stt, detail_key=t["id"],
                         action=Action("Undo" if t["status"] == "done" else "Done",
-                                      post=f"/act/maintenance/{t['id']}/"
+                                      post=f"/act/maintenance/{quote(t['id'], safe='')}/"
                                            f"{'undo' if t['status'] == 'done' else 'done'}"),
                         hay=t["system"]))
         acts = [Action("Mark open" if t["status"] == "done" else "Mark done",
-                       post=f"/act/maintenance/{t['id']}/{'undo' if t['status'] == 'done' else 'done'}"),
+                       post=f"/act/maintenance/{quote(t['id'], safe='')}/{'undo' if t['status'] == 'done' else 'done'}"),
                 Action("Unsnooze" if t["status"] == "snoozed" else "Snooze 1 day",
-                       post=f"/act/maintenance/{t['id']}/{'unsnooze' if t['status'] == 'snoozed' else 'snooze'}")]
+                       post=f"/act/maintenance/{quote(t['id'], safe='')}/{'unsnooze' if t['status'] == 'snoozed' else 'snooze'}")]
         if t["open_url"]:
             acts.append(Action("Open in vault", href=t["open_url"]))
         details[t["id"]] = Detail(title=t["path"], body=t["raw"][:4000], actions=acts,
@@ -617,6 +622,19 @@ async def build_salary(ctx: Ctx) -> PageDef:
         css=["/static/jytte.css", "/static/hub-adopt.css"])
 
 
+def _tx_key(r: dict, seen: dict[str, int]) -> str:
+    """A key that names the same transaction on the next request, so a
+    panel opened after the bank job pushed new rows still explains the
+    row that was clicked. Two identical postings on one day get a
+    counter, in the order the widget delivered them."""
+    base = hashlib.sha1("|".join(str(r.get(k) or "") for k in
+                                 ("date", "amount_oere", "text", "counterparty", "account"))
+                        .encode("utf-8")).hexdigest()[:12]
+    n = seen.get(base, 0)
+    seen[base] = n + 1
+    return f"tx{base}" + (f"-{n}" if n else "")
+
+
 def _bank_month(rows: list[dict], today: date) -> tuple[str, list[dict]]:
     """This month's transactions, or the newest month that has any."""
     this = today.strftime("%Y-%m")
@@ -641,9 +659,10 @@ async def build_bank(ctx: Ctx) -> PageDef:
             pos_of[c.id] = (i, c.farve if c.farve.lower() != computed.lower() else None)
     month, mrows = _bank_month(data.get("rows") or [], ctx.now.date())
     rows, details = [], {}
+    seen: dict[str, int] = {}
     s_out = s_in = s_fast = s_un = 0
     n_out = n_un = 0
-    for i, r in enumerate(mrows):
+    for r in mrows:
         c = r["cat"]
         amt = int(r.get("amount_oere") or 0)
         out = amt < 0
@@ -655,14 +674,16 @@ async def build_bank(ctx: Ctx) -> PageDef:
                 s_fast += -amt
         else:
             s_in += amt
-        if not c["matched"]:
-            s_un += abs(amt)
+        # The engine's honest measure (/bank rule 2) is the share of
+        # SPEND no rule caught; an unmatched deposit is not spend.
+        if not c["matched"] and out:
+            s_un += -amt
             n_un += 1
         tag = "Ukategoriseret" if not c["matched"] else ("Indtaegt" if not out else
                                                         ("Fast" if c["fast"] else "Variabel"))
         idx, explicit = pos_of.get(c["kategori"], (0, None))
         style = cat_style(hue_of.get(c["gruppe"]) if c["matched"] else None, idx, explicit)
-        key = f"tx{i}"
+        key = _tx_key(r, seen)
         d = str(r.get("date") or "")
         try:
             dshow = date.fromisoformat(d[:10]).strftime("%d %b")
@@ -708,7 +729,8 @@ async def build_bank(ctx: Ctx) -> PageDef:
         stats=[Stat("Udgifter", kr(s_out), f"{n_out} posteringer"),
                Stat("Indtaegt", kr(s_in), f"{len(mrows) - n_out} posteringer"),
                Stat("Faste udgifter", kr(s_fast), f"{pct(s_fast, s_out)}% af udgifter"),
-               Stat("Ukategoriseret", kr(s_un), f"{n_un} posteringer")],
+               Stat("Ukategoriseret", f"{pct(s_un, s_out)}%",
+                    f"{kr(s_un)} over {n_un} posteringer")],
         rows=rows, details=details,
         empty_text=reason or "Ingen posteringer i perioden",
         above=["hub/_bank_curve.html"] if data.get("ready") else [],
@@ -775,24 +797,22 @@ NEWS_TABS = ("Spil", "Arbejde", "Sport", "Andet")
 
 
 async def news_rows(ctx: Ctx) -> list[dict]:
+    """Every story in the news widget's cache, newest first. Read from
+    the cache itself rather than jyviews.news(), which keeps only the 60
+    newest across all channels: a busy channel would empty the others'
+    tabs."""
     from app import jyviews
-    n = await jyviews.news(ctx.registry)
-    if not n.get("ready"):
-        return []
-    slug_group = {}
-    for label, slugs in jyviews.NEWS_GROUPS:
-        for s in slugs:
-            slug_group[s] = label
+    slug_group = {s: label for label, slugs in jyviews.NEWS_GROUPS for s in slugs}
     st = await _state(ctx.registry, "news")
-    cats = ((st.get("data") or {}).get("categories") or [])
-    title_group = {(c.get("title") or c.get("slug")): slug_group.get(c.get("slug"), "Andet")
-                   for c in cats}
     out = []
-    for r in n["rows"]:
-        r = dict(r)
-        r["group"] = title_group.get(r["cat"], "Andet")
-        r["when"] = sources.parse_iso(r.get("published"))
-        out.append(r)
+    for c in ((st.get("data") or {}).get("categories") or []):
+        group = slug_group.get(c.get("slug"), "Andet")
+        for it in c.get("items") or []:
+            out.append({"title": it.get("title") or "", "summary": it.get("summary") or "",
+                        "src": it.get("source") or "", "link": it.get("link") or "",
+                        "image": it.get("image"), "cat": c.get("title") or c.get("slug") or "",
+                        "group": group, "when": sources.parse_iso(it.get("published"))})
+    out.sort(key=lambda r: r["when"] or datetime.min.replace(tzinfo=timezone.utc), reverse=True)
     return out
 
 
@@ -931,26 +951,55 @@ BUILDERS = {
 }
 
 
-async def build_search(ctx: Ctx) -> PageDef:
+_SEARCH_TTL = 30.0
+_search_index: tuple[float, str, int, list[tuple[str, str, str, str, str]]] | None = None
+
+
+async def _index(ctx: Ctx) -> tuple[int, list[tuple[str, str, str, str, str]]]:
+    """Every searchable row of every page on this site, as (text, first
+    cell, page title, href, second cell). Built at most every 30 s: search runs on
+    each keystroke, and rebuilding the bank, documents and health checks
+    for each letter would be the same I/O over and over."""
+    global _search_index
     from app.hub import registry as hreg
+    here = site.current() or "all"
+    if _search_index and _search_index[1] == here and time.monotonic() - _search_index[0] < _SEARCH_TTL:
+        return _search_index[2], _search_index[3]
+    entries: list[tuple[str, str, str, str, str]] = []
+    searched = 0
+    for key, fn in BUILDERS.items():
+        it = hreg.BY_KEY.get(key)
+        if key in ("settings", "search") or it is None or not hreg.owned(it):
+            continue
+        searched += 1
+        try:
+            pg = await fn(Ctx(registry=ctx.registry, theme=ctx.theme, cache=ctx.cache))
+        except Exception:  # noqa: BLE001
+            log.exception("[hub] search: %s failed", key)
+            continue
+        for r in pg.rows:
+            entries.append(((" ".join(r.cells) + " " + r.hay).lower(), r.cells[0], pg.title,
+                            it.href, r.cells[1] if len(r.cells) > 1 else ""))
+    _search_index = (time.monotonic(), here, searched, entries)
+    return searched, entries
+
+
+def invalidate_search() -> None:
+    """After a write the index would be up to 30 s stale; drop it."""
+    global _search_index
+    _search_index = None
+
+
+async def build_search(ctx: Ctx) -> PageDef:
     q = (ctx.q or "").strip().lower()
     rows = []
     searched = 0
     if q:
-        for key, fn in BUILDERS.items():
-            it = hreg.BY_KEY.get(key)
-            if key == "settings" or it is None or not hreg.owned(it):
-                continue
-            searched += 1
-            try:
-                pg = await fn(Ctx(registry=ctx.registry, theme=ctx.theme, cache=ctx.cache))
-            except Exception:  # noqa: BLE001
-                log.exception("[hub] search: %s failed", key)
-                continue
-            for r in pg.rows:
-                if q in (" ".join(r.cells) + " " + r.hay).lower():
-                    rows.append(Row(cells=[r.cells[0], pg.title, r.cells[1] if len(r.cells) > 1 else ""],
-                                    kinds=["", "b"], action=Action("Open", get=it.href)))
+        searched, entries = await _index(ctx)
+        for hay, first, title, href, second in entries:
+            if q in hay:
+                rows.append(Row(cells=[first, title, second], kinds=["", "b"],
+                                action=Action("Open", get=href)))
     return PageDef(
         key="search", title="Search results",
         sub="Matches across pipelines, apps, news, notes and more.",

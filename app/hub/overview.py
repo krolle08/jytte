@@ -62,10 +62,12 @@ async def pipelines_card(ctx: Ctx, filt: str = "all") -> dict:
             "paused": lambda x: x["paused"], "failed": lambda x: x["failed"]}.get(filt, lambda x: True)
     rows = []
     for i, x in enumerate(items):
-        if i >= 8:
-            break
+        # Filter first, then cap: the tab counts cover every pipeline,
+        # so the rows under a tab must come from all of them too.
         if not keep(x):
             continue
+        if len(rows) >= 8:
+            break
         rows.append({"id": x["id"], "name": x["name"], "paused": x["paused"],
                      "failed": x["failed"], "colour": TILE_COLOURS[i % 8],
                      "icon": _icon_for(x["name"]), "sel": x["id"] == sel,
@@ -258,9 +260,23 @@ async def build(ctx: Ctx, today: date | None = None) -> dict:
     }
 
 
+_status: tuple[float, tuple[str, bool]] | None = None
+_STATUS_TTL = 30.0
+
+
 async def status(ctx: Ctx) -> tuple[str, bool]:
-    """Top bar status text, from the same counts as the Critical tile."""
+    """Top bar status text, from the same counts as the Critical tile.
+    Every page shows it, including pages that never show a pipeline, so
+    it is cached for 30 s instead of rebuilding the pipelines and
+    running the health checks on each request."""
+    global _status
+    import time
+    if _status and time.monotonic() - _status[0] < _STATUS_TTL:
+        return _status[1]
     p = await ctx.pipelines()
     apps = await apps_card(ctx)
     n = sum(1 for x in p["items"] if x["failed"]) + apps["unhealthy"]
-    return ("All Systems Operational", True) if not n else (f"{n} issue{'s' if n > 1 else ''} need a look", False)
+    out = ("All Systems Operational", True) if not n else (
+        f"{n} issue{'s' if n > 1 else ''} need a look", False)
+    _status = (time.monotonic(), out)
+    return out

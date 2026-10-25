@@ -18,6 +18,7 @@ state, and the page prints "-" rather than inventing one.
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import re
@@ -224,6 +225,18 @@ async def pipelines(registry, directory: Path | None = None) -> dict:
             out["live_error"] = str(e)
 
     now = datetime.now(timezone.utc)
+    # One executions call per workflow, all at once instead of in turn.
+    live_runs: dict[str, list] = {}
+    if out["live"]:
+        ids = [j["id"] for j in data["jobs"] if j["id"]]
+
+        async def _runs(wid: str) -> list:
+            try:
+                return await n8n.executions(wid, limit=10)
+            except n8n.N8nUnavailable:
+                return []
+        for wid, exs in zip(ids, await asyncio.gather(*(_runs(w) for w in ids))):
+            live_runs[wid] = exs
     for j in data["jobs"]:
         doc = _doc(d, j["file"])
         wid = j["id"] or Path(j["file"]).stem
@@ -242,11 +255,7 @@ async def pipelines(registry, directory: Path | None = None) -> dict:
         dur = "-"
 
         if out["live"] and j["id"]:
-            try:
-                exs = await n8n.executions(j["id"], limit=10)
-            except n8n.N8nUnavailable:
-                exs = []
-            for ex in exs:
+            for ex in live_runs.get(j["id"], []):
                 a, b = parse_iso(ex.get("startedAt")), parse_iso(ex.get("stoppedAt"))
                 status = str(ex.get("status") or ("success" if ex.get("finished") else "error"))
                 runs.append({"id": str(ex.get("id")), "started": a, "stopped": b,
@@ -287,8 +296,10 @@ async def pipelines(registry, directory: Path | None = None) -> dict:
             "success_rate": (f"{round(100 * len(ok_runs) / len(runs))}%" if runs else "-"),
             "runs": runs, "doc": doc,
             "href": f"{n8n.ui_base()}/workflow/{j['id']}" if j["id"] else "",
-            "hook_path": (trig.get("detail") or "").split("/webhook/", 1)[-1].split(" ")[0]
-            if trig.get("kind") == "hook" else "",
+            # A webhook node without a path has detail "POST" and no
+            # URL to call; "Run now" must not guess one.
+            "hook_path": (trig.get("detail") or "").split("/webhook/", 1)[1].split(" ")[0]
+            if trig.get("kind") == "hook" and "/webhook/" in (trig.get("detail") or "") else "",
         })
     # The POC lists running first and keeps the file order otherwise.
     out["items"].sort(key=lambda p: (p["paused"], p["name"].lower()))
