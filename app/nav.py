@@ -15,7 +15,7 @@ import logging
 import os
 from dataclasses import dataclass, field, replace
 
-from app import site
+from app import features, site
 
 log = logging.getLogger(__name__)
 
@@ -29,34 +29,33 @@ class Item:
     migrated: bool = True
     legacy_href: str | None = None
     blurb: str = ""
+    # FEAT-003: the feature this page belongs to; None is core.
+    feature: str | None = None
 
 
 @dataclass(frozen=True)
 class Group:
     label: str
     items: list[Item] = field(default_factory=list)
-    # FEAT-001: which site serves these pages. None = both (Legacy,
-    # whose index is shared and filtered by legacy_pages()).
-    site: str | None = None
 
 
 # Screen ids are the handoff's: 1a..1i. `migrated=False` means the new
 # design is not built yet and the page says so and links to legacy,
 # rather than pretending.
 GROUPS: tuple[Group, ...] = (
-    Group("Overview", site=site.LOCAL, items=[
+    Group("Overview", items=[
         Item("home", "Home", "/", migrated=True, legacy_href="/legacy/today",
-             blurb="Mail, kalender og opgaver. Mock 1a."),
+             blurb="Mail, kalender og opgaver. Mock 1a.", feature="today"),
     ]),
-    Group("AI", site=site.LOCAL, items=[
+    Group("AI", items=[
         Item("ai", "AI stack", "/ai", migrated=False, legacy_href="/legacy/ai",
-             blurb="Stack health, overlap-analyse og skills-tabel. Mock 1b."),
+             blurb="Stack health, overlap-analyse og skills-tabel. Mock 1b.", feature="ai"),
         Item("constellation", "Constellation", "/constellation",
              migrated=False, legacy_href="/legacy/ai",
-             blurb="Orkestrator i midten, agents paa ring, skills i kredsloeb. Mock 1c."),
+             blurb="Orkestrator i midten, agents paa ring, skills i kredsloeb. Mock 1c.", feature="ai"),
         Item("workflows", "Workflows", "/workflows",
              migrated=False, legacy_href="/legacy/ai?wf=ado-event-notify",
-             blurb="Flow-canvas med trin-detalje under lærredet. Mock 1d."),
+             blurb="Flow-canvas med trin-detalje under lærredet. Mock 1d.", feature="ai"),
         # Not in the design handoff. The canvas draws one flow at a
         # time, so it cannot answer "which of my jobs are switched
         # on". That is a question about all of them at once, and the
@@ -64,29 +63,29 @@ GROUPS: tuple[Group, ...] = (
         Item("jobs", "Jobs", "/jobs", migrated=True, legacy_href=None,
              blurb="Alle n8n-workflows i én tabel: status, kadence, link til n8n."),
     ]),
-    Group("Work", site=site.LOCAL, items=[
+    Group("Work", items=[
         Item("projects", "Projects", "/projects", migrated=False,
              legacy_href="/legacy/projects",
-             blurb="Kunde, internt og privat i tre kolonner. Mock 1e."),
+             blurb="Kunde, internt og privat i tre kolonner. Mock 1e.", feature="projects"),
         Item("devops", "Azure DevOps", "/devops", migrated=False,
              legacy_href="/legacy/ado",
-             blurb="Work items, PR'er og pipeline-koersler. Mock 1f."),
+             blurb="Work items, PR'er og pipeline-koersler. Mock 1f.", feature="devops"),
         # Not in the design handoff. A reading page rather than a
         # dashboard: the value of an entry is the paragraph saying why
         # it was worth saving.
         Item("opslag", "Opslagsværk", "/opslag", migrated=True, legacy_href=None,
-             blurb="Værktøjer og begreber værd at slå op igen."),
+             blurb="Værktøjer og begreber værd at slå op igen.", feature="opslag"),
     ]),
-    Group("Personal", site=site.PERSONAL, items=[
+    Group("Personal", items=[
         Item("news", "News", "/news", migrated=False, legacy_href="/legacy/news",
-             blurb="Kanalliste og morgen-digest. Mock 1g."),
+             blurb="Kanalliste og morgen-digest. Mock 1g.", feature="news"),
         Item("budget", "Budget", "/budget", migrated=False, legacy_href="/legacy/budget",
-             blurb="Maaned, kategorier og transaktioner. Mock 1h."),
+             blurb="Maaned, kategorier og transaktioner. Mock 1h.", feature="budget"),
         # Budget is what you planned. Bank is what actually left the
         # account, categorised from the posting text. Next to each
         # other because the only interesting question is the gap.
         Item("bank", "Bank", "/bank", migrated=True, legacy_href=None,
-             blurb="Forbrug pr. kategori, kategoriseret ud fra posteringsteksten."),
+             blurb="Forbrug pr. kategori, kategoriseret ud fra posteringsteksten.", feature="bank"),
         # Built in the new shell, so `migrated` is true even though the
         # mock is 1i: there is no legacy stocks page to fall back to,
         # there never was one.
@@ -94,15 +93,15 @@ GROUPS: tuple[Group, ...] = (
         # answers the same question from the other end: Budget is what
         # you planned to spend, El is what a kilowatt costs right now.
         Item("el", "El", "/el", migrated=True, legacy_href=None,
-             blurb="Spotpris pr. kvarter, hvad den koster, og forbruget."),
+             blurb="Spotpris pr. kvarter, hvad den koster, og forbruget.", feature="el"),
         Item("stocks", "Aktier", "/stocks", migrated=True, legacy_href=None,
-             blurb="Nordnet-beholdning fra CSV-eksport. Mock 1i."),
+             blurb="Nordnet-beholdning fra CSV-eksport. Mock 1i.", feature="stocks"),
         # Not in the design handoff, so it has no mock number and no
         # legacy page. Built in the new shell from the start.
         Item("vacation", "Skoleferier", "/vacation", migrated=True, legacy_href=None,
-             blurb="Danske skoleferier, beregnet fra reglerne."),
+             blurb="Danske skoleferier, beregnet fra reglerne.", feature="vacation"),
         Item("salary", "Løn", "/salary", migrated=True, legacy_href=None,
-             blurb="Nettoløn beregnet fra skattekortet."),
+             blurb="Nettoløn beregnet fra skattekortet.", feature="salary"),
     ]),
     # Everything built before the redesign, untouched and still working.
     Group("Legacy", [
@@ -114,18 +113,18 @@ GROUPS: tuple[Group, ...] = (
     # where it sits and what the page says about itself. Keeping the
     # group last, below Legacy, makes "not part of the app yet" a
     # property of the navigation rather than a note in a file.
-    Group("POC'S", site=site.LOCAL, items=[
+    Group("POC'S", items=[
         Item("poc", "Oversigt", "/poc", migrated=True, legacy_href=None,
-             blurb="Hvilke POC'er er WIP, og hvad mangler før PROD."),
+             blurb="Hvilke POC'er er WIP, og hvad mangler før PROD.", feature="poc"),
         Item("poc-systems", "Systemmonitor", "/poc/systems",
              migrated=True, legacy_href=None,
-             blurb="Hvert system som en patient: puls, alder og fejl i træk."),
+             blurb="Hvert system som en patient: puls, alder og fejl i træk.", feature="poc"),
         Item("poc-certifikater", "Certifikater", "/poc/certifikater",
              migrated=True, legacy_href=None,
-             blurb="Kursusbeviser fra assets/certificates. Ikke X.509."),
+             blurb="Kursusbeviser fra assets/certificates. Ikke X.509.", feature="poc"),
         Item("poc-wow", "WoW Forever", "/poc/wow",
              migrated=True, legacy_href=None,
-             blurb="Seneste beta-noter som gennemgang med spillets ikoner."),
+             blurb="Seneste beta-noter som gennemgang med spillets ikoner.", feature="poc"),
     ]),
 )
 
@@ -145,20 +144,19 @@ ITEMS: dict[str, Item] = {it.key: it for g in GROUPS for it in g.items}
 
 def _groups(this: str | None, peer: str) -> list[dict]:
     """The sidebar for one site, in GROUPS order so POC'S stays last.
-    Own groups get keyboard indices; the other site's groups become links
-    to `peer` with no index, or are left out when `peer` is blank. The
-    keys count only own items, so they stay 1..9 on both sites."""
+    Own items get keyboard indices; an item whose feature is off here
+    becomes a link to `peer` with no index when the other site runs it,
+    or is left out. A group left empty is dropped. The keys count only
+    own items, so they stay 1..9 on both sites."""
     out: list[dict] = []
     idx = 0
     for g in GROUPS:
-        if this is not None and g.site not in (None, this):
-            if peer:
-                out.append({"label": g.label,
-                            "links": [replace(it, href=peer + it.href, idx=0)
-                                      for it in g.items]})
-            continue
         links = []
         for it in g.items:
+            if it.feature is not None and not features.runs(it.feature, this):
+                if peer and features.peer_runs(it.feature, this):
+                    links.append(replace(it, href=peer + it.href, idx=0))
+                continue
             if g.label not in _UNINDEXED and idx < _MAX_IDX:
                 idx += 1
                 it = replace(it, idx=idx)
@@ -166,7 +164,8 @@ def _groups(this: str | None, peer: str) -> list[dict]:
         # NOT "items": Jinja resolves dict.items to the bound method, so
         # {{ g.items }} silently yields a builtin instead of the list. The
         # same trap already cost this project a 500 on the front page.
-        out.append({"label": g.label, "links": links})
+        if links:
+            out.append({"label": g.label, "links": links})
     return out
 
 
@@ -174,27 +173,27 @@ def _groups(this: str | None, peer: str) -> list[dict]:
 # column is what app/main.py mounts; `tpl` is rendered with the OLD
 # base.html and styles.css so a legacy page looks like it always did.
 LEGACY_PAGES: tuple[dict, ...] = (
-    {"slug": "today", "site": site.LOCAL, "title": "Today", "url": "/legacy/today",
+    {"slug": "today", "feature": "today", "title": "Today", "url": "/legacy/today",
      "desc": "Daily brief, kalender, mail, vault-opgaver, PR'er, pipelines, taskboard."},
-    {"slug": "dashboard", "site": site.LOCAL, "title": "Boxes", "url": "/legacy/dashboard",
+    {"slug": "dashboard", "feature": "boxes", "title": "Boxes", "url": "/legacy/dashboard",
      "desc": "Widget-gitteret: de widgets på dette site der ikke har en egen side."},
-    {"slug": "ai", "site": site.LOCAL, "title": "AI-arkitektur", "url": "/legacy/ai",
+    {"slug": "ai", "feature": "ai", "title": "AI-arkitektur", "url": "/legacy/ai",
      "desc": "Agent-konstellation, scope-opsummering, ledger og workflow-canvas."},
-    {"slug": "projects", "site": site.LOCAL, "title": "Projects", "url": "/legacy/projects",
+    {"slug": "projects", "feature": "projects", "title": "Projects", "url": "/legacy/projects",
      "desc": "AI- og normale projekter fra den genererede Projects/-visning."},
-    {"slug": "ado", "site": site.LOCAL, "title": "Azure DevOps", "url": "/legacy/ado",
+    {"slug": "ado", "feature": "devops", "title": "Azure DevOps", "url": "/legacy/ado",
      "desc": "Multi-org ADO: PR'er, pipelines og sprintboard, redigerbart."},
-    {"slug": "news", "site": site.PERSONAL, "title": "News", "url": "/legacy/news",
+    {"slug": "news", "feature": "news", "title": "News", "url": "/legacy/news",
      "desc": "8-kategori RSS med billeder."},
-    {"slug": "budget", "site": site.PERSONAL, "title": "Budget", "url": "/legacy/budget",
+    {"slug": "budget", "feature": "budget", "title": "Budget", "url": "/legacy/budget",
      "desc": "Familiebudget med HTMX-CRUD."},
 )
 
 
 def legacy_pages() -> list[dict]:
-    """The /legacy index for this site. A legacy page of the other site
-    answers 404 here, so listing it would be a dead link."""
-    return [p for p in LEGACY_PAGES if site.owns(p["site"])]
+    """The /legacy index for this site. A legacy page whose feature is off
+    here answers 404 here, so listing it would be a dead link."""
+    return [p for p in LEGACY_PAGES if features.on(p["feature"])]
 
 
 async def status(registry) -> list[dict]:

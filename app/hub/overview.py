@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from datetime import date, datetime, timezone
 
-from app import site
+from app import features, site
 from app.hub import maintenance, monitor, sources
 from app.hub.views import NEWS_TABS, Ctx, flow_ctx, kr, news_rows, pct
 
@@ -46,9 +46,10 @@ def _icon_for(name: str) -> str:
     return "flow"
 
 
-def peer(path: str) -> str:
+def peer(path: str, key: str) -> str:
+    """Link to the other site's page, when there is one to link to."""
     p = site.peer_url()
-    return p + path if p else ""
+    return p + path if p and features.on_peer(key) else ""
 
 
 async def pipelines_card(ctx: Ctx, filt: str = "all") -> dict:
@@ -89,8 +90,8 @@ async def flow_card(ctx: Ctx) -> dict | None:
 
 
 async def news_card(ctx: Ctx, tab: str = "All") -> dict:
-    if not site.owns(site.PERSONAL):
-        return {"here": False, "peer": peer("/news"), "tabs": [], "items": []}
+    if not features.on("news"):
+        return {"here": False, "peer": peer("/news", "news"), "tabs": [], "items": []}
     rows = await news_rows(ctx)
     if tab != "All":
         rows = [r for r in rows if r["group"] == tab]
@@ -118,8 +119,8 @@ async def monitoring_card(ctx: Ctx) -> dict:
 
 
 def maintenance_card(today: date | None = None) -> dict:
-    if not site.owns(site.LOCAL):
-        return {"here": False, "peer": peer("/maintenance"), "tasks": [], "attn": 0, "overdue": 0}
+    if not features.on("maintenance"):
+        return {"here": False, "peer": peer("/maintenance", "maintenance"), "tasks": [], "attn": 0, "overdue": 0}
     data = maintenance.load(today)
     tasks = []
     for t in data["items"][:5]:
@@ -141,8 +142,8 @@ def maintenance_card(today: date | None = None) -> dict:
 
 
 async def budget_card(ctx: Ctx, period: str = "plan") -> dict:
-    if not site.owns(site.PERSONAL):
-        return {"here": False, "peer": peer("/budget")}
+    if not features.on("budget"):
+        return {"here": False, "peer": peer("/budget", "budget")}
     parts: list[tuple[str, int]] = []
     total_label = ""
     if period == "plan":
@@ -188,8 +189,8 @@ async def budget_card(ctx: Ctx, period: str = "plan") -> dict:
 
 
 async def salary_card(ctx: Ctx) -> dict:
-    if not site.owns(site.PERSONAL):
-        return {"here": False, "peer": peer("/salary")}
+    if not features.on("salary"):
+        return {"here": False, "peer": peer("/salary", "salary")}
     from app import jyviews
     s = await jyviews.salary(ctx.registry)
     people = [p for p in (s.get("people") or []) if p.get("configured")]
@@ -203,8 +204,8 @@ async def salary_card(ctx: Ctx) -> dict:
 
 
 async def investments_card(ctx: Ctx) -> dict:
-    if not site.owns(site.PERSONAL):
-        return {"here": False, "peer": peer("/stocks")}
+    if not features.on("stocks"):
+        return {"here": False, "peer": peer("/stocks", "stocks")}
     from app import jyviews
     from app.hub.views import _asset_class
     s = await jyviews.stocks(ctx.registry)

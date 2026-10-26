@@ -1,4 +1,5 @@
-"""FEAT-001: one codebase, two sites.
+"""FEAT-001: one codebase, two sites. Since FEAT-003 the split is the
+default placement in config/features.yml; these tests pin that default.
 
 `JYTTE_SITE=personal` is the home server (money, news, household),
 `JYTTE_SITE=local` is the work machine (Home, AI, Work, POC), unset runs
@@ -25,7 +26,7 @@ sys.path.insert(0, str(REPO))
 from fastapi.routing import APIRoute  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
-from app import jobs, nav, site  # noqa: E402
+from app import features, jobs, nav, site  # noqa: E402
 from app import main  # noqa: E402
 from app.registry import WidgetRegistry  # noqa: E402
 
@@ -80,10 +81,12 @@ def test_registry_unset_loads_all(monkeypatch):
     assert names == PERSONAL_WIDGETS | LOCAL_WIDGETS
 
 
-def test_every_manifest_has_site():
+def test_no_manifest_carries_site():
+    """FEAT-003: placement is config/features.yml. A `site:` left in a
+    manifest would be a second answer nobody reads."""
     for m in sorted(WIDGETS.glob("*/manifest.yaml")):
-        tag = (yaml.safe_load(m.read_text(encoding="utf-8")) or {}).get("site")
-        assert tag in site.SITES, f"{m.parent.name}: site is {tag!r}"
+        doc = yaml.safe_load(m.read_text(encoding="utf-8")) or {}
+        assert "site" not in doc, m.parent.name
 
 
 # --- AC-04 / AC-05 / AC-06 routes --------------------------------------
@@ -97,7 +100,7 @@ def test_every_route_is_owned_or_shared():
             # Widget routers (/widgets/<name>/...) belong to their widget,
             # which the registry already filters.
             continue
-        assert (site.path_site(r.path) is not None or r.path in SHARED
+        assert (features.path_feature(r.path) is not None or r.path in SHARED
                 or r.path in site.SHARED_PATHS or _hub_shared(r.path)), r.path
 
 
@@ -112,10 +115,10 @@ def _hub_shared(path: str) -> bool:
 
 
 def test_hub_fragments_follow_their_page():
-    assert site.path_site("/frag/bank/row/tx1") == site.PERSONAL
-    assert site.path_site("/act/maintenance/x/done") == site.LOCAL
-    assert site.path_site("/frag/jobs/row/x") is None
-    assert site.path_site("/") is None
+    assert features.path_feature("/frag/bank/row/tx1") == "bank"
+    assert features.path_feature("/act/maintenance/x/done") == "maintenance"
+    assert features.path_feature("/frag/jobs/row/x") is None
+    assert features.path_feature("/") is None
 
 
 @pytest.mark.parametrize("path", ["/budget", "/bank", "/bank/callback", "/salary",
@@ -144,7 +147,7 @@ def test_own_routes_pass_the_gate(monkeypatch, value, path):
 def test_shared_routes(monkeypatch, value):
     assert _client(monkeypatch, value).get("/health").status_code == 200
     monkeypatch.setenv("JYTTE_SITE", value)
-    owners = {p["site"] for p in nav.legacy_pages()}
+    owners = {s for p in nav.legacy_pages() for s in features.sites_of(p["feature"])}
     assert owners == {value}
 
 
@@ -184,8 +187,12 @@ def test_nav_peer_links():
 
 def test_nav_personal_keys_start_at_one():
     groups = nav._groups(site.PERSONAL, "")
-    assert groups[0]["label"] == "Personal"
-    assert groups[0]["links"][0].idx == 1
+    idx = [it.idx for g in groups for it in g["links"] if it.idx]
+    assert idx and idx == list(range(1, len(idx) + 1))
+    labels = [g["label"] for g in groups]
+    assert "Personal" in labels
+    # Home links to /legacy/today, which is the today feature's page.
+    assert "Overview" not in labels and "Work" not in labels
 
 
 def test_nav_without_peer():
@@ -228,17 +235,28 @@ def test_workflow_lists_partition():
     files = {p.name for p in WF.glob("*.json")}
     personal = _import_only("docker-compose.personal.yml")
     local = _import_only("docker-compose.yml")
-    assert not personal & local
-    assert personal | local == files
-    assert personal == {f for f, s in site.WORKFLOWS.items() if s == site.PERSONAL}
-    assert local == {f for f, s in site.WORKFLOWS.items() if s == site.LOCAL}
+    # FEAT-003: a workflow may run on both sites or neither, so the two
+    # lists no longer partition the files; every file must be in a feature.
+    assert set(features.WORKFLOW_FEATURE) == files
+    assert (personal | local) <= files
+    assert personal == features.workflows_for(site.PERSONAL), _paste("personal", personal)
+    assert local == features.workflows_for(site.LOCAL), _paste("local", local)
+
+
+def _paste(s: str, have: set[str]) -> str:
+    """The N8N_IMPORT_ONLY value to paste after a placement change."""
+    compose = "docker-compose.personal.yml" if s == site.PERSONAL else "docker-compose.yml"
+    want = features.workflows_for(s)
+    return (f"config/features.yml puts other workflows on {s} than {compose} imports "
+            f"(missing: {sorted(want - have)}, extra: {sorted(have - want)}). "
+            f"Set N8N_IMPORT_ONLY there to: {' '.join(sorted(want))}")
 
 
 def test_jobs_filtered(monkeypatch):
     monkeypatch.setenv("JYTTE_SITE", "local")
     files = {j["file"] for j in jobs.load(WF)["jobs"]}
     assert "bank.json" not in files and "elforbrug.json" not in files
-    assert {f for f, s in site.WORKFLOWS.items() if s == site.LOCAL} <= files
+    assert features.workflows_for(site.LOCAL) <= files
 
 
 # --- AC-10 personal compose ------------------------------------------
@@ -283,12 +301,13 @@ def test_nav_peer_groups_keep_order():
     assert labels[-1] == "POC'S"
 
 
-def test_misspelt_site_loads_nowhere(monkeypatch, tmp_path):
+def test_widget_in_no_feature_loads_nowhere(monkeypatch, tmp_path):
+    """FEAT-003: the successor of "a misspelt site: loads nowhere". A
+    widget no feature claims is not loaded once a site is set."""
     import shutil
-    for name in ("vacation",):
-        shutil.copytree(WIDGETS / name, tmp_path / name)
+    shutil.copytree(WIDGETS / "vacation", tmp_path / "vacation")
     m = tmp_path / "vacation" / "manifest.yaml"
-    m.write_text(m.read_text(encoding="utf-8").replace("site: personal", "site: persnal"),
+    m.write_text(m.read_text(encoding="utf-8").replace("name: vacation", "name: vacaton"),
                  encoding="utf-8")
     for value in ("personal", "local"):
         monkeypatch.setenv("JYTTE_SITE", value)

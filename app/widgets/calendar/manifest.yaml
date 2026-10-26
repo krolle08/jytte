@@ -1,5 +1,4 @@
 name: calendar
-site: local
 title: Kalender
 # source: n8n - the Microsoft Graph read lives in
 # deploy/n8n/workflows/calendar.json and arrives via

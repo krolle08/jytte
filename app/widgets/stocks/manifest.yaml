@@ -1,5 +1,4 @@
 name: stocks
-site: personal
 title: Aktier
 # Reads a Nordnet CSV export off a mounted folder, not an API: Nordnet
 # has no automatable read path for a private customer (all three were

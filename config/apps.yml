@@ -6,8 +6,9 @@
 #   health: an http(s) URL; any status under 400 is healthy
 #   tcp:    host:port; an open port is healthy
 # `url` is the link the browser opens, so it is the host's address, not
-# the container's. `site` follows FEAT-001: personal, local, or leave it
-# out for both. `kind: service` lists it on Monitoring only.
+# the container's. `feature: <key>` (FEAT-003) follows that feature in
+# config/features.yml; `site: personal|local` pins it to one site; leave
+# both out for both. `kind: service` lists it on Monitoring only.
 #
 # Nothing here talks to Docker. Restart is not wired, on purpose: see
 # FEAT-002 B-2.

@@ -128,8 +128,9 @@ services:
       # The only directory the Read/Write Files node may touch. Used by
       # workflow `vault-refresh` to read the host's daily refresh status.
       N8N_RESTRICT_FILE_ACCESS_TO: "/vault-status"
-      # FEAT-001: only the local site's jobs. Pinned to app/site.py
-      # WORKFLOWS by tests/test_site_split.py.
+      # FEAT-003: the workflows of the features config/features.yml
+      # places on this site. tests/test_site_split.py fails and prints
+      # the line to paste when a placement change makes them disagree.
       N8N_IMPORT_ONLY: >-
         ado-event-notify.json azuredevops.json calendar.json email.json
         intake-to-ado.json pr-comment.json pr-complete.json pr-create.json

@@ -1,5 +1,4 @@
 name: football
-site: personal
 title: Match Predictor
 refresh_minutes: 60
 client_refresh_seconds: 300

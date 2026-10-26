@@ -9,5 +9,5 @@
 #     frequency: Daily 02:00
 #     defined_in: Host cron
 #     location: /etc/cron.d/backup on the home server
-#     site: personal
+#     site: personal       # or feature: <key> to follow config/features.yml
 schedules: []
