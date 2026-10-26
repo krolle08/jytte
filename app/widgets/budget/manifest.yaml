@@ -1,5 +1,4 @@
 name: budget
-site: personal
 title: Budget
 # refresh_minutes intentionally null - the budget is user-driven, not a
 # polled data source. Card re-renders on SSE after each edit instead.

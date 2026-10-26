@@ -6,15 +6,9 @@ with its own n8n and serves the money, news and household pages. The
 POC. `JYTTE_SITE` picks one; unset runs everything, which is what the
 tests and an unconfigured dev box expect.
 
-Ownership is declared in three places, each where it already lives:
-
-- widgets: `site:` in their own `manifest.yaml` (the folder is the
-  registration, so there is no central list to drift from it)
-- top-level pages: `PERSONAL_PATHS` / `LOCAL_PATHS` below, because pages
-  like /el and /bank compose widgets and have no manifest of their own
-- n8n workflows: `WORKFLOWS` below. `deploy/n8n/init.sh` cannot import
-  Python, so each compose file repeats its list in `N8N_IMPORT_ONLY`,
-  and tests/test_site_split.py fails if the two disagree.
+Which feature runs on which site is FEAT-003's `app/features.py` and
+`config/features.yml`. This module only knows the two sites, the shared
+paths, and which site this process is.
 
 A value that is neither personal nor local raises. A typo that silently
 loaded everything would put work data on the server.
@@ -27,21 +21,6 @@ PERSONAL = "personal"
 LOCAL = "local"
 SITES = (PERSONAL, LOCAL)
 
-# Matched as a whole segment: "/el" owns /el and /el/..., never /elx.
-# Anything in neither tuple is shared: /health, /events, /static, /mcp,
-# /widgets/* (a widget that is not loaded already answers 404 there),
-# /legacy (the index, filtered by nav.legacy_pages), /docs-files, /chat.
-PERSONAL_PATHS = (
-    "/news", "/budget", "/bank", "/el", "/stocks", "/vacation", "/salary",
-    "/docs/ml", "/legacy/news", "/legacy/budget",
-)
-LOCAL_PATHS = (
-    "/ai", "/constellation", "/workflows", "/projects", "/devops",
-    "/opslag", "/poc", "/frontpage", "/today", "/maintenance", "/documents",
-    "/legacy/today", "/legacy/dashboard", "/legacy/ai", "/legacy/projects",
-    "/legacy/ado",
-)
-
 # FEAT-002 Home Hub pages that both sites serve, each about its own
 # site: the overview at `/`, n8n's pipelines (each site has its own
 # n8n), apps, monitoring, notes. Listed so a test can tell "shared on
@@ -53,25 +32,11 @@ SHARED_PATHS = (
 
 # Fragments and actions of a hub page live under /frag/<seg>/ and
 # /act/<seg>/, where <seg> is the page's own first path segment. They
-# belong to whichever site owns that page.
-_HUB_PREFIXES = ("/frag/", "/act/")
+# follow the feature of that page (app/features.path_feature).
+HUB_PREFIXES = ("/frag/", "/act/")
 # Fragment and action segments that belong to no page: the overview's
 # cards and the theme cookie. Shared like `/`.
 HUB_SHARED_SEGMENTS = ("overview", "theme")
-
-WORKFLOWS: dict[str, str] = {
-    "bank.json": PERSONAL,
-    "elforbrug.json": PERSONAL,
-    "ado-event-notify.json": LOCAL,
-    "azuredevops.json": LOCAL,
-    "calendar.json": LOCAL,
-    "email.json": LOCAL,
-    "intake-to-ado.json": LOCAL,
-    "pr-comment.json": LOCAL,
-    "pr-complete.json": LOCAL,
-    "pr-create.json": LOCAL,
-    "vault-refresh.json": LOCAL,
-}
 
 
 def current() -> str | None:
@@ -97,31 +62,6 @@ def owns(tag: str | None) -> bool:
 def peer_url() -> str:
     """Base URL of the other site, for sidebar links. Blank = no links."""
     return (os.getenv("JYTTE_PEER_URL") or "").strip().rstrip("/")
-
-
-def _under(path: str, prefix: str) -> bool:
-    return path == prefix or path.startswith(prefix + "/")
-
-
-def path_site(path: str) -> str | None:
-    """Which site owns a request path, or None when it is shared."""
-    if path == "/":
-        return None
-    for pre in _HUB_PREFIXES:
-        if path.startswith(pre):
-            seg = path[len(pre):].split("/", 1)[0]
-            return None if seg in ("", *HUB_SHARED_SEGMENTS) else path_site("/" + seg)
-    for p in PERSONAL_PATHS:
-        if _under(path, p):
-            return PERSONAL
-    for p in LOCAL_PATHS:
-        if _under(path, p):
-            return LOCAL
-    return None
-
-
-def workflow_site(filename: str) -> str | None:
-    return WORKFLOWS.get(filename)
 
 
 # Fail at import, not at the first request, so a typo stops the

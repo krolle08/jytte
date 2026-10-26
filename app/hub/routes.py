@@ -27,7 +27,7 @@ from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, Response
 from markupsafe import Markup
 
-from app import site
+from app import features, site
 from app.hub import maintenance, n8n, overview, registry as hreg, store
 from app.hub.model import PageDef, filter_rows
 from app.hub.views import BUILDERS, Ctx, invalidate_search
@@ -310,7 +310,7 @@ async def run_pipeline(request: Request, wid: str):
 @router.post("/act/maintenance/{item_id}/{action}", response_class=HTMLResponse)
 async def maintenance_action(request: Request, item_id: str, action: str):
     _check_hx(request)
-    if not site.owns(site.LOCAL):
+    if not features.on("maintenance"):
         raise HTTPException(status_code=404)
     if action not in ("done", "undo", "snooze", "unsnooze"):
         raise HTTPException(status_code=404)

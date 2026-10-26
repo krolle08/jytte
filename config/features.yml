@@ -1,0 +1,41 @@
+# FEAT-003: where each feature runs. One line per feature.
+#
+#   [personal]          home server only (docker-compose.personal.yml)
+#   [local]             work machine only (docker-compose.yml)
+#   [personal, local]   both sites, each with its own jytte.db (no sync)
+#   []                  off everywhere
+#
+# What a feature consists of (widgets, pages, n8n workflows) is
+# app/features.py. A missing line keeps that file's default; an unknown
+# key or site name stops the container from starting.
+#
+# After an edit: restart the site. A feature with n8n workflows also
+# needs its files in N8N_IMPORT_ONLY of that site's compose file;
+# tests/test_features.py fails and prints the line when they disagree.
+#
+# Work data (today, devops, projects, ai, vault, maintenance, documents,
+# opslag, poc, boxes) on the personal site is allowed, but the server has
+# no login: it logs a warning and /settings marks the row red.
+
+# Personal - money, news, household
+news:        [personal]
+budget:      [personal]
+salary:      [personal]
+bank:        [personal]
+el:          [personal]
+stocks:      [personal]
+vacation:    [personal]
+football:    [personal]
+geomap:      [personal]
+
+# Local - work
+today:       [local]
+devops:      [local]
+projects:    [local]
+ai:          [local]
+vault:       [local]
+maintenance: [local]
+documents:   [local]
+opslag:      [local]
+poc:         [local]
+boxes:       [local]

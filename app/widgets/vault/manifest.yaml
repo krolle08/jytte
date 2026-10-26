@@ -1,5 +1,4 @@
 name: vault
-site: local
 title: Vault
 # source: n8n - the daily vault refresh runs on the HOST (Windows Task
 # Scheduler -> LLM-Wiki/scripts/refresh_views.py) and writes

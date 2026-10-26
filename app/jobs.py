@@ -38,7 +38,7 @@ import logging
 import os
 from pathlib import Path
 
-from app import site
+from app import features
 
 log = logging.getLogger(__name__)
 
@@ -229,10 +229,10 @@ def load(directory: Path | None = None) -> dict:
 
     jobs, broken = [], []
     for p in sorted(d.glob("*.json")):
-        # FEAT-001: the other site's n8n runs the other site's jobs.
-        # A file missing from site.WORKFLOWS is shown, not hidden, so a
-        # new workflow is visible until someone assigns it.
-        if not site.owns(site.workflow_site(p.name)):
+        # FEAT-003: a workflow follows its feature. A file in no
+        # feature is shown, not hidden, so a new workflow is visible
+        # until someone assigns it.
+        if not features.workflow_on(p.name):
             continue
         try:
             jobs.append(_one(p, base_url))

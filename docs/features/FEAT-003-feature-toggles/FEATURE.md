@@ -2,7 +2,7 @@
 id: FEAT-003
 slug: feature-toggles
 title: Feature toggles per site
-status: pending        # pending -> in-progress -> review -> done
+status: review             # pending -> in-progress -> review -> done
 priority: high
 target: python
 depends-on: [FEAT-001, FEAT-002]
@@ -40,10 +40,10 @@ the code only knows what a feature consists of.
   soft dependencies. This is structure, so it lives next to the code.
 - Placement in `config/features.yml` (bind-mounted, the human edits it).
   Values: `[personal]`, `[local]`, `[personal, local]`, `[]` (off).
-- `app/site.py` derives `PERSONAL_PATHS`, `LOCAL_PATHS`, `WORKFLOWS` and
-  widget ownership from catalog + placement instead of literals. Its public
-  functions (`owns`, `path_site`, `workflow_site`) keep their signatures,
-  extended so a path can belong to both sites or none.
+- `app/site.py` loses `PERSONAL_PATHS`, `LOCAL_PATHS`, `WORKFLOWS`,
+  `path_site` and `workflow_site`. `app/features.py` answers instead
+  (`serves`, `path_feature`, `workflow_on`, `workflows_for`), so a path or
+  workflow can belong to both sites or none.
 - `site:` disappears from the manifests; the registry asks
   `features.widget_on(name)`.
 - Sidebar (`app/hub/registry.py`, `app/nav.py`) and overview cards
@@ -100,7 +100,7 @@ follow their feature.
 None.
 
 ## Open Questions
-- OQ-1 Where is a toggle flipped? **Default:** edit `config/features.yml`,
+- OQ-1 Where is a toggle flipped? **Decided by the user 2026-10-26:** edit `config/features.yml`,
   then `docker compose up -d` restarts the container. `/settings` shows the
   table read-only with the line to edit. Reason: `./config` is mounted
   read-only on purpose, and a restart is needed anyway. A clickable toggle
@@ -111,7 +111,8 @@ None.
   paste. Alternative: mount `config/` into n8n and let `init.sh` read a
   generated `config/n8n-import.<site>.txt`.
 - OQ-3 Work data on the home server. FEAT-001 exists so work mail, PRs and
-  vault tasks never land on a server without login. **Default:** placing a
+  vault tasks never land on a server without login. **Decided by the user
+  2026-10-26:** placing a
   `work` feature on `personal` is allowed, logs a WARNING on boot and shows a
   red marker in `/settings`. Stricter alternative: refuse to start unless the
   line also says `allow_work_data: true`.
@@ -129,21 +130,22 @@ None.
 - `app/features.py` - catalog, placement loader, `on(feature)`,
   `widget_on(name)`, `path_feature(path)`, `workflows_for(site)`, warnings
 - `config/features.yml` - placement, one line per feature, today's split
-- `app/templates/hub/_features.html` - the Features table on `/settings`
 - `tests/test_features.py` - acceptance tests
 
 ## Files to modify
-- `app/site.py` - derive paths and workflows from `app/features.py`;
-  `path_site` can answer "both"
+- `app/site.py` - only sites, shared paths and hub prefixes remain
 - `app/registry.py` - `features.widget_on(name)` instead of the manifest
   `site:` key
 - `app/widgets/*/manifest.yaml` - remove `site:` (18 files)
 - `app/hub/registry.py` - `NavItem.site` becomes `NavItem.feature`
 - `app/nav.py` - legacy groups and `LEGACY_PAGES` by feature
 - `app/hub/overview.py` - cards check `features.on(...)`
-- `app/hub/views.py` - Settings view adds the Features table
+- `app/hub/views.py` - Settings view gets a Features tab (`feature_rows`), one
+  row per feature with a detail panel holding the yml line; budget and bank
+  name a missing soft dependency (`_missing`)
 - `app/jobs.py` - workflow filter via `features.workflows_for`
 - `app/main.py` - boot log of placement and warnings
+- `app/home.py` - Today budget tile follows the budget feature
 - `tests/test_site_split.py` - assertions move from literals to the catalog
 - `docker-compose.yml`, `docker-compose.personal.yml` - comments point at
   `config/features.yml`; lists unchanged at default placement

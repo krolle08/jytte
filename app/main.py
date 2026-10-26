@@ -13,8 +13,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from jinja2 import ChoiceLoader, FileSystemLoader
 
-from app import (aiview, bankauth, claude, db, frontpage, jyviews,
-                 mcp_server, nav, site, sse, today, watchdog)
+from app import (aiview, bankauth, claude, db, features, frontpage,
+                 jyviews, mcp_server, nav, sse, today, watchdog)
 from app.hub import routes as hub
 from app.registry import WidgetRegistry
 from app.sse import sse_router
@@ -47,6 +47,9 @@ def _templates() -> Jinja2Templates:
 async def lifespan(app: FastAPI):
     Path(os.getenv("JYTTE_DATA_DIR", "/data")).mkdir(parents=True, exist_ok=True)
     await db.init_db()
+    # FEAT-003: which features this site runs, and any placement the
+    # user should look at twice (work data on the server).
+    features.log_boot()
     await registry.start(scheduler)
     mcp_server.attach_widgets(registry)
     # Before the first request can arrive, and after uvicorn has set up
@@ -78,7 +81,7 @@ app = FastAPI(title="Jytte", lifespan=lifespan)
 
 
 class SiteGate:
-    """FEAT-001. The other site's pages answer 404 here, in one place,
+    """FEAT-001/003. A page whose feature is off here answers 404, in one place,
     instead of a check in each of thirty handlers. Widget routes need no
     gate: an unloaded widget has no router and the generic handlers
     already 404 on an unknown name. `/` is the Home Hub overview and is
@@ -95,8 +98,7 @@ class SiteGate:
     async def __call__(self, scope, receive, send):
         if scope["type"] == "http":
             path = scope["path"]
-            owner = site.path_site(path)
-            if owner is not None and not site.owns(owner):
+            if not features.serves(path):
                 resp = JSONResponse({"detail": "Not Found"}, status_code=404)
                 await resp(scope, receive, send)
                 return

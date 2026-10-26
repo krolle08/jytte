@@ -13,14 +13,15 @@ placed where they belong:
 HTMX into #content. The rest are full pages with their own scripts and
 stylesheets, so their links are plain links.
 
-`site` follows FEAT-001: None is both sites. A page of the other site is
-a link to JYTTE_PEER_URL, or left out when there is no peer.
+`feature` follows FEAT-003: None is core and shows on both sites. A page
+whose feature is off here is a link to JYTTE_PEER_URL when the other
+site runs it, or left out.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
 
-from app import site
+from app import features, site
 
 
 @dataclass(frozen=True)
@@ -30,11 +31,9 @@ class NavItem:
     href: str
     icon: str
     group: str | None
-    site: str | None = None
+    feature: str | None = None
     hub: bool = True
 
-
-P, L = site.PERSONAL, site.LOCAL
 
 NAV: tuple[NavItem, ...] = (
     NavItem("overview", "Overview", "/", "home", None),
@@ -45,29 +44,29 @@ NAV: tuple[NavItem, ...] = (
     NavItem("apps", "My Apps", "/apps", "grid", "Apps & Services"),
     NavItem("monitoring", "Monitoring", "/monitoring", "monitor", "Apps & Services"),
     NavItem("infra", "Infrastructure", "/infra", "box", "Apps & Services"),
-    NavItem("maintenance", "Maintenance", "/maintenance", "wrench", "Apps & Services", L),
-    NavItem("budget", "Budget", "/budget", "pie", "Life & Finance", P),
-    NavItem("salary", "Salary", "/salary", "wallet", "Life & Finance", P),
-    NavItem("bank", "Bank", "/bank", "bank", "Life & Finance", P),
-    NavItem("investments", "Investments", "/stocks", "bars", "Life & Finance", P),
-    NavItem("el", "El", "/el", "pulse", "Life & Finance", P, hub=False),
-    NavItem("vacation", "Skoleferier", "/vacation", "clock", "Life & Finance", P, hub=False),
-    NavItem("news", "News & Updates", "/news", "news", "Information", P),
+    NavItem("maintenance", "Maintenance", "/maintenance", "wrench", "Apps & Services", "maintenance"),
+    NavItem("budget", "Budget", "/budget", "pie", "Life & Finance", "budget"),
+    NavItem("salary", "Salary", "/salary", "wallet", "Life & Finance", "salary"),
+    NavItem("bank", "Bank", "/bank", "bank", "Life & Finance", "bank"),
+    NavItem("investments", "Investments", "/stocks", "bars", "Life & Finance", "stocks"),
+    NavItem("el", "El", "/el", "pulse", "Life & Finance", "el", hub=False),
+    NavItem("vacation", "Skoleferier", "/vacation", "clock", "Life & Finance", "vacation", hub=False),
+    NavItem("news", "News & Updates", "/news", "news", "Information", "news"),
     NavItem("bookmarks", "Bookmarks", "/bookmarks", "bookmark", "Information"),
-    NavItem("documents", "Documents", "/documents", "docs", "Information", L),
+    NavItem("documents", "Documents", "/documents", "docs", "Information", "documents"),
     NavItem("notes", "Notes", "/notes", "notes", "Information"),
-    NavItem("opslag", "Opslagsværk", "/opslag", "search", "Information", L, hub=False),
-    NavItem("today", "Today", "/today", "mail", "Work", L, hub=False),
-    NavItem("projects", "Projects", "/projects", "box", "Work", L, hub=False),
-    NavItem("devops", "Azure DevOps", "/devops", "git", "Work", L, hub=False),
-    NavItem("ai", "AI stack", "/ai", "brain", "AI", L, hub=False),
-    NavItem("constellation", "Constellation", "/constellation", "brain", "AI", L, hub=False),
-    NavItem("workflows", "Workflows", "/workflows", "flow", "AI", L, hub=False),
+    NavItem("opslag", "Opslagsværk", "/opslag", "search", "Information", "opslag", hub=False),
+    NavItem("today", "Today", "/today", "mail", "Work", "today", hub=False),
+    NavItem("projects", "Projects", "/projects", "box", "Work", "projects", hub=False),
+    NavItem("devops", "Azure DevOps", "/devops", "git", "Work", "devops", hub=False),
+    NavItem("ai", "AI stack", "/ai", "brain", "AI", "ai", hub=False),
+    NavItem("constellation", "Constellation", "/constellation", "brain", "AI", "ai", hub=False),
+    NavItem("workflows", "Workflows", "/workflows", "flow", "AI", "ai", hub=False),
     NavItem("legacy", "Old pages", "/legacy", "doc", "Legacy", None, hub=False),
-    NavItem("poc", "Overview", "/poc", "shield", "POC'S", L, hub=False),
-    NavItem("poc-systems", "Systemmonitor", "/poc/systems", "pulse", "POC'S", L, hub=False),
-    NavItem("poc-certifikater", "Certifikater", "/poc/certifikater", "doc", "POC'S", L, hub=False),
-    NavItem("poc-wow", "WoW Forever", "/poc/wow", "image", "POC'S", L, hub=False),
+    NavItem("poc", "Overview", "/poc", "shield", "POC'S", "poc", hub=False),
+    NavItem("poc-systems", "Systemmonitor", "/poc/systems", "pulse", "POC'S", "poc", hub=False),
+    NavItem("poc-certifikater", "Certifikater", "/poc/certifikater", "doc", "POC'S", "poc", hub=False),
+    NavItem("poc-wow", "WoW Forever", "/poc/wow", "image", "POC'S", "poc", hub=False),
 )
 
 SETTINGS = NavItem("settings", "Settings", "/settings", "gear", None)
@@ -77,7 +76,7 @@ BY_KEY: dict[str, NavItem] = {it.key: it for it in (*NAV, SETTINGS, SEARCH)}
 BY_PATH: dict[str, NavItem] = {it.href: it for it in (*NAV, SETTINGS, SEARCH)}
 
 # Hub views by the first path segment, which is also what /frag/<seg>
-# and /act/<seg> use, so app/site.py can own a fragment by its page.
+# and /act/<seg> use, so app/features.py can tie a fragment to its page.
 HUB_SEGMENTS: dict[str, NavItem] = {
     (it.href.strip("/") or "overview"): it
     for it in (*NAV, SETTINGS, SEARCH) if it.hub
@@ -85,18 +84,18 @@ HUB_SEGMENTS: dict[str, NavItem] = {
 
 
 def owned(it: NavItem) -> bool:
-    return site.owns(it.site)
+    return it.feature is None or features.on(it.feature)
 
 
 def sidebar(active: str) -> list[dict]:
     """Sidebar sections for this site: [{label, items}], in NAV order.
-    Items of the other site become peer links without HTMX, or are left
-    out when JYTTE_PEER_URL is blank. A group with no items is dropped."""
+    Items whose feature is off here become peer links without HTMX when
+    the other site runs it, or are left out. A group with no items is dropped."""
     peer = site.peer_url()
     out: list[dict] = []
     for it in NAV:
         if not owned(it):
-            if not peer:
+            if not peer or not features.on_peer(it.feature):
                 continue
             it = replace(it, href=peer + it.href, hub=False)
             ext = True

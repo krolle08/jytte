@@ -1,5 +1,4 @@
 name: vacation
-site: personal
 title: Skoleferier
 # The dates are computed, not fetched, so a refresh only matters when
 # the calendar rolls over a holiday boundary. Once an hour is already

@@ -19,7 +19,7 @@ from urllib.parse import quote
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
 
-from app import site
+from app import features, site
 from app.hub import docs_index, maintenance, monitor, n8n, sources, store
 from app.hub.model import (Action, Bar, Chip, Detail, PageDef, Row, Stat,
                            uniq_tabs)
@@ -86,6 +86,16 @@ async def _state(registry, name: str) -> dict:
         return await w.latest()
     except Exception:  # noqa: BLE001
         return {}
+
+
+def _missing(*keys: str) -> str:
+    """FEAT-003 soft dependencies: one sentence naming each feature this
+    page reads that is off here, so an empty row says why it is empty."""
+    off = [features.CATALOG[k].title for k in keys if not features.on(k)]
+    if not off:
+        return ""
+    return (f" {' and '.join(off)} is off on this site (config/features.yml),"
+            " so the part of this page that reads it stays empty.")
 
 
 def _not_here(key: str, title: str, sub: str) -> PageDef:
@@ -274,7 +284,7 @@ def _external_schedules() -> list[dict]:
         return []
     out = []
     for s in doc.get("schedules") or []:
-        if isinstance(s, dict) and s.get("name") and site.owns(s.get("site")):
+        if isinstance(s, dict) and s.get("name") and features.entry_on(s):
             out.append(s)
     return out
 
@@ -493,7 +503,7 @@ async def build_infra(ctx: Ctx) -> PageDef:
 
 
 async def build_maintenance(ctx: Ctx) -> PageDef:
-    if not site.owns(site.LOCAL):
+    if not features.on("maintenance"):
         return _not_here("maintenance", "Maintenance", "Mirrored from your vault.")
     data = maintenance.load()
     rows, details = [], {}
@@ -556,11 +566,12 @@ async def build_maintenance(ctx: Ctx) -> PageDef:
 
 async def build_budget(ctx: Ctx) -> PageDef:
     from app import jyviews
-    if not site.owns(site.PERSONAL):
+    if not features.on("budget"):
         return _not_here("budget", "Budget", "")
     b = await jyviews.budget(ctx.registry)
     if not b.get("ready"):
-        return PageDef(key="budget", title="Budget", sub="Your monthly plan.", stats=[],
+        return PageDef(key="budget", title="Budget", sub="Your monthly plan." + _missing("salary"),
+                       stats=[],
                        cols=["Category", "Planned", "Entries", "Share", "Kind"], rows=[],
                        empty_text=b.get("reason") or "No budget yet")
     fmt = b["fmt"]
@@ -579,7 +590,8 @@ async def build_budget(ctx: Ctx) -> PageDef:
     st = b["strip"]
     return PageDef(
         key="budget", title="Budget",
-        sub="Your monthly plan per category. Edit it in the editor below the table.",
+        sub="Your monthly plan per category. Edit it in the editor below the table."
+            + _missing("salary"),
         cols=["Category", "Planned", "Entries", "Share", "Kind"], tabs=["All", "Expense", "Income"],
         stats=[Stat(s["label"], str(s["value"]), str(s["sub"] or "")) for s in st[:4]],
         rows=rows, empty_text="No entries yet. Add one in the editor below.",
@@ -590,7 +602,7 @@ async def build_budget(ctx: Ctx) -> PageDef:
 
 async def build_salary(ctx: Ctx) -> PageDef:
     from app import jyviews
-    if not site.owns(site.PERSONAL):
+    if not features.on("salary"):
         return _not_here("salary", "Salary", "")
     s = await jyviews.salary(ctx.registry)
     people = s.get("people") or []
@@ -647,7 +659,7 @@ def _bank_month(rows: list[dict], today: date) -> tuple[str, list[dict]]:
 
 async def build_bank(ctx: Ctx) -> PageDef:
     from app import bankview, kategori
-    if not site.owns(site.PERSONAL):
+    if not features.on("bank"):
         return _not_here("bank", "Bank", "")
     data = await bankview.build(ctx.registry)
     book = kategori.load()
@@ -718,7 +730,8 @@ async def build_bank(ctx: Ctx) -> PageDef:
     reason = "" if data.get("ready") else data.get("reason", "")
     return PageDef(
         key="bank", title="Bank",
-        sub=f"Transactions for {month}, categorised with the Jytte rules and coloured per group.",
+        sub=f"Transactions for {month}, categorised with the Jytte rules and coloured per group."
+            + _missing("budget"),
         cols=["Postering", "Dato", "Kategori", "Regel", "Beloeb"],
         tabs=["All", "Fast", "Variabel", "Indtaegt", "Ukategoriseret"],
         bar=Bar(text=("Rules: config/kategoriregler.yml, first match from the top wins. Groups "
@@ -752,7 +765,7 @@ def _asset_class(h: dict) -> str:
 
 async def build_investments(ctx: Ctx) -> PageDef:
     from app import jyviews
-    if not site.owns(site.PERSONAL):
+    if not features.on("stocks"):
         return _not_here("investments", "Investments", "")
     s = await jyviews.stocks(ctx.registry)
     hs = s.get("holdings") or []
@@ -817,7 +830,7 @@ async def news_rows(ctx: Ctx) -> list[dict]:
 
 
 async def build_news(ctx: Ctx) -> PageDef:
-    if not site.owns(site.PERSONAL):
+    if not features.on("news"):
         return _not_here("news", "News & Updates", "")
     items = await news_rows(ctx)
     rows = [Row(cells=[r["title"], r["cat"], r["src"] or "-", sources.ago(r["when"], ctx.now)],
@@ -860,7 +873,7 @@ async def build_bookmarks(ctx: Ctx) -> PageDef:
 
 
 async def build_documents(ctx: Ctx) -> PageDef:
-    if not site.owns(site.LOCAL):
+    if not features.on("documents"):
         return _not_here("documents", "Documents", "")
     idx = await docs_index.index()
     rows, details = [], {}
@@ -926,19 +939,73 @@ async def build_settings(ctx: Ctx) -> PageDef:
     light = ctx.theme == "light"
     rows = [Row(cells=["Light theme", "Switch between dark and light appearance",
                        "On" if light else "Off"], kinds=["", "", "g" if light else "o"],
-                action=Action("Toggle", post="/act/theme/toggle"))]
+                tag="Preferences", action=Action("Toggle", post="/act/theme/toggle"))]
     for k, label, desc, _ in store.SETTINGS:
         on = cur[k]
         rows.append(Row(cells=[label, desc, "On" if on else "Off"], kinds=["", "", "g" if on else "o"],
-                        action=Action("Toggle", post=f"/act/settings/{k}/toggle")))
+                        tag="Preferences", action=Action("Toggle", post=f"/act/settings/{k}/toggle")))
+    frows, details = feature_rows()
+    n_on = sum(1 for k in features.CATALOG if features.on(k))
     return PageDef(
-        key="settings", title="Settings", sub="Preferences for this dashboard.",
-        cols=["Setting", "Description", "State"],
+        key="settings", title="Settings",
+        sub="Preferences for this dashboard, and which features this site runs. "
+            "A feature moves with one line in config/features.yml and a restart.",
+        cols=["Setting", "Description", "State"], tabs=["All", "Preferences", "Features"],
         stats=[Stat("Theme", "Light" if light else "Dark", "toggle below"),
                Stat("Notifications", "On" if cur["notif"] else "Off", "failure alerts"),
                Stat("Site", site.current() or "all", "JYTTE_SITE"),
-               Stat("Version", "FEAT-002", "Home Hub UI")],
-        rows=rows)
+               Stat("Features", f"{n_on}/{len(features.CATALOG)}", "on here")],
+        rows=rows + frows, details=details)
+
+
+def feature_rows() -> tuple[list[Row], dict[str, Detail]]:
+    """FEAT-003: one row per feature. Read-only on purpose: ./config is
+    mounted read-only, and widgets, routers and MCP tools are wired at
+    startup, so a click could not take effect before a restart anyway.
+    Red is work data placed on the home server (no login there), yellow
+    a soft dependency that is off where the feature is on."""
+    warn: dict[str, list[dict]] = {}
+    for w in features.warnings():
+        warn.setdefault(w["feature"], []).append(w)
+    rows, details = [], {}
+    for f in features.CATALOG.values():
+        placed = features.sites_of(f.key)
+        names = [s for s in site.SITES if s in placed]
+        where = ", ".join(names) or "off"
+        ws = warn.get(f.key, [])
+        red = any(w["level"] == "red" for w in ws)
+        on = features.on(f.key)
+        state = "On here" if on else "Off here"
+        kind = "r" if red else ("o" if ws else ("g" if on else ""))
+        desc = f"{where} · {f.data} data"
+        if ws:
+            desc += " · " + ws[0]["text"]
+        rows.append(Row(cells=[f.title, desc, state], kinds=["", "", kind], tag="Features",
+                        detail_key=f"feature-{f.key}", hay=f.key,
+                        action=Action("Details")))
+        body = [f"Placed on: {where}" + (" (default)" if f.key in features.defaulted() else ""),
+                f"Data: {f.data}"]
+        if f.widgets:
+            body.append("Widgets: " + ", ".join(f.widgets))
+        if f.paths:
+            body.append("Pages: " + " ".join(f.paths))
+        if f.workflows:
+            body.append("n8n workflows: " + ", ".join(f.workflows))
+        if f.needs:
+            body.append("Reads: " + ", ".join(features.CATALOG[n].title for n in f.needs))
+        if f.env:
+            body.append("Env vars on the site that runs it: " + ", ".join(f.env))
+        if len(names) > 1:
+            body.append("On more than one site, each with its own jytte.db: the data does not sync.")
+        body += [w["text"] for w in ws]
+        note = "Edit the line below in config/features.yml, then restart this site."
+        if f.workflows:
+            note += (" Its workflows also go in N8N_IMPORT_ONLY of that site's compose file;"
+                     " tests/test_features.py prints the line.")
+        line = f"{f.key}: [{', '.join(names)}]"
+        details[f"feature-{f.key}"] = Detail(title=f.title, body="\n".join(body),
+                                             note=note, cmd=line)
+    return rows, details
 
 
 BUILDERS = {

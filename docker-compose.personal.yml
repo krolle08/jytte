@@ -106,8 +106,9 @@ services:
       # on localhost. Reached as http://server:5678 over Tailscale, which
       # already encrypts the traffic.
       N8N_SECURE_COOKIE: "false"
-      # FEAT-001: only the personal site's jobs. Pinned to app/site.py
-      # WORKFLOWS by tests/test_site_split.py.
+      # FEAT-003: the workflows of the features config/features.yml
+      # places on this site. tests/test_site_split.py fails and prints
+      # the line to paste when a placement change makes them disagree.
       N8N_IMPORT_ONLY: >-
         bank.json elforbrug.json
     volumes:

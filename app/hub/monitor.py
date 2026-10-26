@@ -27,7 +27,7 @@ from pathlib import Path
 import httpx
 import yaml
 
-from app import site
+from app import features
 
 log = logging.getLogger(__name__)
 
@@ -110,7 +110,7 @@ def load_apps(path: Path | None = None) -> dict:
     for a in doc.get("apps") or []:
         if not isinstance(a, dict) or not a.get("id"):
             continue
-        if not site.owns(a.get("site")):
+        if not features.entry_on(a):
             continue
         items.append({
             "id": str(a["id"]), "name": str(a.get("name") or a["id"]),

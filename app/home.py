@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 from datetime import date, datetime
 
-from app import frontpage, site
+from app import features, frontpage, site
 from app.widgets.email import highlight as mail_highlight
 
 log = logging.getLogger(__name__)
@@ -192,13 +192,13 @@ async def build(registry, today_: date | None = None) -> dict:
          "sub": f"{(ai.get('stats') or {}).get('drifted', 0)} driftet",
          "tone": "lilac", "href": "/legacy/ai"},
     ]
-    # FEAT-001: budget lives on the personal site. Running everything,
-    # the tile keeps its legacy link; on the local site it points at the
-    # peer, and without a peer there is nothing to point at.
-    if site.current() is None:
+    # FEAT-003: budget runs where config/features.yml puts it. Here, the
+    # tile keeps its legacy link; elsewhere it points at the peer, and
+    # without a peer there is nothing to point at.
+    if features.on("budget"):
         tiles.append({"label": "Budget", "value": "-", "sub": "ikke migreret endnu",
                       "tone": "", "href": "/legacy/budget"})
-    elif site.peer_url():
+    elif site.peer_url() and features.on_peer("budget"):
         tiles.append({"label": "Budget", "value": "-", "sub": "på serveren",
                       "tone": "", "href": site.peer_url() + "/budget"})
 

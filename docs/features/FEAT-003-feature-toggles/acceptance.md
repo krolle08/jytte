@@ -44,7 +44,7 @@ injected with a temp `features.yml` via `JYTTE_FEATURES_CONFIG`.
 - **When** `/` renders
 - **Then** the budget card shows data here, the salary card shows the peer
   link (or nothing without `JYTTE_PEER_URL`)
-- Test: `tests/test_hub_routes.py::test_overview_cards_follow_features`
+- Test: `test_overview_cards_follow_features`
 
 ### AC-07 Failure mode: typo refuses to start
 - **Given** `budgt: [personal]` or `budget: [persnal]` in `features.yml`
@@ -88,4 +88,16 @@ injected with a temp `features.yml` via `JYTTE_FEATURES_CONFIG`.
 - Test: `test_unset_runs_everything`
 
 ## Results
-Not run yet.
+2026-10-26, on branch `feature/FEAT-003-feature-toggles`:
+- Full suite in the test image: 298 passed (`tests/test_features.py` 19, the
+  FEAT-001 tests moved onto the catalog).
+- ruff: clean.
+- Preview container, `JYTTE_SITE=local` with `budget: [local]`,
+  `salary: [personal]`, `devops: [personal, local]`: `/budget` 200, `/salary`
+  404, `/devops` 200; boot log printed both yellow and the red warning;
+  `/settings?tab=Features` showed 11/19 on, Azure DevOps red, Budget yellow;
+  `/budget` named Salary as off.
+- `/code-review` (medium): 10 findings, all fixed (old-nav Home tagged
+  `today`, CLAUDE.md widget steps, `needs` for today and boxes, apps and
+  schedules entries can carry `feature:`, placement read once per process,
+  test messages and partition check).

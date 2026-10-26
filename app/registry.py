@@ -11,7 +11,7 @@ from typing import Any, Callable
 import yaml
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from app import db, site, sse
+from app import db, features, sse
 
 log = logging.getLogger(__name__)
 
@@ -147,18 +147,14 @@ class WidgetRegistry:
             except Exception as e:
                 log.exception("failed to read manifest %s: %s", entry.name, e)
                 continue
-            # FEAT-001: the other site's widgets are never imported, so
-            # their routers, MCP tools and scheduler jobs do not exist
-            # here either. A missing or misspelt `site:` is an ERROR and
-            # loads nowhere once a site is set: loading it everywhere
-            # would put a personal widget on the work machine.
-            tag = manifest.get("site")
-            if site.current() is not None and tag not in site.SITES:
-                log.error("skipped widget %s: site %r is not one of %s",
-                          entry.name, tag, ", ".join(site.SITES))
-                continue
-            if not site.owns(tag):
-                log.info("skipped widget %s: site %s", entry.name, tag)
+            # FEAT-003: a widget whose feature is off here is never
+            # imported, so its routers, MCP tools and scheduler jobs do
+            # not exist here either. Placement is config/features.yml; a
+            # widget in no feature loads only with JYTTE_SITE unset.
+            name = manifest.get("name") or entry.name
+            if not features.widget_on(name):
+                log.info("skipped widget %s: feature %s is off here", name,
+                         features.WIDGET_FEATURE.get(name))
                 continue
             try:
                 widget = self._load(entry, manifest)

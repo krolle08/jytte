@@ -21,7 +21,7 @@ this file points you at it.
 
 | File              | Required | Purpose                                                                |
 |-------------------|----------|------------------------------------------------------------------------|
-| `manifest.yaml`   | yes      | name, **site**, title, refresh_minutes, expose_mcp, watcher, claude_analyzer |
+| `manifest.yaml`   | yes      | name, title, refresh_minutes, expose_mcp, watcher, claude_analyzer |
 | `fetch.py`        | yes      | `async def fetch() -> dict` + optional `async def summary(data) -> str` |
 | `card.html`       | yes      | Jinja partial rendered into the dashboard grid                          |
 | `analyze.py`      | no       | Optional Claude-powered post-processing (only when manifest sets flag) |
@@ -33,33 +33,43 @@ this file points you at it.
 The registry discovers any folder containing a `manifest.yaml`. No central
 registration list to edit.
 
-## Two sites (FEAT-001)
+## Two sites (FEAT-001) and feature placement (FEAT-003)
 
-One codebase runs twice. `JYTTE_SITE` picks the half; `app/site.py`
-holds the rules and `docs/features/FEAT-001-personal-local-site-split/`
-the why.
+One codebase runs twice. `JYTTE_SITE` picks the half; **which feature
+runs on which half is one line per feature in `config/features.yml`**
+(`[personal]`, `[local]`, `[personal, local]` or `[]` for off). What a
+feature consists of (widgets, pages, n8n workflows, data class, soft
+dependencies) is `CATALOG` in `app/features.py`. The why is in
+`docs/features/FEAT-001-personal-local-site-split/` and
+`docs/features/FEAT-003-feature-toggles/`.
 
 | | `personal` (home server) | `local` (work machine) |
 |---|---|---|
 | Start | `docker compose -f docker-compose.personal.yml up -d --build` | `docker compose up -d --build` |
-| Sidebar | Personal, Legacy (news, budget) | Overview, AI, Work, Legacy (the rest), POC'S |
-| Widgets | news, budget, salary, bank, elpris, elforbrug, stocks, vacation, football, geomap | tasks, email, calendar, azuredevops, projects, aistack, wowforever, vault |
-| n8n jobs | bank, elforbrug | the other nine |
-| `/` | 302 to `/budget` | Home |
+| Default features | news, budget, salary, bank, el, stocks, vacation, football, geomap | today, devops, projects, ai, vault, maintenance, documents, opslag, poc, boxes |
+| `/` | Home Hub overview | Home Hub overview |
 
-Four rules:
+Five rules:
 
-1. **Every manifest declares `site:`.** The registry never imports the
-   other site's widgets, so their routers, MCP tools and jobs do not
-   exist there. A test fails on a manifest without it.
-2. **A new top-level page goes in `PERSONAL_PATHS` or `LOCAL_PATHS`.**
-   The middleware in `app/main.py` answers 404 for the other site's
-   paths. A test fails on a route that is in neither and not shared.
-3. **A new workflow goes in `site.WORKFLOWS` and in `N8N_IMPORT_ONLY`
-   of one compose file.** `deploy/n8n/init.sh` cannot read Python; a
-   test fails when the lists disagree.
-4. **Unset runs everything; any other value refuses to start.** A typo
-   that loaded everything would put work data on the server.
+1. **A new widget goes in exactly one feature in `CATALOG`.** Manifests
+   carry no `site:`. A widget in no feature loads only with the site
+   unset; `tests/test_features.py` fails on it.
+2. **A new top-level page goes in a feature's `paths` or in
+   `site.SHARED_PATHS`.** The `SiteGate` middleware in `app/main.py`
+   answers 404 when the page's feature is off here. A test fails on a
+   route that is in neither.
+3. **A new workflow goes in a feature's `workflows` and in
+   `N8N_IMPORT_ONLY` of each compose file whose site runs it.**
+   `deploy/n8n/init.sh` cannot read Python; the test that fails when
+   they disagree prints the line to paste.
+4. **A bad value refuses to start.** An unknown `JYTTE_SITE`, feature
+   key or site name in `features.yml` raises at import. A missing line
+   keeps the catalog default; unset `JYTTE_SITE` runs everything.
+5. **Placement is read once.** Widgets, routers, MCP tools and jobs are
+   wired at startup, so a change takes a restart. `/settings` (Features
+   tab) shows the placement read-only; work data placed on `personal`
+   logs a warning and is marked red there, because the server has no
+   login. A feature on both sites runs on two separate `jytte.db` files.
 
 `JYTTE_PEER_URL` turns the other site's sidebar groups into links to
 it. Personal data on the server has no login and is reachable on the
@@ -432,7 +442,9 @@ GET  /health      liveness probe
 ## How to add a new widget
 
 1. `mkdir app/widgets/<name>/`
-2. Write `manifest.yaml` (with `site: personal|local`), `fetch.py`, `card.html`, `CLAUDE.md` (use `app/widgets/budget/CLAUDE.md` as the model).
+2. Write `manifest.yaml`, `fetch.py`, `card.html`, `CLAUDE.md` (use `app/widgets/budget/CLAUDE.md` as the model), and add the widget to a
+   feature in `CATALOG` in `app/features.py` (new feature: also a line in
+   `config/features.yml`).
 3. Decide where it goes on the front page. Doing nothing is fine - any
    widget not named in `_EXPLICITLY_PLACED` in `app/frontpage.py` falls
    through to the "More" strip automatically. For a dedicated box, add

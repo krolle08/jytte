@@ -1,5 +1,4 @@
 name: email
-site: local
 title: Mail
 # source: n8n - the Microsoft Graph read lives in
 # deploy/n8n/workflows/email.json and arrives via
