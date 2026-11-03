@@ -41,7 +41,7 @@
       <p class="wf-sub">{{ n.headline }}</p>
       <div class="wf-chips">
         <span class="wf-chip">Posted <b>{{ n.posted_label }}</b></span>
-        <span class="wf-chip">Build <b>{{ n.build }}</b></span>
+        {% if n.build %}<span class="wf-chip">Build <b>{{ n.build }}</b></span>{% endif %}
         {% for m in n.milestones %}<span class="wf-chip">{{ m.label }} <b>{{ m.date_label }}</b></span>{% endfor %}
       </div>
       <a class="wf-enter" href="#wf-timeline">Enter World</a>

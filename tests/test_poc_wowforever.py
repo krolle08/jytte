@@ -2,9 +2,15 @@
 
 Stdlib only, runs on the host:  python -m pytest tests/test_poc_wowforever.py
 """
-from datetime import date
+from datetime import date, timedelta
 
 from app.poc import wowforever as wf
+
+
+def _after(note: dict, days: int) -> str:
+    """An ISO date `days` after the note's key, so these tests follow
+    whichever hand file is newest instead of pinning one."""
+    return (date.fromisoformat(note["key"]) + timedelta(days=days)).isoformat()
 
 
 def test_every_note_parses_and_has_its_icons():
@@ -59,7 +65,7 @@ def test_validation_rejects_schema_drift():
 
 def test_choose_prefers_a_valid_newer_live_note():
     hand = wf.load(wf.note_files()[-1])
-    newer = dict(hand, key="2026-10-22")
+    newer = dict(hand, key=_after(hand, 7))
     broken = dict(newer, classes=[{"name": "Mage", "color": "blue", "spells": []}])
     assert wf.choose(hand, newer) == "live"
     assert wf.choose(hand, dict(hand)) == "file"     # same date: the human file wins
@@ -70,11 +76,13 @@ def test_choose_prefers_a_valid_newer_live_note():
 def test_build_live_note_borrows_timeline_and_gets_a_now_dot():
     hand = wf.load(wf.note_files()[-1])
     live = {k: v for k, v in hand.items() if k not in ("timeline", "milestones")}
-    live.update(key="2026-10-22", _source={"url": "https://example.invalid/p"})
-    ctx = wf.build(today=date(2026, 10, 22), widget_data={"ready": True, "note": live, "blue_posts": []})
+    later = _after(hand, 1)
+    live.update(key=later, _source={"url": "https://example.invalid/p"})
+    ctx = wf.build(today=date.fromisoformat(later),
+                   widget_data={"ready": True, "note": live, "blue_posts": []})
     assert ctx["provenance"] == "analyzer"
     states = {t["date"]: t["state"] for t in ctx["note"]["timeline"]}
-    assert states["2026-10-22"] == "now" and states["2026-10-15"] == "done"
+    assert states[later] == "now" and states["2026-09-17"] == "done"
 
 
 # ---- widget parse helpers ----------------------------------------------
@@ -124,8 +132,8 @@ def test_choose_keeps_the_hand_file_for_the_same_post():
     # reading of the transcribed post looks newer than the hand file.
     hand = wf.load(wf.note_files()[-1])
     assert hand.get("post_id"), "the newest hand file should name the post it transcribes"
-    same = dict(hand, key="2026-10-16", _source={"post_id": hand["post_id"]})
-    other = dict(hand, key="2026-10-23", _source={"post_id": hand["post_id"] + 1})
+    same = dict(hand, key=_after(hand, 1), _source={"post_id": hand["post_id"]})
+    other = dict(hand, key=_after(hand, 8), _source={"post_id": hand["post_id"] + 1})
     assert wf.choose(hand, same) == "file"
     assert wf.choose(hand, other) == "live"
 

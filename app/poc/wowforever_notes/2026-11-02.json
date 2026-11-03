@@ -1,0 +1,972 @@
+{
+  "key": "2026-11-02",
+  "title": "Beta Development Notes - 2 November",
+  "posted": "2026-11-02T19:20:33-08:00",
+  "posted_label": "2 Nov, 19:20 (US forums)",
+  "build": "",
+  "post_id": 30732723,
+  "previous": "2026-10-15",
+  "headline": "Every class hits harder: damage is up across the game and higher level creatures get more health to match",
+  "timeline": [
+    {
+      "date": "2026-09-17",
+      "label": "Beta opens"
+    },
+    {
+      "date": "2026-10-15",
+      "label": "Racials and classes reworked"
+    },
+    {
+      "date": "2026-10-23",
+      "label": "Beta closes, 19:00 CEST"
+    },
+    {
+      "date": "2026-10-27",
+      "label": "Name reservation opens"
+    },
+    {
+      "date": "2026-11-02",
+      "label": "This update"
+    },
+    {
+      "date": "2026-11-03",
+      "label": "Name reservation ends"
+    },
+    {
+      "date": "2026-11-04",
+      "label": "Launch"
+    },
+    {
+      "date": "2026-12-09",
+      "label": "Raids unlock"
+    }
+  ],
+  "milestones": [
+    {
+      "date": "2026-11-03",
+      "label": "Name reservation ends"
+    },
+    {
+      "date": "2026-11-04",
+      "label": "Launch"
+    },
+    {
+      "date": "2026-12-09",
+      "label": "Raids"
+    }
+  ],
+  "fixes": [
+    {
+      "icon": "spell_nature_regenerate",
+      "name": "Class damage raised",
+      "kind": "buff",
+      "text": "Damage is raised for every class, and higher level creatures get more health to compensate. No big tuning changes are planned before the raids open next month."
+    },
+    {
+      "icon": "inv_misc_book_11",
+      "name": "Low-rank spells",
+      "kind": "buff",
+      "text": "Talents no longer have a lower chance to trigger from low-rank spells. Blizzard still does, for ranks learned more than 12 levels ago."
+    },
+    {
+      "icon": "inv_misc_coin_01",
+      "name": "Training costs",
+      "kind": "change",
+      "text": "Training every class ability from 1 to 60 now costs 206 to 207 gold for every class. For Warlocks, the expected cost of pet Grimoires is taken off."
+    },
+    {
+      "icon": "inv_misc_note_01",
+      "name": "New spells and action bars",
+      "kind": "change",
+      "text": "Learning a new spell no longer places it on your action bars."
+    },
+    {
+      "icon": "achievement_character_tauren_male",
+      "name": "Racial base stats",
+      "kind": "fix",
+      "text": "Every race now has the correct base stats. A Tauren Warrior starts with +5 Strength over a Human Warrior (was +2)."
+    },
+    {
+      "icon": "spell_frost_frostbolt02",
+      "name": "Proc roots",
+      "kind": "fix",
+      "text": "Roots from procs now have Diminishing Returns. Applies to Frostbite, Entrapment, Improved Wing Clip, Counterattack and Improved Hamstring."
+    },
+    {
+      "icon": "inv_wand_07",
+      "name": "Throw",
+      "kind": "fix",
+      "text": "Uses the 0.5 second windup instead of the throwing weapon's attack speed."
+    },
+    {
+      "icon": "inv_misc_pocketwatch_01",
+      "name": "Quitter debuff and stun",
+      "kind": "change",
+      "text": "The quitter debuff lasts 40 seconds (was 5 minutes). The stun lasts 2.5 seconds (was 3)."
+    }
+  ],
+  "races": [
+    {
+      "icon": "achievement_character_human_male",
+      "name": "Human",
+      "faction": "alliance",
+      "abilities": [
+        {
+          "icon": "ability_criticalstrike",
+          "name": "Ruthless",
+          "kind": "nerf",
+          "text": "Critical strike chance +1% (was 2%)."
+        },
+        {
+          "icon": "spell_holy_resurrection",
+          "name": "Human Spirit",
+          "kind": "buff",
+          "text": "Spirit +10% (was 5%)."
+        }
+      ]
+    },
+    {
+      "icon": "achievement_character_dwarf_male",
+      "name": "Dwarf",
+      "faction": "alliance",
+      "abilities": [
+        {
+          "icon": "spell_nature_earthquake",
+          "name": "Earth Fury",
+          "kind": "nerf",
+          "text": "Removed (was +2% critical damage and healing)."
+        },
+        {
+          "icon": "ability_marksmanship",
+          "name": "Artisan's Precision",
+          "kind": "new",
+          "text": "+1% hit chance with spells and attacks."
+        }
+      ]
+    },
+    {
+      "icon": "achievement_character_bloodelf_female",
+      "name": "Skyborne",
+      "faction": "alliance",
+      "abilities": [
+        {
+          "icon": "spell_nature_windfury",
+          "name": "Wind-Blessed",
+          "kind": "nerf",
+          "text": "Haste bonus 2% (was 3%)."
+        },
+        {
+          "icon": "spell_nature_crystalball",
+          "name": "Read Leyline",
+          "kind": "change",
+          "text": "+50% Mana and Health regeneration for 15 sec (was 100%). Used at a Ley Line it grants Attuned for 1 hour, which raises it back to 100%."
+        },
+        {
+          "icon": "spell_nature_cyclone",
+          "name": "Skysight",
+          "kind": "change",
+          "text": "+15% movement speed for 15 sec (was 10%). Used at an elemental convergence it grants Charged for 1 hour: +30%."
+        }
+      ]
+    },
+    {
+      "icon": "achievement_character_orc_male",
+      "name": "Orc",
+      "faction": "horde",
+      "abilities": [
+        {
+          "icon": "racial_orc_berserkerstrength",
+          "name": "Blood Fury",
+          "kind": "buff",
+          "text": "Cooldown 2 minutes (was 3)."
+        },
+        {
+          "icon": "ability_hunter_beasttaming",
+          "name": "Command",
+          "kind": "new",
+          "text": "Back: Warlock and Hunter pets deal 5% more damage. Savage (+1% crit) is removed."
+        }
+      ]
+    },
+    {
+      "icon": "achievement_character_undead_male",
+      "name": "Undead",
+      "faction": "horde",
+      "abilities": [
+        {
+          "icon": "spell_shadow_deathcoil",
+          "name": "Touch of the Grave",
+          "kind": "buff",
+          "text": "Internal cooldown 15 sec (was 25). Triggers as often as intended, and the beam visual is gone."
+        },
+        {
+          "icon": "spell_shadow_raisedead",
+          "name": "Cannibalize",
+          "kind": "fix",
+          "text": "Usable again while immune to Physical damage."
+        }
+      ]
+    },
+    {
+      "icon": "achievement_character_tauren_male",
+      "name": "Tauren",
+      "faction": "horde",
+      "abilities": [
+        {
+          "icon": "ability_mount_kodo_01",
+          "name": "Plainsrunning",
+          "kind": "change",
+          "text": "+2% movement speed per stack, up to 60% (was 1% and 30%). No longer affects mounted speed."
+        },
+        {
+          "icon": "spell_nature_unyeildingstamina",
+          "name": "Endurance",
+          "kind": "nerf",
+          "text": "Only +5% Health. The hit and critical damage bonuses are gone."
+        }
+      ]
+    },
+    {
+      "icon": "achievement_character_troll_male",
+      "name": "Troll",
+      "faction": "horde",
+      "abilities": [
+        {
+          "icon": "ability_racial_bloodrage",
+          "name": "Berserking",
+          "kind": "buff",
+          "text": "Lasts 15 sec (was 10)."
+        }
+      ]
+    }
+  ],
+  "classes": [
+    {
+      "name": "Druid",
+      "color": "#FF7C0A",
+      "icon": "classicon_druid",
+      "lede": "Cat damage up about 25%, Bear threat more than doubled, and Feral gets separate Bear and Cat 31-point talents.",
+      "spells": [
+        {
+          "icon": "ability_druid_catform",
+          "name": "Bear and Dire Bear Form",
+          "kind": "buff",
+          "text": "Threat bonus 115% (was 50%), to make up for Blessing of Salvation being removed.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_shadow_vampiricaura",
+          "name": "Shred, Claw and Ravage",
+          "kind": "buff",
+          "text": "Weapon damage: Shred 200% (was 155%), Claw 140% (was 110%), Ravage 435% (was 350%).",
+          "spec": ""
+        },
+        {
+          "icon": "ability_druid_rake",
+          "name": "Rip, Rake, Ferocious Bite, Pounce",
+          "kind": "buff",
+          "text": "Base damage and Attack Power scaling up about 25%. Ferocious Bite gets a new Rank 1 at level 24.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_holy_blessingofstamina",
+          "name": "Poised",
+          "kind": "new",
+          "text": "Passive at level 32. At full Energy out of combat, your next Energy ability costs 10 less.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_arcane_starfire",
+          "name": "Starfire",
+          "kind": "buff",
+          "text": "Base damage up about 40%.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_nature_moonglow",
+          "name": "Genesis and Moonkin Form",
+          "kind": "buff",
+          "text": "Genesis 2/4/6/8/10% periodic damage and healing (was 1-5%). Moonkin crit covers all critical strikes again and is exclusive with Leader of the Pack.",
+          "spec": "Balance"
+        },
+        {
+          "icon": "spell_nature_unyeildingstamina",
+          "name": "Feral 31-point talents",
+          "kind": "change",
+          "text": "Berserk removed. Primal Bite (Bear) and Shifting Power (Cat, needs the new Predatory Discipline) are both row 7 talents. Lacerate is now a row 4 talent.",
+          "spec": "Feral"
+        },
+        {
+          "icon": "ability_hunter_pet_bear",
+          "name": "Rend and Tear",
+          "kind": "buff",
+          "text": "Damage bonus 3/6/9/12/15% (was 2-10%).",
+          "spec": "Feral"
+        },
+        {
+          "icon": "spell_nature_rejuvenation",
+          "name": "Bloom",
+          "kind": "new",
+          "text": "Replaces Gift of the Earthmother. An expiring Rejuvenation or Regrowth heals for 100% of your Spirit (50% if dispelled).",
+          "spec": "Restoration"
+        },
+        {
+          "icon": "spell_nature_wispheal",
+          "name": "Wild Growth and Swiftmend",
+          "kind": "change",
+          "text": "Wild Growth has a 3 sec base cast. Swiftmend needs your own Rejuvenation or Regrowth on the target. Naturalist now 2-10% damage.",
+          "spec": "Restoration"
+        }
+      ]
+    },
+    {
+      "name": "Hunter",
+      "color": "#AAD372",
+      "icon": "classicon_hunter",
+      "lede": "Aimed Shot more than doubles, every shot scales harder, and traps share one cooldown.",
+      "spells": [
+        {
+          "icon": "ability_hunter_snipershot",
+          "name": "Aimed Shot",
+          "kind": "buff",
+          "text": "Bonus damage up about 110% on every rank.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_arcane_blast",
+          "name": "Arcane Shot",
+          "kind": "buff",
+          "text": "Base damage up about 30%. Attack Power coefficient 0.15 (was 0.1).",
+          "spec": ""
+        },
+        {
+          "icon": "ability_poisons",
+          "name": "Serpent Sting",
+          "kind": "buff",
+          "text": "5% Attack Power per tick (was 3%). Base damage up about 20%.",
+          "spec": ""
+        },
+        {
+          "icon": "ability_marksmanship",
+          "name": "Aspect of the Hawk",
+          "kind": "buff",
+          "text": "Ranged Attack Power 20, 35, 50, 70, 90, 110 for ranks 1 to 6.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_fire_flameshock",
+          "name": "Traps",
+          "kind": "change",
+          "text": "All traps share one 30 sec cooldown (Fire and Frost traps were separate).",
+          "spec": ""
+        },
+        {
+          "icon": "ability_hunter_resourcefulness",
+          "name": "Hunter's Mark",
+          "kind": "fix",
+          "text": "Different ranks no longer stack. Rank 4 no longer gives less than Rank 3.",
+          "spec": ""
+        },
+        {
+          "icon": "ability_trueshot",
+          "name": "Trueshot Aura",
+          "kind": "buff",
+          "text": "Ranged Attack Power 20, 35, 50, 75, 100 for ranks 1 to 5.",
+          "spec": "Marksmanship"
+        },
+        {
+          "icon": "ability_whirlwind",
+          "name": "Barrage and Sniper Shot",
+          "kind": "buff",
+          "text": "Barrage 5/10/15% (was 3/7/10%). Sniper Shot bonus damage doubled.",
+          "spec": "Marksmanship"
+        },
+        {
+          "icon": "ability_kick",
+          "name": "Lightning Reflexes",
+          "kind": "buff",
+          "text": "Agility 3/6/9/12/15% (was 2-10%).",
+          "spec": "Survival"
+        }
+      ]
+    },
+    {
+      "name": "Mage",
+      "color": "#3FC7EB",
+      "icon": "classicon_mage",
+      "lede": "Frost Blast is gone, Ice Barrier becomes a damage cooldown, and Arcane Blast is cheaper to stack.",
+      "spells": [
+        {
+          "icon": "spell_frost_frostbolt02",
+          "name": "Frost Blast",
+          "kind": "nerf",
+          "text": "Removed.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_arcane_blast",
+          "name": "Arcane Blast",
+          "kind": "change",
+          "text": "Mana cost +100% per stack (was 175%). 12% of Intellect as spell damage per stack (was 15%). Lasts 18 sec.",
+          "spec": "Arcane"
+        },
+        {
+          "icon": "ability_mage_missilebarrage",
+          "name": "Missile Barrage",
+          "kind": "fix",
+          "text": "Consumed at the start of the channel. Moves to row 2, and Clearcasting is kept while it is active.",
+          "spec": "Arcane"
+        },
+        {
+          "icon": "spell_nature_enchantarmor",
+          "name": "Arcane Resilience",
+          "kind": "buff",
+          "text": "Row 1, up to 3 points for armor equal to 75% of Intellect. Arcane Focus is removed and folded into Precision.",
+          "spec": "Arcane"
+        },
+        {
+          "icon": "spell_fire_flameshock",
+          "name": "Incineration",
+          "kind": "buff",
+          "text": "Up to 5 points for 10% crit (was 3 points for 6%).",
+          "spec": "Fire"
+        },
+        {
+          "icon": "spell_nature_wispheal",
+          "name": "Critical Mass",
+          "kind": "nerf",
+          "text": "Back to 3 points for 6% crit (was 5 points for 10%).",
+          "spec": "Fire"
+        },
+        {
+          "icon": "spell_fire_fireball",
+          "name": "Accelerant",
+          "kind": "change",
+          "text": "Improved Fireball is renamed and also cuts Arcane Wrath's cast by up to 0.5 sec. Ignite now applies to all Flamestrike damage.",
+          "spec": "Fire"
+        },
+        {
+          "icon": "spell_ice_lament",
+          "name": "Ice Barrier",
+          "kind": "buff",
+          "text": "+15% Frost damage for 1 minute, plus 5% while the barrier holds. Piercing Ice is removed.",
+          "spec": "Frost"
+        },
+        {
+          "icon": "spell_frost_frostblast",
+          "name": "Ice Lance",
+          "kind": "change",
+          "text": "8 sec cooldown shared with Fire Blast. Bonus damage against frozen targets back to 300%.",
+          "spec": "Frost"
+        },
+        {
+          "icon": "spell_frost_chillingblast",
+          "name": "Precision and Winter's Chill",
+          "kind": "change",
+          "text": "Precision is 3 points for 2/4/6% spell hit. Winter's Chill adds 20% Cone of Cold damage per stack.",
+          "spec": "Frost"
+        }
+      ]
+    },
+    {
+      "name": "Paladin",
+      "color": "#F48CBA",
+      "icon": "classicon_paladin",
+      "lede": "Salvation is gone, Righteous Fury comes at level 10, and all three trees are rebuilt with new talents.",
+      "spells": [
+        {
+          "icon": "spell_holy_sealofsalvation",
+          "name": "Salvation",
+          "kind": "nerf",
+          "text": "Salvation, Mass Salvation, Revoke and Blessing of Light are removed.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_holy_sealoffury",
+          "name": "Righteous Fury",
+          "kind": "buff",
+          "text": "Trained at level 10 (was 16). +33% to all threat, plus 90% more threat from Holy damage.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_holy_holybolt",
+          "name": "Oath of Light",
+          "kind": "new",
+          "text": "Row 4 talent. Swear an Oath on one ally for 5 min to raise your Holy Light, Flash of Light and Holy Shock healing on them.",
+          "spec": "Holy"
+        },
+        {
+          "icon": "spell_holy_searinglight",
+          "name": "Holy Power and Boundless Light",
+          "kind": "change",
+          "text": "Holy Power raises the critical healing bonus 10-50%. New Boundless Light: +15/30% Holy Shock crit on allies without your Oath.",
+          "spec": "Holy"
+        },
+        {
+          "icon": "inv_shield_06",
+          "name": "Shieldsworn",
+          "kind": "new",
+          "text": "Row 7 talent. Holy Strike strikes with your shield, triggers your block talents, lets you block spells for 6 sec, and has a 4 sec shorter cooldown.",
+          "spec": "Protection"
+        },
+        {
+          "icon": "spell_holy_blessingofstrength",
+          "name": "Sacred Duty and Stoicism",
+          "kind": "change",
+          "text": "Sacred Duty drops its Stamina bonus and shortens Forbearance by 5/10 sec. New Stoicism: stuns and charms 10/20% shorter.",
+          "spec": "Protection"
+        },
+        {
+          "icon": "spell_holy_righteousfury",
+          "name": "Unsealed Wrath",
+          "kind": "new",
+          "text": "The new 31-point talent, requires Repentance. Melee attacks store up to 3 copies of your Seal; switching Seals fires each stored copy.",
+          "spec": "Retribution"
+        },
+        {
+          "icon": "spell_holy_holysmite",
+          "name": "Champion of the Light",
+          "kind": "buff",
+          "text": "Spell damage 12-60% of Intellect, and up to 1 sec off Hammer of Wrath's cast.",
+          "spec": "Retribution"
+        },
+        {
+          "icon": "spell_holy_innerfire",
+          "name": "Conviction and Two-Handed Specialization",
+          "kind": "buff",
+          "text": "Conviction gives 2/4/6% crit to all spells and attacks. Two-Handed Specialization covers Holy damage and lowers threat.",
+          "spec": "Retribution"
+        }
+      ]
+    },
+    {
+      "name": "Priest",
+      "color": "#FFFFFF",
+      "icon": "classicon_priest",
+      "lede": "Shadow Word: Death bites back harder, and Binding Heal becomes Holy Binding.",
+      "spells": [
+        {
+          "icon": "spell_shadow_demonicfortitude",
+          "name": "Shadow Word: Death",
+          "kind": "change",
+          "text": "Deals 30% of your maximum Health to you if it fails to kill (was 10%). No backlash on a miss.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_holy_renew",
+          "name": "Power Word: Shield",
+          "kind": "fix",
+          "text": "Can be replaced by a shield of equal or higher rank.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_holy_resurrection",
+          "name": "Holy Binding",
+          "kind": "new",
+          "text": "Replaces Binding Heal. Flash Heal on another target also heals you for 50%, with no threat.",
+          "spec": "Holy"
+        },
+        {
+          "icon": "spell_shadow_unsummonbuilding",
+          "name": "Vampiric Embrace",
+          "kind": "nerf",
+          "text": "Its healing can no longer crit.",
+          "spec": "Shadow"
+        },
+        {
+          "icon": "spell_shadow_blackplague",
+          "name": "Shadowform",
+          "kind": "fix",
+          "text": "Cure Disease and Abolish Disease no longer drop you out of it. Devouring Contagion no longer spreads from critters.",
+          "spec": "Shadow"
+        }
+      ]
+    },
+    {
+      "name": "Rogue",
+      "color": "#FFF468",
+      "icon": "classicon_rogue",
+      "lede": "The biggest rework: a new Shank ability, Poised, Death Mark, and new talents in all three trees.",
+      "spells": [
+        {
+          "icon": "inv_sword_04",
+          "name": "Shank",
+          "kind": "new",
+          "text": "Level 24. 5 Energy, 10 sec cooldown. Off-hand strike for 50% weapon damage that cannot miss and generates 15 Energy (25 at rank 2, level 44).",
+          "spec": ""
+        },
+        {
+          "icon": "spell_holy_blessingofstamina",
+          "name": "Poised",
+          "kind": "new",
+          "text": "Passive at level 18. At full Energy out of combat, your next Energy ability costs 10 less.",
+          "spec": ""
+        },
+        {
+          "icon": "ability_poisons",
+          "name": "Deadly and Instant Poison",
+          "kind": "buff",
+          "text": "Attack Power coefficients doubled (0.009 and 0.01).",
+          "spec": ""
+        },
+        {
+          "icon": "ability_rogue_shadowstrikes",
+          "name": "Mutilate",
+          "kind": "buff",
+          "text": "Moves to row 7. 90% weapon damage plus a larger bonus (was 75%).",
+          "spec": "Assassination"
+        },
+        {
+          "icon": "spell_shadow_vampiricaura",
+          "name": "Blood Splatter and Venom",
+          "kind": "new",
+          "text": "Blood Splatter: Rupture +6 sec, Garrote +9 sec. Venom: Shank raises poison damage 30% and poison chance 20% for 6 sec. Murder removed.",
+          "spec": "Assassination"
+        },
+        {
+          "icon": "inv_misc_pocketwatch_01",
+          "name": "Relentless Strikes and Seal Fate",
+          "kind": "change",
+          "text": "Relentless Strikes is 5 points, 4-20% per Combo Point to restore 25 Energy. Seal Fate is 3 points, 33/66/100%.",
+          "spec": "Assassination"
+        },
+        {
+          "icon": "ability_meleedamage",
+          "name": "Flash of Steel and Composure",
+          "kind": "new",
+          "text": "Flash of Steel: Shank generates up to 15 more Energy and has up to 2 sec less cooldown. Composure: Poised saves up to 10 more Energy.",
+          "spec": "Combat"
+        },
+        {
+          "icon": "inv_misc_coin_02",
+          "name": "Coup de Grace",
+          "kind": "change",
+          "text": "Improved Eviscerate renamed. Raises Eviscerate and Death Mark damage by 7/13/20%. Dual Wield Specialization is 2 points for 25/50% off-hand damage.",
+          "spec": "Combat"
+        },
+        {
+          "icon": "spell_shadow_deathcoil",
+          "name": "Death Mark",
+          "kind": "new",
+          "text": "Row 7 finisher, 25 Energy, 10 sec cooldown. Stores part of your damage per Combo Point (Garrote and Rupture at twice the rate) and deals it after 6 sec.",
+          "spec": "Subtlety"
+        },
+        {
+          "icon": "ability_sap",
+          "name": "Boot Knife and Quick Getaway",
+          "kind": "new",
+          "text": "Boot Knife: Shank up to 100% chance to add 2 Combo Points. Quick Getaway: one extra Sap target and a speed burst after Sap. Quietus, Cutthroat and Thousand Cuts removed.",
+          "spec": "Subtlety"
+        }
+      ]
+    },
+    {
+      "name": "Shaman",
+      "color": "#0070DD",
+      "icon": "classicon_shaman",
+      "lede": "Lava Burst is removed, Lightning Bolt and shocks hit much harder, and Stormstrike comes faster.",
+      "spells": [
+        {
+          "icon": "spell_nature_chainlightning",
+          "name": "Lightning Bolt",
+          "kind": "buff",
+          "text": "Base damage raised on all ranks, max rank +80%. About 78% of Classic Era damage at a shorter cast.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_nature_earthquake",
+          "name": "Chain Lightning",
+          "kind": "change",
+          "text": "2.5 sec cast. About 145% of Lightning Bolt damage on the main target for about 225% of its Mana.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_fire_sealoffire",
+          "name": "Shocks",
+          "kind": "buff",
+          "text": "Base damage back to Classic Era values.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_nature_groundingtotem",
+          "name": "Totemic Call",
+          "kind": "change",
+          "text": "Totemic Projection renamed. Pulls your totems to you, 30 sec cooldown.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_shaman_lavaburst",
+          "name": "Lava Burst",
+          "kind": "nerf",
+          "text": "Removed. Call of Thunder takes its place: +5% crit on Lightning Bolt and Chain Lightning.",
+          "spec": "Elemental"
+        },
+        {
+          "icon": "spell_nature_wispheal",
+          "name": "Lightning Overload and Lightning Mastery",
+          "kind": "buff",
+          "text": "Overload 10/20/30% chance (was 3/7/10%). Elemental Mastery is renamed Lightning Mastery.",
+          "spec": "Elemental"
+        },
+        {
+          "icon": "ability_shaman_stormstrike",
+          "name": "Stormstrike",
+          "kind": "buff",
+          "text": "150% normalized weapon damage (was 100%), 6 sec cooldown (was 8). Maelstrom Weapon triggers twice as often.",
+          "spec": "Enhancement"
+        },
+        {
+          "icon": "spell_nature_windfury",
+          "name": "Flurry and Mental Dexterity",
+          "kind": "buff",
+          "text": "Flurry 6-30% attack speed (was 5-25%). Mental Dexterity gives 50/100/150% of Intellect as Attack Power.",
+          "spec": "Enhancement"
+        },
+        {
+          "icon": "ability_shaman_watershield",
+          "name": "Riptide",
+          "kind": "change",
+          "text": "Heal over time only, no initial heal. About 40% cheaper, 12 sec cooldown (was 6).",
+          "spec": "Restoration"
+        }
+      ]
+    },
+    {
+      "name": "Warlock",
+      "color": "#8788EE",
+      "icon": "classicon_warlock",
+      "lede": "Wrack more than doubles at 60, pets lose Health, and Shadow and Flame doubles.",
+      "spells": [
+        {
+          "icon": "spell_shadow_summonsuccubus",
+          "name": "Pet Health",
+          "kind": "nerf",
+          "text": "Pets gain 2 Health per point of your Stamina (was 7.5).",
+          "spec": ""
+        },
+        {
+          "icon": "spell_shadow_siphonmana",
+          "name": "Drain Soul",
+          "kind": "nerf",
+          "text": "Much lower chance to grant a Soul Shard from damage that does not kill.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_shadow_unholystrength",
+          "name": "Spellstones and Bane of Agony",
+          "kind": "fix",
+          "text": "Spellstones raise only Shadow damage. Bane of Agony updates its damage as it should.",
+          "spec": ""
+        },
+        {
+          "icon": "spell_shadow_callofbone",
+          "name": "Wrack",
+          "kind": "buff",
+          "text": "Spell damage coefficient doubled. Base damage per second at level 60 goes from 36 to 86.",
+          "spec": "Affliction"
+        },
+        {
+          "icon": "spell_shadow_shadowworddominate",
+          "name": "Amplify Curse and Improved Drains",
+          "kind": "change",
+          "text": "Amplify Curse affects Curse of Exhaustion and Bane of Agony. Improved Drains boosts Drain Mana, not Wrack.",
+          "spec": "Affliction"
+        },
+        {
+          "icon": "spell_shadow_corpseexplode",
+          "name": "Shadow and Flame",
+          "kind": "buff",
+          "text": "Fire or Shadow damage +4/8/12/16/20% (was 2-10%).",
+          "spec": "Destruction"
+        }
+      ]
+    },
+    {
+      "name": "Warrior",
+      "color": "#C69B6D",
+      "icon": "classicon_warrior",
+      "lede": "Tank threat jumps, Slam comes faster, and Fury gets Reckless Swings and Improved Whirlwind.",
+      "spells": [
+        {
+          "icon": "inv_shield_06",
+          "name": "Defensive Stance",
+          "kind": "buff",
+          "text": "Threat bonus 80% (was 30%).",
+          "spec": ""
+        },
+        {
+          "icon": "ability_warrior_decisivestrike",
+          "name": "Slam",
+          "kind": "buff",
+          "text": "Cooldown 15 sec (was 18).",
+          "spec": ""
+        },
+        {
+          "icon": "ability_meleedamage",
+          "name": "Two-Handed Specialization",
+          "kind": "buff",
+          "text": "2/4/6% damage with a two-handed weapon (was 1/2/3%).",
+          "spec": "Arms"
+        },
+        {
+          "icon": "ability_warrior_battleshout",
+          "name": "Tactical Mastery and Bloodthrill",
+          "kind": "change",
+          "text": "Improved Tactical Mastery is 3 points for 5/10/15 Rage kept. Bloodthrill is 2 points, 10/20% Overpower chance.",
+          "spec": "Arms"
+        },
+        {
+          "icon": "ability_criticalstrike",
+          "name": "Reckless Swings",
+          "kind": "new",
+          "text": "Row 4, 15 sec cooldown, costs 25% of base Health. Your next 4 melee attacks generate 5 extra Rage.",
+          "spec": "Fury"
+        },
+        {
+          "icon": "ability_whirlwind",
+          "name": "Improved Whirlwind",
+          "kind": "new",
+          "text": "Row 6. Whirlwind cooldown 1/2 sec shorter, 15/30% more damage to the closest enemy.",
+          "spec": "Fury"
+        },
+        {
+          "icon": "ability_racial_bloodrage",
+          "name": "Flurry",
+          "kind": "change",
+          "text": "3 points for 10/20/30% attack speed for 3 swings. No longer needs Death Wish; Bloodthirst does.",
+          "spec": "Fury"
+        },
+        {
+          "icon": "spell_nature_ancestralguardian",
+          "name": "Defiance",
+          "kind": "buff",
+          "text": "Threat 7/13/20% (was 5/10/15%).",
+          "spec": "Protection"
+        }
+      ]
+    }
+  ],
+  "quests": [
+    {
+      "icon": "inv_misc_map_01",
+      "zone": "The whole world",
+      "text": "Respawn rates adjusted for launch crowds: fastest in starting zones, slower as you level. Lower zones go back to normal once the launch surge settles."
+    },
+    {
+      "icon": "spell_arcane_teleportdalaran",
+      "zone": "Alterac Mountains",
+      "text": "Dalaran Summoners no longer summon without end."
+    },
+    {
+      "icon": "ability_mount_kodo_01",
+      "zone": "Barrens",
+      "text": "Talk to Rethgar Deathgate to start \"Counterattack!\". Alliance Outrunners spawn in random places."
+    },
+    {
+      "icon": "inv_misc_note_01",
+      "zone": "Darkshore",
+      "text": "\"Holy Diver\" now gives experience."
+    },
+    {
+      "icon": "spell_shadow_raisedead",
+      "zone": "Ruins of Lordaeron",
+      "text": "Dungeon quests all need level 15 (was a mix of 15 and 16)."
+    },
+    {
+      "icon": "ability_hunter_pet_bear",
+      "zone": "Teldrassil",
+      "text": "Fewer spiders in The Cleft for \"Twisted Hatred\"."
+    },
+    {
+      "icon": "achievement_reputation_kirintor",
+      "zone": "Wetlands",
+      "text": "Carnage no longer resets near the end of \"Carnage\". Alba Fairmoon stays for \"Destruction in Deadmines\"."
+    }
+  ],
+  "gear": [
+    {
+      "icon": "inv_misc_book_09",
+      "name": "Bags",
+      "text": "No longer equip themselves into empty bag slots. Equip them by hand."
+    },
+    {
+      "icon": "inv_wand_07",
+      "name": "Replica Ironforge Air Rifle (Legacy)",
+      "text": "Usable on allies who also have one equipped."
+    },
+    {
+      "icon": "inv_bannerpvp_02",
+      "name": "Darkspear Islands",
+      "text": "Dropping the flag no longer gives you the Recently Dropped Flag debuff."
+    }
+  ],
+  "interface": [
+    {
+      "icon": "inv_misc_enggizmos_27",
+      "name": "Gamepad support",
+      "kind": "new",
+      "text": "Complete: movement, spells, interaction and all core interface work on a controller. Set it up in Edit Mode and Options."
+    },
+    {
+      "icon": "spell_holy_holybolt",
+      "name": "Ground-targeted items",
+      "kind": "new",
+      "text": "AoE items on the gamepad action bar can be placed. Press the button again to confirm."
+    },
+    {
+      "icon": "inv_misc_book_11",
+      "name": "Gamepad bags",
+      "kind": "buff",
+      "text": "New bag UI with free space and ammo counters, better Keyring navigation and search."
+    },
+    {
+      "icon": "ability_marksmanship",
+      "name": "Focus target and corpses",
+      "kind": "new",
+      "text": "LB + RB + Face Down targets your focus. Friendly corpses and critters can be targeted."
+    },
+    {
+      "icon": "spell_magic_featherfall",
+      "name": "Flight paths",
+      "kind": "new",
+      "text": "Back/Cancel ends a flight early at the next flight point."
+    },
+    {
+      "icon": "inv_misc_note_01",
+      "name": "Popups",
+      "kind": "change",
+      "text": "Popups you did not open no longer steal gamepad focus."
+    }
+  ],
+  "actionbar": [
+    "classicon_rogue",
+    "inv_sword_04",
+    "spell_ice_lament",
+    "ability_shaman_stormstrike",
+    "spell_nature_chainlightning",
+    "spell_holy_righteousfury",
+    "spell_shadow_callofbone",
+    "ability_hunter_snipershot",
+    "ability_druid_catform",
+    "ability_whirlwind",
+    "spell_shaman_lavaburst",
+    "racial_orc_berserkerstrength"
+  ],
+  "sources": [
+    {
+      "label": "Blizzard forums: WoW Forever Beta Development Notes, updated 2 November",
+      "url": "https://us.forums.blizzard.com/en/wow/t/wow-forever-beta-development-notes-%E2%80%93-updated-november-2/2360696/9"
+    },
+    {
+      "label": "Blizzard forums: World of Warcraft: Forever Goes Live Globally November 4",
+      "url": "https://us.forums.blizzard.com/en/wow/t/2396008"
+    },
+    {
+      "label": "worldofwarcraft.com: Claim Your World of Warcraft: Forever Character Names",
+      "url": "https://worldofwarcraft.blizzard.com/en-us/news/24303866"
+    }
+  ],
+  "transcribed": "2026-11-03",
+  "transcribed_by": "Claude (hand transcription of the forum post)",
+  "corrections": []
+}
