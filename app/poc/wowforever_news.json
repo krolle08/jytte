@@ -1,7 +1,47 @@
 {
-  "updated": "2026-10-21",
+  "updated": "2026-11-04",
   "checked_by": "Claude, read from worldofwarcraft.blizzard.com and the Blizzard forums",
   "posts": [
+    {
+      "date": "2026-11-03",
+      "icon": "inv_misc_pocketwatch_01",
+      "title": "Launch: 4 November at 15:00 PST, midnight in Europe",
+      "text": "WoW Forever opens worldwide on 4 November at 15:00 PST, which is 00:00 CET on 5 November (23:00 UTC). The first login asks for an Experience Preset: Classic (standard models, no quest markers, no one-bag, no transmog) or Enhanced (HD models with all of those on), changeable later in Options. Then pick a Ruleset: Normal, PvP, Roleplay or Roleplay PvP. Hardcore follows some time after launch.",
+      "label": "worldofwarcraft.com",
+      "url": "https://worldofwarcraft.blizzard.com/en-us/news/24315820"
+    },
+    {
+      "date": "2026-11-03",
+      "icon": "inv_misc_book_09",
+      "title": "Agree on Ruleset and faction before you make characters",
+      "text": "Characters can group, join guilds, run dungeons and raid together only inside the same Ruleset and faction, and a PvP Ruleset holds you to one faction. Each character can spend up to 16 Legacy Points at launch, so alts are optional. The Cooldown Manager and a Damage Meter sit under Advanced options. One subscription or Game Time covers both Forever and the modern game.",
+      "label": "worldofwarcraft.com",
+      "url": "https://worldofwarcraft.blizzard.com/en-us/news/24315821"
+    },
+    {
+      "date": "2026-11-03",
+      "icon": "inv_gizmo_02",
+      "title": "Gamepad guide",
+      "text": "Any XInput controller works, with Xbox and PlayStation button icons. Turn it on under Options, Gameplay, Gamepad. Hold LT, RT or both for four action bars, and LB+RB with left or right on the D-pad switches between three sets, 84 slots in all. Support is still in beta, and chat still needs a keyboard.",
+      "label": "worldofwarcraft.com",
+      "url": "https://worldofwarcraft.blizzard.com/en-us/news/24316974"
+    },
+    {
+      "date": "2026-10-29",
+      "icon": "inv_bannerpvp_02",
+      "title": "Returning player guide: two-part names and a 15v15 battleground",
+      "text": "Forever is set in Year 1, before Kazzak reopened the Dark Portal. Every character has a first name and a second name, and the pair must be unique in your region. New combinations: Human Hunter, Dwarf Shaman, Gnome Priest, Orc Mage, Troll Warlock and Undead Paladin; Skyborne need the Heroic Pack or higher. Darkspear Islands is a new 15v15 battleground off Dustwallow Marsh for levels 30 to 60.",
+      "label": "worldofwarcraft.com",
+      "url": "https://worldofwarcraft.blizzard.com/en-us/news/24315643"
+    },
+    {
+      "date": "2026-10-28",
+      "icon": "inv_misc_note_01",
+      "title": "Fix for names refused by mistake",
+      "text": "A bug made the restricted name list too strict, for example refusing any name containing \"con\". The fix went in with each region's next realm restart, so a name that was refused before is worth trying again.",
+      "label": "Blizzard forums, Kaivax",
+      "url": "https://us.forums.blizzard.com/en/wow/t/overly-restrictive-name-check-and-fix-incoming-october-27/2394467"
+    },
     {
       "date": "2026-10-20",
       "icon": "inv_misc_pocketwatch_01",
