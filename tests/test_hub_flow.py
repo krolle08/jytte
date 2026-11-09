@@ -82,3 +82,16 @@ def test_graph_longest_path():
                            "C": {"main": [[{"node": "D"}]]}}}
     layers, _ = flow.graph(doc)
     assert [[n["id"] for n in lay] for lay in layers] == [["A"], ["B"], ["C"], ["D"]]
+
+
+def test_edges_name_their_ends_so_the_browser_can_redraw_them():
+    # hub.js redraws an edge from its data-s/data-t when a node is dragged,
+    # with the same curve as flow._curve; the starting path must match it.
+    layers = [[{**_n("A"), "id": "A"}], [{**_n("B"), "id": "B"}]]
+    out = flow.layout(layers, edges=[("A", "B")])
+    e = out["edges"][0]
+    a, b = out["nodes"]
+    assert (e["s"], e["t"]) == ("A", "B") and (a["key"], b["key"]) == ("A", "B")
+    assert e["d"] == flow._curve(a["x"], a["cy"], b["x"], b["cy"])
+    # the fallback pairing rule has no ids, so the label is the key
+    assert flow.layout([[_n("X")], [_n("Y")]])["edges"][0]["s"] == "X"

@@ -268,3 +268,19 @@ img.th{display:block}
 .body{flex-direction:column}
 .grid{grid-template-columns:minmax(0,1fr)}
 }
+
+/* Interactive flow (hub.js): nodes drag, the background pans. */
+.flowbox{cursor:grab}
+.flowcanvas{user-select:none;-webkit-user-select:none;touch-action:none}
+.flowcanvas .node{cursor:grab;transition:box-shadow .15s}
+.flowcanvas .node:hover,.flowcanvas .node:focus-visible{box-shadow:0 0 0 2px color-mix(in srgb,var(--c) 45%,transparent),0 0 14px rgba(255,255,255,.06);outline:none}
+.flowbox.grabbing,.flowcanvas .node.grabbing{cursor:grabbing}
+.flowcanvas .node.grabbing{z-index:2;box-shadow:0 0 0 2px var(--c),0 8px 22px rgba(0,0,0,.45)}
+.flowcanvas path{transition:opacity .15s,stroke-width .15s}
+.flowcanvas.lit path{opacity:.22}
+.flowcanvas.lit path.hl{opacity:1;stroke-width:2.6}
+.flowcard .h-hd .flowhint{margin-left:auto;font-weight:400;font-size:11px;color:#6b7a93;white-space:nowrap;flex:none}
+.flowcard .flowreset{height:26px;padding:0 10px;border-radius:7px;border:1px solid #223352;background:#121f36;color:#e8eef9;font-size:11px;white-space:nowrap;flex:none;cursor:pointer}
+.flowcard .flowreset:hover{background:#1c2f55}
+@media (max-width:640px){.flowcard .h-hd .flowhint{display:none}}
+@media (prefers-reduced-motion:reduce){.flowcanvas .node,.flowcanvas path{transition:none}}
