@@ -411,7 +411,7 @@ GET  /poc/wow  POC: newest WoW Forever beta note as a game-styled walkthrough
 GET  /bank        Bank - spend by category, from the posting text
 GET  /bank/callback  AIS consent redirect. No shell, no DB write, code never logged
 GET  /el          El - spot price per quarter-hour, what it costs, consumption
-GET  /jobs        N8N Pipelines - every workflow, its flow (?sel=<id>), pause/resume with N8N_API_KEY
+GET  /jobs        N8N Pipelines - every workflow, its flow (?sel=<id>, nodes draggable, layout kept per browser), pause/resume with N8N_API_KEY
 GET  /opslag      Opslagsværk - tools and concepts, from config/opslagsvaerk.yml
 GET  /devops      multi-instance Azure DevOps tab (/legacy/ado is the old one)
 GET  /news        8-category news aggregator

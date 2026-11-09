@@ -36,6 +36,10 @@ def layout(layers: list[list[dict]], failed_label: str | None = None,
     when `edges` are given). The failed node gets `failed`, every node
     in a later layer `dim`, and edges leaving the failed node are red
     and dashed.
+
+    Every node carries `key` (its id, else its label) and every edge the
+    `s`/`t` keys of its ends, so the browser can redraw an edge when a
+    node is dragged (app/static/hub.js) with the same curve as `_curve`.
     """
     n_layers = len(layers)
     widest = max((len(l) for l in layers), default=1)
@@ -54,6 +58,10 @@ def layout(layers: list[list[dict]], failed_label: str | None = None,
     if failed_label:
         fail_layer = next((li for li, lay in enumerate(pos)
                            if any(n["label"] == failed_label for n in lay)), -1)
+
+    for lay in pos:
+        for n in lay:
+            n["key"] = str(n.get("id") or n["label"])
 
     nodes = []
     for li, lay in enumerate(pos):
@@ -82,14 +90,21 @@ def layout(layers: list[list[dict]], failed_label: str | None = None,
 
     out_edges = []
     for a, b in pairs:
-        x1, y1, x2, y2 = a["x"] + NW, a["cy"], b["x"], b["cy"]
-        dx = (x2 - x1) * 0.45
         bad = failed_label is not None and a["label"] == failed_label
         colour = R if bad else (b["colour"] if a["colour"] == NEUTRAL else a["colour"])
         out_edges.append({
-            "d": f"M{_n(x1)} {_n(y1)} C{_n(x1 + dx)} {_n(y1)} {_n(x2 - dx)} {_n(y2)} {_n(x2)} {_n(y2)}",
+            "d": _curve(a["x"], a["cy"], b["x"], b["cy"]),
+            "s": a["key"], "t": b["key"],
             "colour": colour, "dash": "4 4" if bad else "none"})
     return {"nodes": nodes, "edges": out_edges, "width": width, "height": height}
+
+
+def _curve(ax: float, ay: float, bx: float, by: float) -> str:
+    """The edge from the right side of node a to the left side of node
+    b. hub.js repeats this formula for a dragged node; keep them equal."""
+    x1, y1, x2, y2 = ax + NW, ay, bx, by
+    dx = (x2 - x1) * 0.45
+    return f"M{_n(x1)} {_n(y1)} C{_n(x1 + dx)} {_n(y1)} {_n(x2 - dx)} {_n(y2)} {_n(x2)} {_n(y2)}"
 
 
 def _n(v: float) -> str:
